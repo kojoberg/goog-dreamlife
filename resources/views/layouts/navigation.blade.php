@@ -15,45 +15,128 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+
                     <x-nav-link :href="route('pos.index')" :active="request()->routeIs('pos.*')">
                         {{ __('POS') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('products.index')" :active="request()->routeIs('products.*')">
-                        {{ __('Products') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('suppliers.index')" :active="request()->routeIs('suppliers.*')">
-                        {{ __('Suppliers') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('categories.index')" :active="request()->routeIs('categories.*')">
-                        {{ __('Categories') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('shifts.create')" :active="request()->routeIs('shifts.*')">
-                        {{ __('My Shift') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('expenses.index')" :active="request()->routeIs('expenses.*')">
-                        {{ __('Expenses') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('drug-interactions.index')"
-                        :active="request()->routeIs('drug-interactions.*')">
-                        {{ __('Safety Checks') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('procurement.orders.index')" :active="request()->routeIs('procurement.*')">
-                        {{ __('Procurement') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('analytics.index')" :active="request()->routeIs('analytics.*')">
-                        {{ __('Analytics') }}
-                    </x-nav-link>
+
+                    <!-- Inventory Dropdown -->
+                    <div class="hidden sm:flex sm:items-center sm:ms-2">
+                        <x-dropdown align="right" width="48">
+                            <x-slot name="trigger">
+                                <button
+                                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                                    <div>Inventory</div>
+                                    <div class="ms-1">
+                                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd"
+                                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                </button>
+                            </x-slot>
+                            <x-slot name="content">
+                                <x-dropdown-link :href="route('inventory.create')">
+                                    {{ __('Receive Stock') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link :href="route('procurement.orders.index')">
+                                    {{ __('Procurement (POs)') }}
+                                </x-dropdown-link>
+                                <div class="border-t border-gray-100"></div>
+                                <x-dropdown-link :href="route('products.index')">
+                                    {{ __('Products') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link :href="route('categories.index')">
+                                    {{ __('Categories') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link :href="route('suppliers.index')">
+                                    {{ __('Suppliers') }}
+                                </x-dropdown-link>
+                            </x-slot>
+                        </x-dropdown>
+                    </div>
+
+                    <!-- Clinical Dropdown -->
+                    <div class="hidden sm:flex sm:items-center sm:ms-2">
+                        <x-dropdown align="right" width="48">
+                            <x-slot name="trigger">
+                                <button
+                                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                                    <div>Clinical</div>
+                                    <div class="ms-1">
+                                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd"
+                                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                </button>
+                            </x-slot>
+                            <x-slot name="content">
+                                <x-dropdown-link :href="route('prescriptions.index')">
+                                    {{ __('Prescriptions') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link :href="route('patients.index')">
+                                    {{ __('Patients') }}
+                                </x-dropdown-link>
+                                <div class="border-t border-gray-100"></div>
+                                <x-dropdown-link :href="route('drug-interactions.index')">
+                                    {{ __('Safety Checks') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link :href="route('analytics.index')">
+                                    {{ __('Analytics') }}
+                                </x-dropdown-link>
+                            </x-slot>
+                        </x-dropdown>
+                    </div>
+
+                    <!-- Operations Dropdown -->
+                    <div class="hidden sm:flex sm:items-center sm:ms-2">
+                        <x-dropdown align="right" width="48">
+                            <x-slot name="trigger">
+                                <button
+                                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                                    <div>Operations</div>
+                                    <div class="ms-1">
+                                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd"
+                                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                </button>
+                            </x-slot>
+                            <x-slot name="content">
+                                <x-dropdown-link :href="route('shifts.create')">
+                                    {{ __('My Shift') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link :href="route('expenses.index')">
+                                    {{ __('Expenses') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link :href="route('settings.index')">
+                                    {{ __('Settings') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link :href="route('profile.edit')">
+                                    {{ __('Profile') }}
+                                </x-dropdown-link>
+                            </x-slot>
+                        </x-dropdown>
+                    </div>
                 </div>
             </div>
 
-            <!-- Settings Dropdown -->
+            <!-- Settings Dropdown (User Name) -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
+                <!-- Keep existing user dropdown for logout -->
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button
                             class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
                             <div>{{ Auth::user()->name }}</div>
-
                             <div class="ms-1">
                                 <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg"
                                     viewBox="0 0 20 20">
@@ -64,18 +147,11 @@
                             </div>
                         </button>
                     </x-slot>
-
                     <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
-                        </x-dropdown-link>
-
-                        <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-
-                            <x-dropdown-link :href="route('logout')" onclick="event.preventDefault();
-                                                this.closest('form').submit();">
+                            <x-dropdown-link :href="route('logout')"
+                                onclick="event.preventDefault(); this.closest('form').submit();">
                                 {{ __('Log Out') }}
                             </x-dropdown-link>
                         </form>
@@ -105,6 +181,26 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('pos.index')" :active="request()->routeIs('pos.*')">
+                {{ __('POS') }}
+            </x-responsive-nav-link>
+
+            <div class="border-t border-gray-200 my-2"></div>
+            <div class="px-4 text-xs text-gray-500 uppercase font-bold">Inventory</div>
+            <x-responsive-nav-link :href="route('inventory.create')">Receive Stock</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('products.index')">Products</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('categories.index')">Categories</x-responsive-nav-link>
+
+            <div class="border-t border-gray-200 my-2"></div>
+            <div class="px-4 text-xs text-gray-500 uppercase font-bold">Clinical</div>
+            <x-responsive-nav-link :href="route('prescriptions.index')">Prescriptions</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('patients.index')">Patients</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('drug-interactions.index')">Safety Checks</x-responsive-nav-link>
+
+            <div class="border-t border-gray-200 my-2"></div>
+            <div class="px-4 text-xs text-gray-500 uppercase font-bold">Operations</div>
+            <x-responsive-nav-link :href="route('shifts.create')">My Shift</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('expenses.index')">Expenses</x-responsive-nav-link>
         </div>
 
         <!-- Responsive Settings Options -->
@@ -122,9 +218,8 @@
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-
-                    <x-responsive-nav-link :href="route('logout')" onclick="event.preventDefault();
-                                        this.closest('form').submit();">
+                    <x-responsive-nav-link :href="route('logout')"
+                        onclick="event.preventDefault(); this.closest('form').submit();">
                         {{ __('Log Out') }}
                     </x-responsive-nav-link>
                 </form>
