@@ -105,7 +105,7 @@ class PatientController extends Controller
     /**
      * AJAX Store for POS
      */
-    public function storeApi(Request $request)
+    public function apiStore(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',

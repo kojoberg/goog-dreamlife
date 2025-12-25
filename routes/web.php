@@ -43,6 +43,8 @@ Route::middleware('auth')->group(function () {
     Route::put('/settings', [\App\Http\Controllers\SettingController::class, 'update'])->name('settings.update');
 
     // Phase 5: Clinical
+    Route::get('/patients/search', [\App\Http\Controllers\PatientController::class, 'search'])->name('patients.search');
+    Route::post('/patients/api/store', [\App\Http\Controllers\PatientController::class, 'apiStore'])->name('patients.api.store');
     Route::resource('patients', \App\Http\Controllers\PatientController::class);
     Route::resource('prescriptions', \App\Http\Controllers\PrescriptionController::class);
     Route::post('/prescriptions/{prescription}/dispense', [\App\Http\Controllers\PrescriptionController::class, 'dispense'])->name('prescriptions.dispense');
