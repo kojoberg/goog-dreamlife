@@ -37,7 +37,16 @@ class PosController extends Controller
                 ];
             });
 
-        $settings = Setting::first();
+        $settings = Setting::firstOrCreate(
+            ['id' => 1],
+            [
+                'business_name' => 'Dream Life Healthcare',
+                'address' => '123 Health Street, City',
+                'phone' => '+233 00 000 0000',
+                'email' => 'info@dreamlife.com',
+                'currency_symbol' => 'GHS'
+            ]
+        );
         return view('pos.index', compact('products', 'settings'));
     }
 
