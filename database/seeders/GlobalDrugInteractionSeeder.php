@@ -21,43 +21,41 @@ class GlobalDrugInteractionSeeder extends Seeder
         $catED = Category::firstOrCreate(['name' => 'ED Medications'], ['description' => 'Erectile Dysfunction']);
         $catCardiac = Category::firstOrCreate(['name' => 'Cardiac'], ['description' => 'Heart medications']);
 
-        // 2. Ensure Drugs Exist (Using firstOrCreate to avoid duplicates)
-        $msg = "Seeded by Global Import";
+        // 2. Ensure Drugs Exist
+        // Helper function to create product and stock
+        $createDrug = function ($name, $category, $price, $cost, $stock, $isChronic = false) {
+            $product = Product::firstOrCreate(
+                ['name' => $name],
+                [
+                    'category_id' => $category->id,
+                    'unit_price' => $price, // Correct column name
+                    'reorder_level' => 10,
+                    'is_chronic' => $isChronic,
+                    'description' => 'Seeded by Global Import'
+                ]
+            );
 
-        $aspirin = Product::firstOrCreate(
-            ['name' => 'Aspirin 75mg'],
-            ['category_id' => $catBloodThinner->id, 'sell_price' => 10, 'cost_price' => 5, 'stock' => 100, 'reorder_level' => 20, 'description' => $msg]
-        );
+            // Add Initial Stock Batch if none exists
+            if ($product->batches()->count() == 0) {
+                \App\Models\InventoryBatch::create([
+                    'product_id' => $product->id,
+                    'supplier_id' => null, // Optional
+                    'batch_number' => 'INIT-' . strtoupper(substr($name, 0, 3)),
+                    'quantity' => $stock,
+                    'cost_price' => $cost,
+                    'expiry_date' => now()->addYear(2),
+                ]);
+            }
+            return $product;
+        };
 
-        $warfarin = Product::firstOrCreate(
-            ['name' => 'Warfarin 5mg'],
-            ['category_id' => $catBloodThinner->id, 'sell_price' => 25, 'cost_price' => 12, 'stock' => 50, 'reorder_level' => 10, 'is_chronic' => true, 'description' => $msg]
-        );
-
-        $ibuprofen = Product::firstOrCreate(
-            ['name' => 'Ibuprofen 400mg'],
-            ['category_id' => $catAnalgesic->id, 'sell_price' => 15, 'cost_price' => 6, 'stock' => 100, 'reorder_level' => 20, 'description' => $msg]
-        );
-
-        $sildenafil = Product::firstOrCreate(
-            ['name' => 'Sildenafil (Viagra) 50mg'],
-            ['category_id' => $catED->id, 'sell_price' => 50, 'cost_price' => 20, 'stock' => 30, 'reorder_level' => 5, 'description' => $msg]
-        );
-
-        $nitroglycerin = Product::firstOrCreate(
-            ['name' => 'Nitroglycerin (GTN)'],
-            ['category_id' => $catCardiac->id, 'sell_price' => 45, 'cost_price' => 22, 'stock' => 20, 'reorder_level' => 5, 'is_chronic' => true, 'description' => $msg]
-        );
-
-        $simvastatin = Product::firstOrCreate(
-            ['name' => 'Simvastatin 20mg'],
-            ['category_id' => $catCardiac->id, 'sell_price' => 30, 'cost_price' => 10, 'stock' => 80, 'reorder_level' => 15, 'is_chronic' => true, 'description' => $msg]
-        );
-
-        $clarithromycin = Product::firstOrCreate(
-            ['name' => 'Clarithromycin 500mg'],
-            ['category_id' => $catAntibiotic->id, 'sell_price' => 60, 'cost_price' => 35, 'stock' => 40, 'reorder_level' => 10, 'description' => $msg]
-        );
+        $aspirin = $createDrug('Aspirin 75mg', $catBloodThinner, 10, 5, 100);
+        $warfarin = $createDrug('Warfarin 5mg', $catBloodThinner, 25, 12, 50, true);
+        $ibuprofen = $createDrug('Ibuprofen 400mg', $catAnalgesic, 15, 6, 100);
+        $sildenafil = $createDrug('Sildenafil (Viagra) 50mg', $catED, 50, 20, 30);
+        $nitroglycerin = $createDrug('Nitroglycerin (GTN)', $catCardiac, 45, 22, 20, true);
+        $simvastatin = $createDrug('Simvastatin 20mg', $catCardiac, 30, 10, 80, true);
+        $clarithromycin = $createDrug('Clarithromycin 500mg', $catAntibiotic, 60, 35, 40);
 
         // 3. Create Interactions
         $interactions = [
@@ -94,7 +92,6 @@ class GlobalDrugInteractionSeeder extends Seeder
         ];
 
         foreach ($interactions as $data) {
-            // Check if exists to avoid dupes
             $exists = DrugInteraction::where(function ($q) use ($data) {
                 $q->where('drug_a_id', $data['drug_a']->id)
                     ->where('drug_b_id', $data['drug_b']->id);
