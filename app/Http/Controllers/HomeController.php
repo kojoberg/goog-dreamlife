@@ -16,7 +16,10 @@ class HomeController extends Controller
         // 1. Key Metrics
         $todaySales = Sale::whereDate('created_at', Carbon::today())->sum('total_amount');
 
-        $expiredBatches = InventoryBatch::where('expiry_date', '<', now())
+        $settings = \App\Models\Setting::first();
+        $days = $settings->alert_expiry_days ?? 90;
+
+        $expiredBatches = InventoryBatch::where('expiry_date', '<=', now()->addDays($days))
             ->where('quantity', '>', 0)
             ->count();
 

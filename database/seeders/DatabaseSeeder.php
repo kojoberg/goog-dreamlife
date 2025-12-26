@@ -68,5 +68,9 @@ class DatabaseSeeder extends Seeder
             'quantity' => 100,
             'expiry_date' => now()->addYear(),
         ]);
+
+        $this->call([
+            \Database\Seeders\GlobalDrugInteractionSeeder::class,
+        ]);
     }
 }

@@ -15,8 +15,10 @@ class SmsService
     public function __construct()
     {
         $settings = Setting::first();
-        $this->apiKey = $settings->sms_api_key;
-        $this->senderId = $settings->sms_sender_id;
+        if ($settings) {
+            $this->apiKey = $settings->sms_api_key;
+            $this->senderId = $settings->sms_sender_id;
+        }
     }
 
     /**

@@ -45,6 +45,14 @@
                                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                         </div>
 
+                        <!-- Cost Price -->
+                        <div class="mb-4">
+                            <label for="cost_price" class="block text-gray-700 text-sm font-bold mb-2">Unit Cost
+                                (GHS)</label>
+                            <input type="number" step="0.01" name="cost_price" id="cost_price"
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        </div>
+
                         <!-- Quantity -->
                         <div class="mb-4">
                             <label for="quantity" class="block text-gray-700 text-sm font-bold mb-2">Quantity

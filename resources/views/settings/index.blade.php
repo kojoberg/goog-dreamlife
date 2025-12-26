@@ -39,6 +39,15 @@
                             </div>
 
                             <div class="col-span-1">
+                                <label class="block text-gray-700 text-sm font-bold mb-2">Expiry Alert (Days)</label>
+                                <input type="number" name="alert_expiry_days"
+                                    value="{{ $settings->alert_expiry_days ?? 90 }}"
+                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    required min="1">
+                                <p class="text-xs text-gray-500 mt-1">Days before expiry to trigger alert.</p>
+                            </div>
+
+                            <div class="col-span-1">
                                 <label class="block text-gray-700 text-sm font-bold mb-2">Phone Number</label>
                                 <input type="text" name="phone" value="{{ $settings->phone }}"
                                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">

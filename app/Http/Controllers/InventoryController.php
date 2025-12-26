@@ -12,11 +12,18 @@ class InventoryController extends Controller
     /**
      * Display current inventory batches.
      */
-    public function index()
+    public function index(Request $request)
     {
         // Eager load product and supplier
-        $batches = InventoryBatch::with(['product', 'supplier'])
-            ->orderBy('expiry_date', 'asc')
+        $query = InventoryBatch::with(['product', 'supplier']);
+
+        if ($request->filter === 'expired') {
+            $settings = \App\Models\Setting::first();
+            $days = $settings->alert_expiry_days ?? 90;
+            $query->where('expiry_date', '<=', now()->addDays($days));
+        }
+
+        $batches = $query->orderBy('expiry_date', 'asc')
             ->paginate(15);
 
         return view('inventory.index', compact('batches'));
@@ -42,6 +49,7 @@ class InventoryController extends Controller
             'supplier_id' => 'nullable|exists:suppliers,id',
             'batch_number' => 'nullable|string|max:50',
             'quantity' => 'required|integer|min:1',
+            'cost_price' => 'nullable|numeric|min:0',
             'expiry_date' => 'nullable|date|after:today',
         ]);
 

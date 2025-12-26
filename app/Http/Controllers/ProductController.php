@@ -8,9 +8,31 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::with('category')->latest()->paginate(10);
+        $query = Product::with('category')->latest();
+
+        // Note: Filtering by stock (aggregate) in SQL is complex without subqueries.
+        // For simplicity/speed in this MVP, we fetch all and filter in PHP if low_stock requested, 
+        // OR we just use a `whereHas` for non-zero logic, but low stock vs reorder level implies checking each.
+        // Let's retrieve all for now if filtered.
+
+        if ($request->filter === 'low_stock') {
+            // We can't easily paginate AFTER filtering a collection without manually building a Paginator.
+            // Strategy: Get IDs of low stock items first?
+            // Or better: Filter in memory. If dataset is huge -> performance hit.
+            // Optimized approach: SQL check.
+            // sum(inventory_batches.quantity) <= reorder_level
+
+            // Let's use get() then filter then manual pagination or just show all (assuming < 1000 products for now)
+            $products = $query->get()->filter(function ($p) {
+                return $p->stock <= $p->reorder_level;
+            });
+            // No pagination for filtered view to keep it simple
+        } else {
+            $products = $query->paginate(10);
+        }
+
         return view('products.index', compact('products'));
     }
 

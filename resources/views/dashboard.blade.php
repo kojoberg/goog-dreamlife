@@ -17,11 +17,11 @@
                 </div>
 
                 <!-- Expired Batches -->
-                <div
-                    class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-l-4 {{ $expiredBatches > 0 ? 'border-red-500' : 'border-gray-200' }}">
+                <a href="{{ route('inventory.index', ['filter' => 'expired']) }}"
+                    class="block bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-l-4 {{ $expiredBatches > 0 ? 'border-red-500 hover:bg-red-50' : 'border-gray-200 hover:bg-gray-50' }} transition">
                     <div class="flex justify-between items-center">
                         <div>
-                            <div class="text-gray-500 text-sm font-medium uppercase">Expired Batches</div>
+                            <div class="text-gray-500 text-sm font-medium uppercase">Expiring / Expired Batches</div>
                             <div
                                 class="mt-2 text-3xl font-bold {{ $expiredBatches > 0 ? 'text-red-600' : 'text-gray-900' }}">
                                 {{ $expiredBatches }}
@@ -32,11 +32,11 @@
                                 Needed</span>
                         @endif
                     </div>
-                </div>
+                </a>
 
                 <!-- Low Stock -->
-                <div
-                    class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-l-4 {{ $lowStockCount > 0 ? 'border-yellow-500' : 'border-gray-200' }}">
+                <a href="{{ route('products.index', ['filter' => 'low_stock']) }}"
+                    class="block bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-l-4 {{ $lowStockCount > 0 ? 'border-yellow-500 hover:bg-yellow-50' : 'border-gray-200 hover:bg-gray-50' }} transition">
                     <div class="flex justify-between items-center">
                         <div>
                             <div class="text-gray-500 text-sm font-medium uppercase">Low Stock Alerts</div>
@@ -50,7 +50,7 @@
                                 class="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2.5 py-0.5 rounded">Restock</span>
                         @endif
                     </div>
-                </div>
+                </a>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

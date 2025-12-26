@@ -37,6 +37,7 @@ class SettingController extends Controller
             'phone' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:255',
             'currency_symbol' => 'required|string|max:10',
+            'alert_expiry_days' => 'required|integer|min:1',
             'smtp_host' => 'nullable|string',
             'smtp_port' => 'nullable|string',
             'smtp_username' => 'nullable|string',
