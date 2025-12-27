@@ -10,9 +10,11 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::table('purchase_orders', function (Blueprint $table) {
-            $table->foreignId('branch_id')->nullable()->constrained()->onDelete('set null')->after('id');
-        });
+        if (!Schema::hasColumn('purchase_orders', 'branch_id')) {
+            Schema::table('purchase_orders', function (Blueprint $table) {
+                $table->foreignId('branch_id')->nullable()->constrained()->onDelete('set null')->after('id');
+            });
+        }
     }
 
     /**
