@@ -65,20 +65,36 @@ chmod -R 775 storage bootstrap/cache
 
 echo -e "${GREEN}[5/7] Installing Dependencies & Building Assets...${NC}"
 
-# Install PHP Dependencies First (Required for artisan)
-export COMPOSER_ALLOW_SUPERUSER=1
-composer update --optimize-autoloader --no-dev
-
-# Setup Env
+# Setup Env First (Needed for composer scripts to not fail)
 if [ ! -f .env ]; then
     cp .env.example .env
-    sed -i "s/DB_DATABASE=laravel/DB_DATABASE=${DB_NAME}/" .env
-    sed -i "s/DB_USERNAME=root/DB_USERNAME=${DB_USER}/" .env
-    sed -i "s/DB_PASSWORD=/DB_PASSWORD=${DB_PASS}/" .env
+    
+    # Configure Database - SWITCH TO MYSQL
+    sed -i "s/DB_CONNECTION=sqlite/DB_CONNECTION=mysql/" .env
+    sed -i "s/# DB_HOST=127.0.0.1/DB_HOST=127.0.0.1/" .env
+    sed -i "s/# DB_PORT=3306/DB_PORT=3306/" .env
+    sed -i "s/# DB_DATABASE=laravel/DB_DATABASE=${DB_NAME}/" .env
+    sed -i "s/# DB_USERNAME=root/DB_USERNAME=${DB_USER}/" .env
+    sed -i "s/# DB_PASSWORD=/DB_PASSWORD=${DB_PASS}/" .env
+    
+    # Configure App
     sed -i "s/APP_URL=http:\/\/localhost/APP_URL=http:\/\/$(curl -s ifconfig.me)/" .env
     sed -i "s/APP_ENV=local/APP_ENV=production/" .env
     sed -i "s/APP_DEBUG=true/APP_DEBUG=false/" .env
-    php artisan key:generate
+fi
+
+# Install PHP Dependencies (Downgrade if needed for PHP 8.2)
+export COMPOSER_ALLOW_SUPERUSER=1
+composer update --optimize-autoloader --no-dev
+
+# Generate Key now that vendor exists
+if [ ! -f .env ]; then
+    # Double check if key needs generating
+    if grep -q "APP_KEY=" .env; then
+         php artisan key:generate
+    fi
+else
+     php artisan key:generate
 fi
 
 npm install
