@@ -147,6 +147,118 @@
         let loyaltyPointValue = {{ $settings->loyalty_point_value ?? 0.10 }};
         let searchTimeout = null;
 
+        // Cart Variables
+        let cart = [];
+        let total = 0;
+
+        function addToCart(product) {
+            // Check if product needed interaction check?
+            // For now just add to cart.
+            // Check if already in cart
+            const existing = cart.find(item => item.id == product.id);
+            if (existing) {
+                existing.qty++;
+            } else {
+                cart.push({
+                    ...product,
+                    qty: 1
+                });
+            }
+            updateCartUI();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartUI();
+        }
+
+        function updateQty(index, qty) {
+            if (qty < 1) return;
+            cart[index].qty = parseInt(qty);
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const container = document.getElementById('cart-items');
+            const totalEl = document.getElementById('cart-total');
+            const checkoutBtn = document.getElementById('checkout-btn');
+
+            container.innerHTML = '';
+            total = 0;
+
+            if (cart.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 mt-10">Cart is empty</div>';
+                totalEl.innerText = 'GHS 0.00';
+                checkoutBtn.disabled = true;
+                return;
+            }
+
+            cart.forEach((item, index) => {
+                const itemTotal = item.price * item.qty;
+                total += itemTotal;
+
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center mb-3 p-2 bg-gray-50 rounded';
+                div.innerHTML = `
+                    <div class="flex-1">
+                        <div class="font-bold text-sm">${item.name}</div>
+                        <div class="text-xs text-gray-500">GHS ${item.price} x 
+                            <input type="number" min="1" value="${item.qty}" 
+                            class="w-12 border rounded px-1" 
+                            onchange="updateQty(${index}, this.value)">
+                        </div>
+                    </div>
+                    <div class="font-bold text-sm px-2">GHS ${itemTotal.toFixed(2)}</div>
+                    <button onclick="removeFromCart(${index})" class="text-red-500 hover:text-red-700">x</button>
+                `;
+                container.appendChild(div);
+            });
+
+            totalEl.innerText = 'GHS ' + total.toFixed(2);
+            checkoutBtn.disabled = false;
+
+            // Recalculate redemption if active
+            calculateRedemption();
+        }
+
+        function filterProducts() {
+            const query = document.getElementById('search').value.toLowerCase();
+            const products = document.querySelectorAll('.product-card');
+
+            products.forEach(card => {
+                const name = card.getAttribute('data-name');
+                if (name.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function calculateChange() {
+            const tendered = parseFloat(document.getElementById('amount-tendered').value) || 0;
+            const redeemPoints = document.getElementById('redeem-check')?.checked ? (document.getElementById('redeem-amount').value || 0) : 0;
+
+            let payable = total;
+            if (redeemPoints > 0) {
+                payable -= (redeemPoints * loyaltyPointValue);
+            }
+            if (payable < 0) payable = 0;
+
+            const change = tendered - payable;
+            const display = document.getElementById('change-display');
+            const amountEl = document.getElementById('change-amount');
+
+            if (tendered > 0) {
+                display.style.display = 'flex';
+                amountEl.innerText = 'GHS ' + change.toFixed(2);
+                if (change < 0) amountEl.classList.add('text-red-500');
+                else amountEl.classList.remove('text-red-500');
+            } else {
+                display.style.display = 'none';
+            }
+        }
+
         function debounceSearchPatient() {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(searchPatient, 300);
