@@ -11,7 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            $table->string('rxcui')->nullable()->after('barcode')->comment('RxNorm Concept Unique Identifier');
+            $table->string('rxcui')->nullable()->after('name')->comment('RxNorm Concept Unique Identifier');
             $table->timestamp('last_interaction_sync')->nullable()->after('updated_at');
         });
     }
