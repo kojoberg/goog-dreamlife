@@ -77,7 +77,9 @@ class ProcurementController extends Controller
             return back()->with('error', 'Order already received.');
         }
 
-        DB::transaction(function () use ($order) {
+        $request->validate(['received_by' => 'required|string|max:255']);
+
+        DB::transaction(function () use ($order, $request) {
             foreach ($order->items as $item) {
                 if ($item->quantity_received < $item->quantity_ordered) {
                     // Update Item
@@ -90,14 +92,26 @@ class ProcurementController extends Controller
                         'supplier_id' => $order->supplier_id,
                         'batch_number' => 'PO-' . $order->id . '-' . time(),
                         'quantity' => $qty,
-                        'expiry_date' => now()->addYear(), // Default or ask user? keeping simple.
+                        'expiry_date' => now()->addYear(),
                         'cost_price' => $item->unit_cost,
                     ]);
+
+                    // Update Product Cost Price to latest received cost
+                    $item->product->update(['cost_price' => $item->unit_cost]);
                 }
             }
-            $order->update(['status' => 'received']);
+            $order->update([
+                'status' => 'received',
+                'received_by' => $request->received_by // Save staff name
+            ]);
         });
 
         return back()->with('success', 'Stock Received and Inventory Updated.');
+    }
+
+    public function print(PurchaseOrder $order)
+    {
+        $order->load(['items.product', 'supplier', 'user']);
+        return view('procurement.orders.print', compact('order'));
     }
 }

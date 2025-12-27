@@ -88,19 +88,40 @@ class PosController extends Controller
                 // For simplicity, let's keep the logic close to the loop
             }
 
-            // 2. Calculate Taxes
-            // NHIL 2.5%, GETFund 2.5%, COVID 1%
-            // VAT 15% on (Subtotal + Levies)
-            $nhil = $subtotal * 0.025;
-            $getfund = $subtotal * 0.025;
-            $covid = $subtotal * 0.01;
-            $levies = $nhil + $getfund + $covid;
+            // 2. Calculate Taxes (INCLUSIVE)
+            $grandTotal = $subtotal; // Product Price includes everything if tax enabled
+            $settings = Setting::first();
+            $taxEnabled = $settings->enable_tax;
 
-            $vatBase = $subtotal + $levies;
-            $vat = $vatBase * 0.15;
+            if ($taxEnabled) {
+                // Formula: Price = Cost + Levies + VAT
+                // Total = 1.06 * 1.15 * Base = 1.219 * Base
+                $baseAmount = $grandTotal / 1.219;
 
-            $totalTax = $levies + $vat;
-            $grandTotal = $subtotal + $totalTax;
+                $levies = $baseAmount * 0.06;
+                $nhil = $baseAmount * 0.025;
+                $getfund = $baseAmount * 0.025;
+                $covid = $baseAmount * 0.01;
+
+                $vatBase = $baseAmount + $nhil + $getfund + $covid;
+                $vat = $vatBase * 0.15;
+
+                // Re-assign for DB storage
+                $subtotal = $baseAmount;
+                $totalTax = $grandTotal - $baseAmount;
+
+                $taxBreakdown = [
+                    'nhil' => round($nhil, 2),
+                    'getfund' => round($getfund, 2),
+                    'covid' => round($covid, 2),
+                    'vat' => round($vat, 2)
+                ];
+            } else {
+                // No Tax
+                $subtotal = $grandTotal;
+                $totalTax = 0;
+                $taxBreakdown = null;
+            }
 
             // Validate Amount Tendered (if provided)
             if ($request->has('amount_tendered') && $request->amount_tendered < $grandTotal) {
@@ -121,12 +142,7 @@ class PosController extends Controller
                 'tax_amount' => $totalTax,
                 'total_amount' => $grandTotal,
                 'payment_method' => $request->payment_method,
-                'tax_breakdown' => [
-                    'nhil' => round($nhil, 2),
-                    'getfund' => round($getfund, 2),
-                    'covid' => round($covid, 2),
-                    'vat' => round($vat, 2)
-                ]
+                'tax_breakdown' => $taxBreakdown
             ]);
 
             // 4. Process Grid Items & Deduct Stock
@@ -258,6 +274,12 @@ class PosController extends Controller
                     $smsService = new \App\Services\SmsService();
                     // Customize message
                     $message = "Thank you for shopping at Dream Life! Amount: GHS " . number_format($sale->total_amount, 2) . ". Receipt #" . str_pad($sale->id, 6, '0', STR_PAD_LEFT);
+
+                    if ($sale->patient) {
+                        $earned = $sale->points_earned ?? 0;
+                        $balance = $sale->patient->loyalty_points; // Contains updated balance
+                        $message .= "\nPts Earned: $earned. Total Pts: $balance";
+                    }
                     $smsService->sendQuickSms($request->phone, $message);
                 } catch (\Exception $e) {
                     \Illuminate\Support\Facades\Log::error("Failed to send SMS receipt: " . $e->getMessage());

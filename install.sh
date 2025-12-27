@@ -27,7 +27,7 @@ apt install -y software-properties-common curl git unzip
 echo -e "${GREEN}[2/7] Installing Dependencies (PHP, Nginx, MySQL, Node)...${NC}"
 add-apt-repository ppa:ondrej/php -y
 apt update
-apt install -y nginx mysql-server composer \
+apt install -y nginx mysql-server composer zip unzip \
     php8.2-fpm php8.2-mysql php8.2-common php8.2-cli php8.2-xml php8.2-curl \
     php8.2-mbstring php8.2-zip php8.2-bcmath php8.2-gd php8.2-intl
 
@@ -62,6 +62,10 @@ fi
 # Permissions
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
+# Backups folder
+mkdir -p storage/app/backups
+chown -R www-data:www-data storage/app/backups
+chmod -R 775 storage/app/backups
 
 echo -e "${GREEN}[5/7] Installing Dependencies & Building Assets...${NC}"
 

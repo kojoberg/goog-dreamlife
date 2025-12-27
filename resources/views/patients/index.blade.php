@@ -33,6 +33,9 @@
                                     Contact</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Loyalty Pts</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Prescriptions</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -44,6 +47,12 @@
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $patient->name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $patient->phone }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span
+                                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                            {{ $patient->loyalty_points ?? 0 }}
+                                        </span>
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $patient->prescriptions_count }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <a href="{{ route('patients.show', $patient) }}"

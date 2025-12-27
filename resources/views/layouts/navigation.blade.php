@@ -120,6 +120,9 @@
                                 <x-dropdown-link :href="route('settings.index')">
                                     {{ __('Settings') }}
                                 </x-dropdown-link>
+                                <x-dropdown-link :href="route('backups.index')">
+                                    {{ __('Backups') }}
+                                </x-dropdown-link>
                                 <x-dropdown-link :href="route('profile.edit')">
                                     {{ __('Profile') }}
                                 </x-dropdown-link>

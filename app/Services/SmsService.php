@@ -39,7 +39,7 @@ class SmsService
                 'api_key' => $this->apiKey,
                 'sender_id' => $this->senderId,
                 'recipient' => $recipient,
-                'message' => $message,
+                'message' => $message . "\n\nSoftware powered by UviTech, Inc.",
             ]);
 
             $data = $response->json();

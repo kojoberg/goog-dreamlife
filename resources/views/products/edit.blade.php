@@ -21,6 +21,26 @@
                                 required>
                         </div>
 
+                        <!-- Price and Cost Price -->
+                        <div class="mb-4 grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="unit_price" class="block text-gray-700 text-sm font-bold mb-2">Selling Price
+                                    (GHS)</label>
+                                <input type="number" step="0.01" name="unit_price" id="unit_price"
+                                    value="{{ $product->unit_price }}"
+                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    required>
+                            </div>
+                            <div>
+                                <label for="cost_price" class="block text-gray-700 text-sm font-bold mb-2">Cost Price
+                                    (GHS)</label>
+                                <input type="number" step="0.01" name="cost_price" id="cost_price"
+                                    value="{{ $product->cost_price }}"
+                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                <p class="text-xs text-gray-500 mt-1">Used for profit calculation.</p>
+                            </div>
+                        </div>
+
                         <!-- Category -->
                         <div class="mb-4">
                             <label for="category_id" class="block text-gray-700 text-sm font-bold mb-2">Category</label>

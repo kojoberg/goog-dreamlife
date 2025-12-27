@@ -101,10 +101,24 @@
                 <td>Payment Method</td>
                 <td class="right">{{ ucfirst(str_replace('_', ' ', $sale->payment_method)) }}</td>
             </tr>
+            @if($sale->patient)
+                <tr>
+                    <td colspan="2" class="divider"></td>
+                </tr>
+                <tr>
+                    <td>Points Earned</td>
+                    <td class="right">{{ $sale->points_earned ?? 0 }}</td>
+                </tr>
+                <tr>
+                    <td>Total Points Balance</td>
+                    <td class="right">{{ $sale->patient->loyalty_points }}</td>
+                </tr>
+            @endif
         </table>
 
         <div class="text-center" style="margin-top: 20px;">
             <p>Thank you for your patronage!</p>
+            <p>Software powered by UviTech, Inc.</p>
         </div>
     </div>
 </body>

@@ -42,32 +42,8 @@ class DatabaseSeeder extends Seeder
             'role' => 'cashier',
         ]);
 
-        // Sample Data
-        $supplier = Supplier::create([
-            'name' => 'Global Pharma Distributors',
-            'contact_person' => 'Mr. Kwame',
-            'phone' => '0244123456',
-            'email' => 'sales@globalpharma.com',
-            'address' => 'Spintex Road, Accra',
-        ]);
-
-        $category = Category::create(['name' => 'Painkillers']);
-
-        $product = Product::create([
-            'name' => 'Paracetamol 500mg',
-            'category_id' => $category->id,
-            'description' => 'Standard pain reliance.',
-            'unit_price' => 5.00,
-            'reorder_level' => 20,
-        ]);
-
-        InventoryBatch::create([
-            'product_id' => $product->id,
-            'supplier_id' => $supplier->id,
-            'batch_number' => 'BATCH-001',
-            'quantity' => 100,
-            'expiry_date' => now()->addYear(),
-        ]);
+        // Sample Data Removed for Clean Install
+        // Users will create their own Suppliers, Categories, and Products.
 
         $this->call([
             \Database\Seeders\GlobalDrugInteractionSeeder::class,

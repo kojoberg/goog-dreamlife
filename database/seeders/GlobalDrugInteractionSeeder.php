@@ -22,30 +22,22 @@ class GlobalDrugInteractionSeeder extends Seeder
         $catCardiac = Category::firstOrCreate(['name' => 'Cardiac'], ['description' => 'Heart medications']);
 
         // 2. Ensure Drugs Exist
-        // Helper function to create product and stock
+        // Helper function to create product definition ONLY (No Stock)
         $createDrug = function ($name, $category, $price, $cost, $stock, $isChronic = false) {
             $product = Product::firstOrCreate(
                 ['name' => $name],
                 [
                     'category_id' => $category->id,
-                    'unit_price' => $price, // Correct column name
+                    'unit_price' => $price,
                     'reorder_level' => 10,
                     'is_chronic' => $isChronic,
-                    'description' => 'Seeded by Global Import'
+                    'description' => 'Global Database Definition'
                 ]
             );
 
-            // Add Initial Stock Batch if none exists
-            if ($product->batches()->count() == 0) {
-                \App\Models\InventoryBatch::create([
-                    'product_id' => $product->id,
-                    'supplier_id' => null, // Optional
-                    'batch_number' => 'INIT-' . strtoupper(substr($name, 0, 3)),
-                    'quantity' => $stock,
-                    'cost_price' => $cost,
-                    'expiry_date' => now()->addYear(2),
-                ]);
-            }
+            // Removing Initial Batch Creation so users start with 0 stock.
+            // Cost price will be set on the product definition later or during first receive.
+
             return $product;
         };
 

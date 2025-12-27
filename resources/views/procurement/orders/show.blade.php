@@ -9,19 +9,41 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                 <div class="p-6 text-gray-900">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p><strong>Status:</strong> <span class="uppercase font-bold">{{ $order->status }}</span>
-                            </p>
-                            <p><strong>Date:</strong> {{ $order->created_at->format('d M Y') }}</p>
-                            <p><strong>Expected:</strong>
-                                {{ $order->expected_date ? $order->expected_date->format('d M Y') : 'N/A' }}</p>
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="grid grid-cols-2 gap-8 w-3/4">
+                            <div>
+                                <p><strong>Status:</strong> <span
+                                        class="uppercase font-bold inline-block px-2 py-1 rounded text-xs {{ $order->status === 'received' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">{{ $order->status }}</span>
+                                </p>
+                                <p class="mt-2"><strong>Ordered Date:</strong> {{ $order->created_at->format('d M Y') }}
+                                </p>
+                                <p><strong>Expected Date:</strong>
+                                    {{ $order->expected_date ? $order->expected_date->format('d M Y') : 'N/A' }}</p>
+                                @if($order->received_by)
+                                    <p><strong>Received By:</strong> {{ $order->received_by }}</p>
+                                @endif
+                            </div>
+                            <div class="text-right">
+                                <p class="text-3xl font-bold text-gray-800">{{ number_format($order->total_amount, 2) }}
+                                </p>
+                                <p class="text-sm text-gray-500 uppercase tracking-wide">Total Value</p>
+                            </div>
                         </div>
-                        <div class="text-right">
-                            <p class="text-2xl font-bold">{{ number_format($order->total_amount, 2) }}</p>
-                            <p class="text-gray-500">Total Value</p>
+                        <div>
+                            <a href="{{ route('procurement.orders.print', $order) }}" target="_blank"
+                                class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 disabled:opacity-25 transition ease-in-out duration-150">
+                                Print Order
+                            </a>
                         </div>
                     </div>
+
+                    @if($order->notes)
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <h4 class="font-bold text-sm text-gray-700 mb-1">Notes:</h4>
+                            <p class="text-gray-600 italic bg-gray-50 p-3 rounded border border-gray-100">
+                                {{ $order->notes }}</p>
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -50,7 +72,8 @@
                                     </td>
                                     <td class="p-3 text-right">{{ number_format($item->unit_cost, 2) }}</td>
                                     <td class="p-3 text-right">
-                                        {{ number_format($item->quantity_ordered * $item->unit_cost, 2) }}</td>
+                                        {{ number_format($item->quantity_ordered * $item->unit_cost, 2) }}
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -68,6 +91,12 @@
 
                         <form action="{{ route('procurement.orders.receive', $order) }}" method="POST">
                             @csrf
+                            
+                            <div class="mb-4">
+                                <label class="block text-gray-700 text-sm font-bold mb-2">Received By (Staff Name)</label>
+                                <input type="text" name="received_by" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required placeholder="Enter name of staff receiving stock">
+                            </div>
+
                             <button type="submit"
                                 class="bg-green-600 hover:bg-green-800 text-white font-bold py-3 px-6 rounded w-full text-center"
                                 onclick="return confirm('Confirm receipt of stock? This will update inventory levels.')">

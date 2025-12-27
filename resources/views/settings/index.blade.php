@@ -17,7 +17,7 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('settings.update') }}" method="POST">
+                    <form action="{{ route('settings.update') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
 
@@ -29,6 +29,22 @@
                                     required>
                                 <p class="text-xs text-gray-500 mt-1">This will appear on receipts and the dashboard.
                                 </p>
+                            </div>
+
+                            <div class="col-span-1">
+                                <label class="block text-gray-700 text-sm font-bold mb-2">TIN Number</label>
+                                <input type="text" name="tin_number" value="{{ $settings->tin_number }}"
+                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                <p class="text-xs text-gray-500 mt-1">Tax Identification Number.</p>
+                            </div>
+
+                            <div class="col-span-1">
+                                <label class="block text-gray-700 text-sm font-bold mb-2">Receipt Logo</label>
+                                <input type="file" name="logo"
+                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                @if($settings->logo_path)
+                                    <p class="text-xs text-green-500 mt-1">Current logo uploaded.</p>
+                                @endif
                             </div>
 
                             <div class="col-span-1">
@@ -145,6 +161,123 @@
                         </div>
 
                         <div class="mt-8 border-t pt-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">System Preferences</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center">
+                                    <input id="enable_tax" name="enable_tax" type="checkbox"
+                                        {{ $settings->enable_tax ? 'checked' : '' }}
+                                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                    <label for="enable_tax" class="ml-2 block text-sm text-gray-900">
+                                        Enable Tax Calculation in POS
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notifications -->
+                        <div class="mt-8 border-t pt-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Notifications</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <h4 class="font-bold text-sm text-gray-700 mb-2">Low Stock Alerts</h4>
+                                    <div class="flex items-center mb-2">
+                                        <input id="notify_low_stock_email" name="notify_low_stock_email" type="checkbox"
+                                            {{ $settings->notify_low_stock_email ? 'checked' : '' }}
+                                            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                        <label for="notify_low_stock_email" class="ml-2 block text-sm text-gray-900">Email</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input id="notify_low_stock_sms" name="notify_low_stock_sms" type="checkbox"
+                                            {{ $settings->notify_low_stock_sms ? 'checked' : '' }}
+                                            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                        <label for="notify_low_stock_sms" class="ml-2 block text-sm text-gray-900">SMS</label>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-sm text-gray-700 mb-2">Expiry Alerts</h4>
+                                    <div class="flex items-center mb-2">
+                                        <input id="notify_expiry_email" name="notify_expiry_email" type="checkbox"
+                                            {{ $settings->notify_expiry_email ? 'checked' : '' }}
+                                            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                        <label for="notify_expiry_email" class="ml-2 block text-sm text-gray-900">Email</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input id="notify_expiry_sms" name="notify_expiry_sms" type="checkbox"
+                                            {{ $settings->notify_expiry_sms ? 'checked' : '' }}
+                                            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                        <label for="notify_expiry_sms" class="ml-2 block text-sm text-gray-900">SMS</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- System Administration (License & Version) -->
+                        <div class="mt-8 border-t pt-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">System Administration</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-lg">
+                                
+                                <!-- Version Info -->
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Software Version</label>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-gray-900 font-mono">{{ $settings->current_version ?? '1.0.0' }}</span>
+                                        <button type="submit" form="update-form" class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-200">
+                                            Check for Updates
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- License Info -->
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">License Status</label>
+                                     @if($settings->license_expiry)
+                                        @php
+                                            $expiry = \Carbon\Carbon::parse($settings->license_expiry);
+                                            $isExpired = $expiry->isPast();
+                                        @endphp
+                                        <div class="text-sm {{ $isExpired ? 'text-red-600 font-bold' : 'text-green-600 font-bold' }}">
+                                            {{ $isExpired ? 'EXPIRED' : 'ACTIVE' }} (Expires: {{ $expiry->format('d M Y') }})
+                                        </div>
+                                     @else
+                                        <div class="text-sm text-yellow-600 font-bold">TRIAL / NOT ACTIVATED</div>
+                                     @endif
+                                </div>
+
+                                <!-- License Key Input -->
+                                <div class="md:col-span-2">
+                                     <label class="block text-gray-700 text-sm font-bold mb-2">Update License Key</label>
+                                     <input type="text" name="license_key" value="{{ $settings->license_key }}" placeholder="Enter new license key..."
+                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                     <p class="text-xs text-gray-500 mt-1">Contact support to renew or purchase a license.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Branch Management -->
+                        <div class="mt-8 border-t pt-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Multi-Branch Operations</h3>
+                            <div class="bg-gray-50 p-4 rounded-lg flex justify-between items-center">
+                                <div>
+                                    <h4 class="font-bold text-gray-800">Manage Branches</h4>
+                                    <p class="text-sm text-gray-600">Create and manage multiple pharmacy branches.</p>
+                                </div>
+                                <a href="{{ route('branches.index') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                                    Manage Branches
+                                </a>
+                            </div>
+
+                            <div class="bg-gray-50 p-4 rounded-lg flex justify-between items-center mt-4">
+                                <div>
+                                    <h4 class="font-bold text-gray-800">User Management</h4>
+                                    <p class="text-sm text-gray-600">Add staff, assign roles and branches.</p>
+                                </div>
+                                <a href="{{ route('users.index') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                                    Manage Users
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 border-t pt-6">
                             <h3 class="text-lg font-medium text-gray-900 mb-4">Test Configuration</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
@@ -169,6 +302,11 @@
                                 Save Settings
                             </button>
                         </div>
+                    </form>
+
+                    <!-- Separate Form for Update Trigger -->
+                    <form id="update-form" action="{{ route('settings.system_update') }}" method="POST" class="hidden">
+                        @csrf
                     </form>
 
                 </div>

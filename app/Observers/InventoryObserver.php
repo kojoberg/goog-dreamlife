@@ -37,6 +37,39 @@ class InventoryObserver
             'new_values' => $inventoryBatch->getChanges(),
             'ip_address' => request()->ip(),
         ]);
+
+        // Check for Low Stock Logic
+        // We need to check TOTAL stock for the product, not just this batch
+        $product = $inventoryBatch->product;
+
+        // Helper to get total stock
+        $totalStock = $product->batches()->where('quantity', '>', 0)->sum('quantity');
+
+        if ($totalStock <= $product->reorder_level) {
+            $settings = \App\Models\Setting::first();
+
+            // EMAIL ALERT
+            if ($settings && $settings->notify_low_stock_email && $settings->email) {
+                // Ideally Queue Job, but direct mail for simplicity (or use Notification class)
+                try {
+                    \Illuminate\Support\Facades\Mail::raw("Low Stock Alert: {$product->name} is down to {$totalStock} units (Level: {$product->reorder_level}).", function ($msg) use ($settings) {
+                        $msg->to($settings->email)->subject('Low Stock Alert');
+                    });
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("Low Stock Email Failed: " . $e->getMessage());
+                }
+            }
+
+            // SMS ALERT
+            if ($settings && $settings->notify_low_stock_sms && $settings->phone) {
+                try {
+                    $sms = new \App\Services\SmsService();
+                    $sms->sendQuickSms($settings->phone, "ALERT: Low Stock for {$product->name}. Remaining: {$totalStock}");
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::error("Low Stock SMS Failed: " . $e->getMessage());
+                }
+            }
+        }
     }
 
     /**

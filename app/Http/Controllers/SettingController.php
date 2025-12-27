@@ -33,9 +33,10 @@ class SettingController extends Controller
     {
         $validated = $request->validate([
             'business_name' => 'required|string|max:255',
+            'tin_number' => 'nullable|string|max:50', // New
             'address' => 'nullable|string',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string',
+            'email' => 'nullable|email',
             'currency_symbol' => 'required|string|max:10',
             'alert_expiry_days' => 'required|integer|min:1',
             'smtp_host' => 'nullable|string',
@@ -46,11 +47,35 @@ class SettingController extends Controller
             'smtp_from_name' => 'nullable|string',
             'sms_api_key' => 'nullable|string',
             'sms_sender_id' => 'nullable|string',
-            'loyalty_spend_per_point' => 'required|numeric|min:0',
-            'loyalty_point_value' => 'required|numeric|min:0',
+            'loyalty_spend_per_point' => 'nullable|numeric|min:0',
+            'loyalty_point_value' => 'nullable|numeric|min:0',
+            'logo' => 'nullable|image|max:2048', // 2MB Max
+            // New Preferences
+            'enable_tax' => 'nullable|in:on,1,true', // HTML Checkbox sends 'on' or nothing
+            'notify_low_stock_email' => 'nullable|in:on,1,true',
+            'notify_low_stock_sms' => 'nullable|in:on,1,true',
+            'notify_expiry_email' => 'nullable|in:on,1,true',
+            'notify_expiry_sms' => 'nullable|in:on,1,true',
         ]);
 
         $settings = Setting::first();
+
+        // Handle File Upload
+        if ($request->hasFile('logo')) {
+            $path = $request->file('logo')->store('logos', 'public');
+            $settings->logo_path = $path;
+        }
+
+        // Convert checkbox to boolean (if present = true, else false)
+        $validated['enable_tax'] = $request->has('enable_tax');
+        $validated['notify_low_stock_email'] = $request->has('notify_low_stock_email');
+        $validated['notify_low_stock_sms'] = $request->has('notify_low_stock_sms');
+        $validated['notify_expiry_email'] = $request->has('notify_expiry_email');
+        $validated['notify_expiry_sms'] = $request->has('notify_expiry_sms');
+
+        // Remove file from validated array to avoid overwrite error if not handled above
+        unset($validated['logo']);
+
         $settings->update($validated);
 
         $message = "Settings updated successfully.";

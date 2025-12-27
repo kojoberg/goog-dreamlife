@@ -30,15 +30,27 @@ class HomeController extends Controller
         })->count();
 
         // 2. Chart Data (Last 7 Days)
-        $salesLast7Days = Sale::select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total_amount) as total'))
-            ->where('created_at', '>=', Carbon::now()->subDays(6))
+        // Generate last 7 days array
+        $dates = collect();
+        foreach (range(6, 0) as $i) {
+            $dates->push(Carbon::now()->subDays($i)->format('Y-m-d'));
+        }
+
+        $salesData = Sale::select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total_amount) as total'))
+            ->where('created_at', '>=', Carbon::now()->subDays(6)->startOfDay())
             ->groupBy('date')
             ->orderBy('date', 'asc')
-            ->get();
+            ->pluck('total', 'date');
 
-        // Format for Chart.js
-        $dates = $salesLast7Days->pluck('date');
-        $totals = $salesLast7Days->pluck('total');
+        // Map totals to dates, filling 0 if missing
+        $totals = $dates->map(function ($date) use ($salesData) {
+            return $salesData->get($date) ?? 0;
+        });
+
+        // Format dates for display (e.g., "Mon 27")
+        $displayDates = $dates->map(function ($date) {
+            return Carbon::parse($date)->format('D d');
+        });
 
         // 3. Recent Transactions
         $recentSales = Sale::with('user')->latest()->take(5)->get();
@@ -47,7 +59,7 @@ class HomeController extends Controller
             'todaySales',
             'expiredBatches',
             'lowStockCount',
-            'dates',
+            'displayDates',
             'totals',
             'recentSales'
         ));

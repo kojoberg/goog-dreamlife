@@ -22,6 +22,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'branch_id',
     ];
 
     /**
@@ -67,5 +68,10 @@ class User extends Authenticatable
     public function isCashier()
     {
         return $this->role === 'cashier';
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
     }
 }

@@ -25,6 +25,7 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
+                                <th <tr>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Name</th>
@@ -33,7 +34,10 @@
                                     Category</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Price (GHS)</th>
+                                    Price/Cost</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Margin</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Stock</th>
@@ -41,13 +45,33 @@
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Actions</th>
                             </tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Category</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Price (GHS)</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Stock</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions</th>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach ($products as $product)
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $product->name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ $product->category->name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ number_format($product->unit_price, 2) }}
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        {{ $product->category->name ?? 'Uncategorized' }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900">{{ number_format($product->unit_price, 2) }}
+                                        </div>
+                                        <div class="text-xs text-gray-500">Cost:
+                                            {{ number_format($product->cost_price, 2) }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        @php
+                                            $margin = $product->unit_price - $product->cost_price;
+                                            $color = $margin >= 0 ? 'text-green-600' : 'text-red-600';
+                                        @endphp
+                                        <span class="{{ $color }} font-bold">{{ number_format($margin, 2) }}</span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span

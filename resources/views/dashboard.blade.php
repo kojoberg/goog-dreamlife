@@ -105,28 +105,77 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         const ctx = document.getElementById('salesChart').getContext('2d');
+
+        // Gradient Fill
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(79, 70, 229, 0.4)'); // Indigo
+        gradient.addColorStop(1, 'rgba(79, 70, 229, 0.0)');
+
         const salesChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: @json($dates),
+                labels: @json($displayDates),
                 datasets: [{
                     label: 'Sales (GHS)',
                     data: @json($totals),
-                    borderColor: 'rgb(79, 70, 229)',
-                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                    tension: 0.3,
-                    fill: true
+                    borderColor: '#4f46e5', // Indigo 600
+                    backgroundColor: gradient,
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#4f46e5',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(17, 24, 39, 0.8)',
+                        padding: 12,
+                        callbacks: {
+                            label: function (context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS' }).format(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
+                        grid: {
+                            color: '#f3f4f6',
+                            drawBorder: false,
+                        },
                         ticks: {
+                            font: {
+                                size: 11
+                            },
                             callback: function (value) {
-                                return 'GHS ' + value;
+                                return value; // Simplified
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 11
                             }
                         }
                     }

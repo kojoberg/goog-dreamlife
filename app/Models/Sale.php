@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Sale extends Model
 {
+    use \App\Traits\HasBranchScope;
+
     protected $guarded = [];
 
     protected $casts = [
