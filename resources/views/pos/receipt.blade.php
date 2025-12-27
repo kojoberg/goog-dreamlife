@@ -48,9 +48,7 @@
 </head>
 
 <body>
-    @php
-        $settings = \App\Models\Setting::firstOrCreate(['id' => 1], ['business_name' => 'Dream Life Healthcare']);
-    @endphp
+
 
     <div class="text-center">
         <h2 style="margin:0;">{{ $settings->business_name }}</h2>
@@ -60,7 +58,7 @@
         @if($settings->phone)
             <p>Tel: {{ $settings->phone }}</p>
         @endif
-         @if($settings->email)
+        @if($settings->email)
             <p>Email: {{ $settings->email }}</p>
         @endif
     </div>

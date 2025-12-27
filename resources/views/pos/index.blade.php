@@ -151,10 +151,41 @@
         let cart = [];
         let total = 0;
 
-        function addToCart(product) {
-            // Check if product needed interaction check?
-            // For now just add to cart.
-            // Check if already in cart
+        async function addToCart(product) {
+            // 1. Check for Interactions
+            const cartIds = cart.map(item => item.id);
+            if (cartIds.length > 0) {
+                try {
+                    const res = await fetch('{{ route('pos.check-interactions') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            cart_ids: cartIds,
+                            new_product_id: product.id
+                        })
+                    });
+                    const data = await res.json();
+                    
+                    if (data.interactions && data.interactions.length > 0) {
+                        let msg = "⚠️ DRUG INTERACTION WARNING ⚠️\n\n";
+                        data.interactions.forEach(i => {
+                            msg += `- ${i.drug} (${i.severity}): ${i.description}\n`;
+                        });
+                        msg += "\nDo you still want to add this product?";
+                        
+                        if (!confirm(msg)) {
+                            return; // Cancel add
+                        }
+                    }
+                } catch(e) {
+                    console.error("Interaction check failed", e);
+                }
+            }
+
+            // 2. Add to Cart
             const existing = cart.find(item => item.id == product.id);
             if (existing) {
                 existing.qty++;

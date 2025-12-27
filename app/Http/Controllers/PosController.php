@@ -275,6 +275,23 @@ class PosController extends Controller
     /**
      * Show Receipt
      */
+    public function receipt(Sale $sale)
+    {
+        $sale->load(['items.product', 'user', 'patient']);
+        $settings = Setting::first(); // Should exist from index() or seed
+
+        // Fallback for settings if null (prevent crash)
+        if (!$settings) {
+            $settings = new Setting([
+                'business_name' => 'Dream Life Healthcare',
+                'address' => 'Accra, Ghana',
+                'phone' => '000-000-0000',
+                'currency_symbol' => 'GHS'
+            ]);
+        }
+
+        return view('pos.receipt', compact('sale', 'settings'));
+    }
     /**
      * Check for drug interactions
      */

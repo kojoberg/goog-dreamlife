@@ -92,7 +92,6 @@ class ProcurementController extends Controller
                         'quantity' => $qty,
                         'expiry_date' => now()->addYear(), // Default or ask user? keeping simple.
                         'cost_price' => $item->unit_cost,
-                        'received_date' => now(),
                     ]);
                 }
             }

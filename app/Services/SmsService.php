@@ -50,7 +50,9 @@ class SmsService
                 return ['success' => true, 'data' => $data];
             }
 
-            return ['success' => false, 'message' => $data['msg'] ?? 'Unknown error'];
+            // Check 'msg' (some endpoints) or 'desc' (others)
+            $errorMessage = $data['msg'] ?? ($data['desc'] ?? 'Unknown error');
+            return ['success' => false, 'message' => $errorMessage];
 
         } catch (\Exception $e) {
             Log::error("SMS Service Error: " . $e->getMessage());

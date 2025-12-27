@@ -26,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
             $settings = \App\Models\Setting::first();
             if ($settings && $settings->smtp_host) {
                 config([
+                    'mail.default' => 'smtp', // FORCE usage of SMTP
                     'mail.mailers.smtp.host' => $settings->smtp_host,
                     'mail.mailers.smtp.port' => $settings->smtp_port,
                     'mail.mailers.smtp.username' => $settings->smtp_username,
