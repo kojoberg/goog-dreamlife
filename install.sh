@@ -66,6 +66,7 @@ chmod -R 775 storage bootstrap/cache
 echo -e "${GREEN}[5/7] Installing Dependencies & Building Assets...${NC}"
 
 # Install PHP Dependencies First (Required for artisan)
+export COMPOSER_ALLOW_SUPERUSER=1
 composer install --optimize-autoloader --no-dev
 
 # Setup Env
