@@ -64,6 +64,10 @@ chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
 
 echo -e "${GREEN}[5/7] Installing Dependencies & Building Assets...${NC}"
+
+# Install PHP Dependencies First (Required for artisan)
+composer install --optimize-autoloader --no-dev
+
 # Setup Env
 if [ ! -f .env ]; then
     cp .env.example .env
@@ -76,7 +80,6 @@ if [ ! -f .env ]; then
     php artisan key:generate
 fi
 
-composer install --optimize-autoloader --no-dev
 npm install
 npm run build
 
