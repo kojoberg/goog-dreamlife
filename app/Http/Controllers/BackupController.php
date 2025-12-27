@@ -54,9 +54,14 @@ class BackupController extends Controller
             $dbHost = config('database.connections.mysql.host');
             $dumpFile = storage_path('app/backups/dump.sql');
 
-            // Use mysqldump (assumes it's in path)
-            // Warning: putting password in command line is insecure in shared envs, but okay for this context
-            $command = "mysqldump --user={$dbUser} --password='{$dbPass}' --host={$dbHost} {$dbName} > {$dumpFile}";
+            // Use mysqldump with full path
+            $mysqldump = '/opt/homebrew/bin/mysqldump';
+            if (!file_exists($mysqldump)) {
+                $mysqldump = 'mysqldump'; // Fallback
+            }
+
+            // Add --column-statistics=0 for compatibility if needed, or --no-tablespaces
+            $command = "{$mysqldump} --user={$dbUser} --password='{$dbPass}' --host={$dbHost} --no-tablespaces {$dbName} > {$dumpFile} 2>&1";
 
             // Execute command
             system($command, $returnVar);
@@ -86,7 +91,22 @@ class BackupController extends Controller
                 unlink($dumpFile);
             }
 
-            return redirect()->route('backups.index')->with('success', 'Backup created successfully.');
+            $message = 'Backup created successfully.';
+
+            // Upload to Google Drive if configured
+            if (config('filesystems.disks.google')) {
+                try {
+                    $fileContent = file_get_contents($zipPath);
+                    $cloudFilename = $filename; // Keep same name
+                    Storage::disk('google')->put($cloudFilename, $fileContent);
+                    $message .= ' And uploaded to Google Drive.';
+                } catch (\Exception $e) {
+                    \Log::error("Google Drive Backup Failed: " . $e->getMessage());
+                    $message .= ' But failed to upload to Google Drive (check logs).';
+                }
+            }
+
+            return redirect()->route('backups.index')->with('success', $message);
         } else {
             return redirect()->route('backups.index')->with('error', 'Failed to create backup zip.');
         }

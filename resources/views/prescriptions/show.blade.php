@@ -11,8 +11,8 @@
                 <div class="p-6 text-gray-900">
                     <div class="flex justify-between mb-6">
                         <div>
-                            <h3 class="text-lg font-bold">Patient: {{ $prescription->patient->name }}</h3>
-                            <p class="text-sm text-gray-500">Dr. {{ $prescription->doctor->name }}</p>
+                            <h3 class="text-lg font-bold">Patient: {{ $prescription->patient->name ?? 'Unknown' }}</h3>
+                            <p class="text-sm text-gray-500">Dr. {{ $prescription->doctor->name ?? 'Unknown' }}</p>
                             <p class="text-sm text-gray-500">{{ $prescription->created_at->format('F j, Y g:i A') }}</p>
                         </div>
                         <div>
@@ -28,8 +28,13 @@
                         <ul class="list-disc pl-5">
                             @foreach($prescription->medications as $med)
                                 <li class="mb-1">
-                                    <span class="font-semibold">{{ $med['name'] }}</span> - {{ $med['dosage'] }}
-                                    ({{ $med['frequency'] }})
+                                    <span class="font-semibold">{{ $med['name'] ?? 'Unknown Drug' }}</span>
+                                    - {{ $med['dosage'] ?? '' }}
+                                    ({{ $med['frequency'] ?? '' }})
+                                    @if(!empty($med['route'])) <span
+                                    class="text-xs bg-gray-200 px-1 rounded">{{ $med['route'] }}</span> @endif
+                                    @if(!empty($med['days_supply'])) <span
+                                    class="text-xs text-blue-600 ml-1">{{ $med['days_supply'] }} Days</span> @endif
                                 </li>
                             @endforeach
                         </ul>

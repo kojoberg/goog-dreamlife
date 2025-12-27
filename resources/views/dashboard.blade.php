@@ -11,44 +11,66 @@
             {{-- KPI Cards --}}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <!-- Sales Card -->
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-l-4 border-green-500">
-                    <div class="text-gray-500 text-sm font-medium uppercase">Total Sales Today</div>
-                    <div class="mt-2 text-3xl font-bold text-gray-900">GHS {{ number_format($todaySales, 2) }}</div>
+                <div
+                    class="bg-gradient-to-r from-emerald-500 to-green-600 overflow-hidden shadow-lg sm:rounded-xl p-6 text-white transform hover:-translate-y-1 transition duration-300">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="text-green-100 text-sm font-semibold uppercase tracking-wide">Total Sales Today
+                            </div>
+                            <div class="mt-2 text-3xl font-extrabold">GHS {{ number_format($todaySales, 2) }}</div>
+                        </div>
+                        <div class="p-2 bg-white/20 rounded-lg">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Expired Batches -->
                 <a href="{{ route('inventory.index', ['filter' => 'expired']) }}"
-                    class="block bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-l-4 {{ $expiredBatches > 0 ? 'border-red-500 hover:bg-red-50' : 'border-gray-200 hover:bg-gray-50' }} transition">
+                    class="block bg-white overflow-hidden shadow-lg sm:rounded-xl p-6 border-l-4 {{ $expiredBatches > 0 ? 'border-red-500' : 'border-gray-300' }} hover:shadow-xl hover:-translate-y-1 transition duration-300 group">
                     <div class="flex justify-between items-center">
                         <div>
-                            <div class="text-gray-500 text-sm font-medium uppercase">Expiring / Expired Batches</div>
+                            <div class="text-gray-500 text-sm font-medium uppercase group-hover:text-gray-700">Expiring
+                                / Expired</div>
                             <div
                                 class="mt-2 text-3xl font-bold {{ $expiredBatches > 0 ? 'text-red-600' : 'text-gray-900' }}">
                                 {{ $expiredBatches }}
                             </div>
                         </div>
-                        @if($expiredBatches > 0)
-                            <span class="bg-red-100 text-red-800 text-xs font-semibold px-2.5 py-0.5 rounded">Action
-                                Needed</span>
-                        @endif
+                        <div
+                            class="{{ $expiredBatches > 0 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-400' }} p-3 rounded-full">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                </path>
+                            </svg>
+                        </div>
                     </div>
                 </a>
 
                 <!-- Low Stock -->
                 <a href="{{ route('products.index', ['filter' => 'low_stock']) }}"
-                    class="block bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 border-l-4 {{ $lowStockCount > 0 ? 'border-yellow-500 hover:bg-yellow-50' : 'border-gray-200 hover:bg-gray-50' }} transition">
+                    class="block bg-white overflow-hidden shadow-lg sm:rounded-xl p-6 border-l-4 {{ $lowStockCount > 0 ? 'border-yellow-500' : 'border-gray-300' }} hover:shadow-xl hover:-translate-y-1 transition duration-300 group">
                     <div class="flex justify-between items-center">
                         <div>
-                            <div class="text-gray-500 text-sm font-medium uppercase">Low Stock Alerts</div>
+                            <div class="text-gray-500 text-sm font-medium uppercase group-hover:text-gray-700">Low Stock
+                                Alerts</div>
                             <div
                                 class="mt-2 text-3xl font-bold {{ $lowStockCount > 0 ? 'text-yellow-600' : 'text-gray-900' }}">
                                 {{ $lowStockCount }}
                             </div>
                         </div>
-                        @if($lowStockCount > 0)
-                            <span
-                                class="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2.5 py-0.5 rounded">Restock</span>
-                        @endif
+                        <div
+                            class="{{ $lowStockCount > 0 ? 'bg-yellow-100 text-yellow-600' : 'bg-gray-100 text-gray-400' }} p-3 rounded-full">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                            </svg>
+                        </div>
                     </div>
                 </a>
             </div>

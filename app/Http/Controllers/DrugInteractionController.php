@@ -8,6 +8,20 @@ use Illuminate\Http\Request;
 
 class DrugInteractionController extends Controller
 {
+    public function sync()
+    {
+        set_time_limit(300); // 5 minutes
+
+        try {
+            $service = new \App\Services\DrugInteractionService();
+            $service->syncInteractions();
+
+            return back()->with('success', 'Drug interaction sync initiated and completed for this batch.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Sync failed: ' . $e->getMessage());
+        }
+    }
+
     public function index()
     {
         $interactions = DrugInteraction::with(['drugA', 'drugB'])->paginate(10);

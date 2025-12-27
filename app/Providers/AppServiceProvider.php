@@ -21,6 +21,15 @@ class AppServiceProvider extends ServiceProvider
     {
         \App\Models\InventoryBatch::observe(\App\Observers\InventoryObserver::class);
 
+        // Audit Logging
+        \App\Models\User::observe(\App\Observers\AuditObserver::class);
+        \App\Models\Product::observe(\App\Observers\AuditObserver::class);
+        \App\Models\Sale::observe(\App\Observers\AuditObserver::class);
+        \App\Models\Prescription::observe(\App\Observers\AuditObserver::class);
+        \App\Models\Patient::observe(\App\Observers\AuditObserver::class);
+        \App\Models\Setting::observe(\App\Observers\AuditObserver::class);
+        \App\Models\InventoryBatch::observe(\App\Observers\AuditObserver::class);
+
         // Dynamic SMTP Configuration
         if (\Illuminate\Support\Facades\Schema::hasTable('settings')) {
             $settings = \App\Models\Setting::first();
@@ -34,6 +43,19 @@ class AppServiceProvider extends ServiceProvider
                     'mail.mailers.smtp.encryption' => $settings->smtp_encryption,
                     'mail.from.address' => $settings->smtp_from_address ?? 'info@dreamlife.com',
                     'mail.from.name' => $settings->smtp_from_name ?? 'Dream Life Healthcare',
+                ]);
+            }
+
+            // Google Drive Configuration
+            if ($settings && $settings->google_drive_client_id && $settings->google_drive_refresh_token) {
+                config([
+                    'filesystems.disks.google' => [
+                        'driver' => 'google',
+                        'clientId' => $settings->google_drive_client_id,
+                        'clientSecret' => $settings->google_drive_client_secret,
+                        'refreshToken' => $settings->google_drive_refresh_token,
+                        'folderId' => $settings->google_drive_folder_id ?? null,
+                    ]
                 ]);
             }
         }

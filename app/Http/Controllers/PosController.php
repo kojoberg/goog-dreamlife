@@ -21,19 +21,33 @@ class PosController extends Controller
     public function index()
     {
         // Fetch products with visible stock
-        $products = Product::whereHas('batches', function ($q) {
-            $q->where('quantity', '>', 0)
-                ->where('expiry_date', '>=', now());
+        // Fetch products: EITHER (Goods with stock > 0) OR (Services)
+        $products = Product::where(function ($query) {
+            $query->where('product_type', 'service')
+                ->orWhereHas('batches', function ($q) {
+                    $q->where('quantity', '>', 0)
+                        ->where('expiry_date', '>=', now());
+                });
         })
             ->with(['category'])
             ->get()
             ->map(function ($product) {
+                // Determine price based on branch
+                $branchId = Auth::user()->branch_id;
+                $price = $product->getPriceForBranch($branchId);
+
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
-                    'price' => (float) $product->unit_price,
-                    'stock' => $product->stock, // Helper attribute
+                    'price' => (float) $price,
+                    // If service, stock is essentially infinite (or just hidden) for UI. Let's say 999
+                    'stock' => $product->product_type === 'service' ? 9999 : $product->stock,
                     'category' => $product->category->name ?? 'Uncategorized',
+                    'type' => $product->product_type, // Useful for JS
+                    'dosage' => $product->dosage,
+                    'form' => $product->drug_form,
+                    'route' => $product->drug_route,
+                    'barcode' => $product->barcode, // For scanner Search
                 ];
             });
 
@@ -79,7 +93,10 @@ class PosController extends Controller
             foreach ($request->cart as $item) {
                 $product = Product::find($item['id']);
                 $qtyNeeded = $item['qty'];
-                $price = $product->unit_price;
+
+                // Use Branch Price
+                $branchId = Auth::user()->branch_id;
+                $price = $product->getPriceForBranch($branchId);
 
                 $subtotal += ($qtyNeeded * $price);
 
@@ -150,7 +167,24 @@ class PosController extends Controller
                 $product = Product::find($item['id']);
                 $qtyNeeded = $item['qty'];
 
-                // FIFO Stock Deduction
+                if ($product->product_type === 'service') {
+                    // Just create SaleItem, no stock deduction
+                    // Resolve price again to be safe
+                    $branchId = Auth::user()->branch_id;
+                    $unitPrice = $product->getPriceForBranch($branchId);
+
+                    $saleItem = SaleItem::create([
+                        'sale_id' => $sale->id,
+                        'product_id' => $product->id,
+                        'batch_id' => null, // No batch for services
+                        'quantity' => $qtyNeeded,
+                        'unit_price' => $unitPrice,
+                        'subtotal' => $qtyNeeded * $unitPrice,
+                    ]);
+                    continue; // Skip batch logic
+                }
+
+                // FIFO Stock Deduction for GOODS
                 $batches = InventoryBatch::where('product_id', $product->id)
                     ->where('quantity', '>', 0)
                     ->where('expiry_date', '>=', now())
@@ -166,13 +200,13 @@ class PosController extends Controller
                     if ($batch->quantity >= $qtyToFulfill) {
                         $batch->decrement('quantity', $qtyToFulfill);
 
-                        SaleItem::create([
+                        $saleItem = SaleItem::create([
                             'sale_id' => $sale->id,
                             'product_id' => $product->id,
                             'batch_id' => $batch->id,
                             'quantity' => $qtyToFulfill,
-                            'unit_price' => $product->unit_price,
-                            'subtotal' => $qtyToFulfill * $product->unit_price,
+                            'unit_price' => $product->getPriceForBranch(Auth::user()->branch_id),
+                            'subtotal' => $qtyToFulfill * $product->getPriceForBranch(Auth::user()->branch_id),
                         ]);
 
                         $qtyToFulfill = 0;
@@ -185,8 +219,8 @@ class PosController extends Controller
                             'product_id' => $product->id,
                             'batch_id' => $batch->id,
                             'quantity' => $taken,
-                            'unit_price' => $product->unit_price,
-                            'subtotal' => $taken * $product->unit_price,
+                            'unit_price' => $product->getPriceForBranch(Auth::user()->branch_id),
+                            'subtotal' => $taken * $product->getPriceForBranch(Auth::user()->branch_id),
                         ]);
 
                         $qtyToFulfill -= $taken;
@@ -219,8 +253,9 @@ class PosController extends Controller
 
             // --- LOYALTY PROGRAM LOGIC ---
             $settings = Setting::first();
+            $discountValue = 0;
 
-            // 1. redemption
+            // 1. Redemption (Calculate Discount)
             if ($request->redeem_points && $request->patient_id) {
                 $patient = Patient::find($request->patient_id);
                 $pointsToRedeem = (int) $request->redeem_points;
@@ -228,26 +263,34 @@ class PosController extends Controller
                 if ($patient && $patient->loyalty_points >= $pointsToRedeem) {
                     $discountValue = $pointsToRedeem * $settings->loyalty_point_value;
 
+                    // Cap discount at grandTotal (Cannot go below zero)
+                    if ($discountValue > $grandTotal) {
+                        $discountValue = $grandTotal;
+                    }
+
+                    // Deduct Points
+                    $patient->decrement('loyalty_points', $pointsToRedeem);
+
                     // Update Sale
                     $sale->points_redeemed = $pointsToRedeem;
-                    // Ensure we don't refund more than total? (Ideally frontend handles this, but backend check good)
-                    // For simplicity, assuming discount is applied to total (already calculated in frontend/request total?)
-                    // Actually, the request->total usually reflects the final payable.
-                    // But we should record the discount. 
-                    // Let's assume request->total IS the final amount to be paid. 
-                    // We just log that points were used.
+                    $sale->discount_amount = $discountValue;
 
-                    $patient->decrement('loyalty_points', $pointsToRedeem);
+                    // Adjust Total Amount (Net Payable)
+                    $sale->total_amount = $grandTotal - $discountValue;
+                    // Note: Tax is still based on the original subtotal (statutory requirement usually).
                 }
             }
 
-            // 2. Earning
-            if ($request->patient_id && $settings->loyalty_spend_per_point > 0) {
-                $pointsEarned = floor($grandTotal / $settings->loyalty_spend_per_point); // Changed $request->total to $grandTotal
+            // 2. Earning (Based on Net Paybale Amount, or Gross? Usually Net)
+            // Let's assume points are earned on the amount actually paid (Net).
+            $netPayable = $grandTotal - $discountValue;
+
+            if ($request->patient_id && $settings->loyalty_spend_per_point > 0 && $netPayable > 0) {
+                $pointsEarned = floor($netPayable / $settings->loyalty_spend_per_point);
                 if ($pointsEarned > 0) {
                     $sale->points_earned = $pointsEarned;
-                    $patient = Patient::find($request->patient_id); // Re-fetch or use existing
-                    if ($patient) { // Ensure patient exists before incrementing
+                    $patient = Patient::find($request->patient_id);
+                    if ($patient) {
                         $patient->increment('loyalty_points', $pointsEarned);
                     }
                 }

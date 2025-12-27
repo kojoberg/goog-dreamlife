@@ -56,7 +56,7 @@ else
     echo "Cloning repository..."
     cd /var/www
     #git clone https://github.com/kojoberg/goog-dreamlife.git dreamlife
-    git clone -b v2.0-alpha https://github.com/kojoberg/goog-dreamlife.git
+    git clone -b v2.0-alpha https://github.com/kojoberg/goog-dreamlife.git dreamlife
     cd dreamlife
 fi
 

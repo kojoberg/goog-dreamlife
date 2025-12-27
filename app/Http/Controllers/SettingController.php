@@ -23,7 +23,20 @@ class SettingController extends Controller
             ]
         );
 
-        return view('settings.index', compact('settings'));
+        // Fetch Git Version
+        $systemVersion = $settings->current_version ?? 'v1.0';
+        try {
+            $branch = trim(exec('git branch --show-current'));
+            $hash = trim(exec('git rev-parse --short HEAD'));
+
+            if ($branch || $hash) {
+                $systemVersion = ($branch ?: 'HEAD') . ' (' . ($hash ?: 'Unknown') . ')';
+            }
+        } catch (\Exception $e) {
+            // Keep default
+        }
+
+        return view('settings.index', compact('settings', 'systemVersion'));
     }
 
     /**

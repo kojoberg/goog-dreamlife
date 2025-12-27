@@ -8,6 +8,8 @@ class Product extends Model
 {
     protected $guarded = [];
 
+
+
     protected $casts = [
         'is_chronic' => 'boolean',
     ];
@@ -31,5 +33,35 @@ class Product extends Model
     public function getStockAttribute()
     {
         return $this->batches()->where('expiry_date', '>=', now())->sum('quantity');
+    }
+
+    // Branch pivot relationship
+    public function branches()
+    {
+        return $this->belongsToMany(Branch::class)
+            ->withPivot(['unit_price', 'cost_price', 'reorder_level'])
+            ->withTimestamps();
+    }
+
+    // Dynamic Price Accessor (Branch Aware)
+    // NOTE: This assumes we store the current branch in session or config globally if we want magic access,
+    // OR we explicitly call a method.
+    // For safety, let's add a helper method rather than overriding the attribute which might confuse saving.
+    public function getPriceForBranch($branchId)
+    {
+        $pivot = $this->branches()->where('branch_id', $branchId)->first();
+        if ($pivot && $pivot->pivot->unit_price !== null) {
+            return $pivot->pivot->unit_price;
+        }
+        return $this->unit_price;
+    }
+
+    public function getCostForBranch($branchId)
+    {
+        $pivot = $this->branches()->where('branch_id', $branchId)->first();
+        if ($pivot && $pivot->pivot->cost_price !== null) {
+            return $pivot->pivot->cost_price;
+        }
+        return $this->cost_price;
     }
 }

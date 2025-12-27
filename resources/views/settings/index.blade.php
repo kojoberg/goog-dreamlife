@@ -139,6 +139,36 @@
                         </div>
 
                         <div class="mt-8 border-t pt-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Google Drive Backup Configuration</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Client ID</label>
+                                    <input type="text" name="google_drive_client_id" value="{{ $settings->google_drive_client_id }}"
+                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Client Secret</label>
+                                    <input type="password" name="google_drive_client_secret" value="{{ $settings->google_drive_client_secret }}"
+                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Refresh Token</label>
+                                    <input type="text" name="google_drive_refresh_token" value="{{ $settings->google_drive_refresh_token }}"
+                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Use the <a href="https://developers.google.com/oauthplayground" target="_blank" class="text-blue-600 underline">Google OAuth Playground</a> to generate a refresh token with `https://www.googleapis.com/auth/drive` scope.
+                                    </p>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Folder ID (Optional)</label>
+                                    <input type="text" name="google_drive_folder_id" value="{{ $settings->google_drive_folder_id }}"
+                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                    <p class="text-xs text-gray-500 mt-1">ID of the folder to store backups in.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 border-t pt-6">
                             <h3 class="text-lg font-medium text-gray-900 mb-4">Loyalty Program Settings</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
@@ -220,7 +250,7 @@
                                 <div>
                                     <label class="block text-gray-700 text-sm font-bold mb-2">Software Version</label>
                                     <div class="flex items-center justify-between">
-                                        <span class="text-gray-900 font-mono">{{ $settings->current_version ?? '1.0.0' }}</span>
+                                        <span class="text-gray-900 font-mono text-sm">{{ $systemVersion }}</span>
                                         <button type="submit" form="update-form" class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-200">
                                             Check for Updates
                                         </button>

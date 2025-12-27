@@ -21,6 +21,27 @@
                                 required>
                         </div>
 
+                        <!-- Barcode (New) -->
+                        <div class="mb-4">
+                            <label for="barcode" class="block text-gray-700 text-sm font-bold mb-2">Barcode /
+                                UPC</label>
+                            <input type="text" name="barcode" id="barcode" value="{{ $product->barcode }}"
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                placeholder="Scan or type barcode key">
+                        </div>
+
+                        <!-- Product Type -->
+                        <div class="mb-4">
+                            <label for="product_type" class="block text-gray-700 text-sm font-bold mb-2">Type</label>
+                            <select name="product_type" id="product_type"
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                <option value="goods" {{ $product->product_type == 'goods' ? 'selected' : '' }}>Goods
+                                    (Physical Stock)</option>
+                                <option value="service" {{ $product->product_type == 'service' ? 'selected' : '' }}>
+                                    Service (Consultation, BP Check, etc.)</option>
+                            </select>
+                        </div>
+
                         <!-- Price and Cost Price -->
                         <div class="mb-4 grid grid-cols-2 gap-4">
                             <div>
@@ -50,16 +71,6 @@
                                     <option value="{{ $category->id }}" {{ $product->category_id == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                                 @endforeach
                             </select>
-                        </div>
-
-                        <!-- Price -->
-                        <div class="mb-4">
-                            <label for="unit_price" class="block text-gray-700 text-sm font-bold mb-2">Unit Price
-                                (GHS)</label>
-                            <input type="number" step="0.01" name="unit_price" id="unit_price"
-                                value="{{ $product->unit_price }}"
-                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                required>
                         </div>
 
                         <!-- Reorder Level -->

@@ -4,9 +4,17 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Drug Interactions') }}
             </h2>
+        <div class="flex space-x-2">
+            <form action="{{ route('drug-interactions.sync') }}" method="POST" class="inline">
+                @csrf
+                <button type="submit" class="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded" onclick="return confirm('This process interacts with external APIs and may take some time. Continue?');">
+                    Sync All (FDA/NLM)
+                </button>
+            </form>
             <a href="{{ route('drug-interactions.create') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                 Add New Interaction
             </a>
+        </div>
         </div>
     </x-slot>
 
