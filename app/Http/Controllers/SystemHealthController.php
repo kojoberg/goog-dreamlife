@@ -93,7 +93,55 @@ class SystemHealthController extends Controller
             'message' => ($settings && $settings->google_drive_refresh_token) ? 'Configured' : 'Missing Refresh Token'
         ];
 
-        return view('admin.system_health', compact('checks'));
+        // Debug Mode Check
+        $checks['debug_mode'] = [
+            'status' => $settings && $settings->debug_mode ? 'warning' : 'ok',
+            'message' => $settings && $settings->debug_mode ? 'Enabled (Detailed Errors Visible)' : 'Disabled (Production Safe)',
+            'val' => $settings ? $settings->debug_mode : false
+        ];
+
+        // System Versions
+        $systemInfo = [
+            'php' => phpversion(),
+            'laravel' => app()->version(),
+            'database' => 'Unknown',
+            'app_version' => 'v1.0 (Static)',
+        ];
+
+        try {
+            $pdo = DB::connection()->getPdo();
+            $systemInfo['database'] = $pdo->getAttribute(\PDO::ATTR_SERVER_VERSION);
+        } catch (\Exception $e) {
+        }
+
+        // Git Version
+        try {
+            $branch = trim(exec('git branch --show-current'));
+            $hash = trim(exec('git rev-parse --short HEAD'));
+            if (!empty($branch) || !empty($hash)) {
+                $systemInfo['app_version'] = ($branch ?: 'HEAD') . " (" . ($hash ?: 'Unknown') . ")";
+            }
+        } catch (\Exception $e) {
+        }
+
+        return view('admin.system_health', compact('checks', 'systemInfo'));
+    }
+
+    public function toggleDebug(Request $request)
+    {
+        // Require Admin
+        if (!auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        $settings = Setting::firstOrCreate(['id' => 1]);
+        $settings->debug_mode = !$settings->debug_mode;
+        $settings->save();
+
+        // Clear config cache to ensure next request picks it up (though AppServiceProvider handles runtime)
+        // Artisan::call('config:clear'); 
+
+        return back()->with('success', 'Debug Mode ' . ($settings->debug_mode ? 'Enabled' : 'Disabled'));
     }
 
     private function formatBytes($bytes, $precision = 2)

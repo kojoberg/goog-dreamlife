@@ -52,6 +52,7 @@ Route::middleware('auth')->group(function () {
         Route::get('products/import', [\App\Http\Controllers\ProductController::class, 'importForm'])->name('products.import');
         Route::get('products/import/template', [\App\Http\Controllers\ProductController::class, 'downloadTemplate'])->name('products.import.template');
         Route::post('products/import', [\App\Http\Controllers\ProductController::class, 'processImport'])->name('products.import.store');
+        Route::get('products/lookup', [\App\Http\Controllers\ProductController::class, 'lookup'])->name('products.lookup');
         Route::resource('products', \App\Http\Controllers\ProductController::class);
 
         Route::resource('inventory', \App\Http\Controllers\InventoryController::class);
@@ -98,6 +99,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
         // System Health
         Route::get('/system-health', [\App\Http\Controllers\SystemHealthController::class, 'index'])->name('admin.system-health');
+        Route::post('/system-health/toggle-debug', [\App\Http\Controllers\SystemHealthController::class, 'toggleDebug'])->name('admin.system-health.toggle-debug');
     });
 });
 

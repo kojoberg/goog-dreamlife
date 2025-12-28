@@ -47,6 +47,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'nullable|exists:categories,id',
+            'barcode' => 'nullable|string|max:255|unique:products,barcode',
             'product_type' => 'required|in:goods,service', // New
             'unit_price' => 'required|numeric|min:0',
             'cost_price' => 'nullable|numeric|min:0',
@@ -68,14 +69,15 @@ class ProductController extends Controller
         Product::create([
             'name' => $validated['name'],
             'category_id' => $validated['category_id'],
+            'barcode' => $validated['barcode'] ?? null,
             'product_type' => $validated['product_type'],
             'unit_price' => $validated['unit_price'],
             'cost_price' => $validated['cost_price'] ?? 0,
             'reorder_level' => $validated['reorder_level'],
-            'description' => $validated['description'],
-            'drug_route' => $validated['drug_route'],
-            'drug_form' => $validated['drug_form'],
-            'dosage' => $validated['dosage'],
+            'description' => $validated['description'] ?? null,
+            'drug_route' => $validated['drug_route'] ?? null,
+            'drug_form' => $validated['drug_form'] ?? null,
+            'dosage' => $validated['dosage'] ?? null,
             'is_chronic' => $validated['is_chronic'],
         ]);
 
@@ -93,6 +95,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'nullable|exists:categories,id',
+            'barcode' => 'nullable|string|max:255|unique:products,barcode,' . $product->id,
             'product_type' => 'required|in:goods,service', // New
             'unit_price' => 'required|numeric|min:0',
             'cost_price' => 'nullable|numeric|min:0',
@@ -113,14 +116,15 @@ class ProductController extends Controller
         $product->update([
             'name' => $validated['name'],
             'category_id' => $validated['category_id'],
+            'barcode' => $validated['barcode'] ?? $product->barcode,
             'product_type' => $validated['product_type'],
             'unit_price' => $validated['unit_price'],
             'cost_price' => $validated['cost_price'] ?? $product->cost_price,
             'reorder_level' => $validated['reorder_level'],
-            'description' => $validated['description'],
-            'drug_route' => $validated['drug_route'],
-            'drug_form' => $validated['drug_form'],
-            'dosage' => $validated['dosage'],
+            'description' => $validated['description'] ?? null,
+            'drug_route' => $validated['drug_route'] ?? null,
+            'drug_form' => $validated['drug_form'] ?? null,
+            'dosage' => $validated['dosage'] ?? null,
             'is_chronic' => $validated['is_chronic'],
         ]);
 
@@ -227,5 +231,54 @@ class ProductController extends Controller
         }
 
         return redirect()->route('products.index')->with('success', "Imported $count products successfully.");
+    }
+
+    public function lookup(Request $request)
+    {
+        $barcode = $request->query('barcode');
+
+        if (!$barcode) {
+            return response()->json(['success' => false, 'message' => 'Barcode required'], 400);
+        }
+
+        try {
+            // Use OpenFoodFacts API (v0)
+            $url = "https://world.openfoodfacts.org/api/v0/product/{$barcode}.json";
+
+            // Set User-Agent as requested by OpenFoodFacts
+            $options = [
+                "http" => [
+                    "header" => "User-Agent: UVITECH-RxPMS/1.0 (internal-dev-test)"
+                ]
+            ];
+            $context = stream_context_create($options);
+
+            $json = file_get_contents($url, false, $context);
+
+            if ($json === false) {
+                return response()->json(['success' => false, 'message' => 'External API error'], 502);
+            }
+
+            $data = json_decode($json, true);
+
+            if (isset($data['status']) && $data['status'] == 1) {
+                $product = $data['product'];
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'name' => $product['product_name'] ?? $product['product_name_en'] ?? 'Unknown Product',
+                        'description' => $product['generic_name'] ?? $product['generic_name_en'] ?? '',
+                        'image_url' => $product['image_url'] ?? null,
+                        // Could try to guess category or brand, but let's stick to basics
+                    ]
+                ]);
+            } else {
+                return response()->json(['success' => false, 'message' => 'Product not found in database'], 404);
+            }
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 }

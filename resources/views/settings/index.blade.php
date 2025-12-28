@@ -75,10 +75,22 @@
                                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                             </div>
 
-                            <div class="col-span-2">
+                            <div class="col-span-2 md:col-span-1">
                                 <label class="block text-gray-700 text-sm font-bold mb-2">Address</label>
                                 <textarea name="address" rows="3"
                                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">{{ $settings->address }}</textarea>
+                            </div>
+
+                            <div class="col-span-1">
+                                <label class="block text-gray-700 text-sm font-bold mb-2">Font Family</label>
+                                <select name="font_family" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                    <option value="Segoe UI" {{ $settings->font_family == 'Segoe UI' ? 'selected' : '' }}>Segoe UI (Default)</option>
+                                    <option value="Inter" {{ $settings->font_family == 'Inter' ? 'selected' : '' }}>Inter</option>
+                                    <option value="Roboto" {{ $settings->font_family == 'Roboto' ? 'selected' : '' }}>Roboto</option>
+                                    <option value="Open Sans" {{ $settings->font_family == 'Open Sans' ? 'selected' : '' }}>Open Sans</option>
+                                    <option value="Lato" {{ $settings->font_family == 'Lato' ? 'selected' : '' }}>Lato</option>
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">System-wide font preference.</p>
                             </div>
                         </div>
 
@@ -116,7 +128,7 @@
                                 <div>
                                     <label class="block text-gray-700 text-sm font-bold mb-2">From Name</label>
                                     <input type="text" name="smtp_from_name" value="{{ $settings->smtp_from_name }}"
-                                        placeholder="Dream Life Pharmacy"
+                                        placeholder="UVITECH Healthcare"
                                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                                 </div>
                             </div>
@@ -251,7 +263,7 @@
                                     <label class="block text-gray-700 text-sm font-bold mb-2">Software Version</label>
                                     <div class="flex items-center justify-between">
                                         <span class="text-gray-900 font-mono text-sm">{{ $systemVersion }}</span>
-                                        <button type="submit" form="update-form" class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-200">
+                                        <button id="btn-check-updates" type="button" class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded hover:bg-indigo-200">
                                             Check for Updates
                                         </button>
                                     </div>
@@ -269,7 +281,29 @@
                                             {{ $isExpired ? 'EXPIRED' : 'ACTIVE' }} (Expires: {{ $expiry->format('d M Y') }})
                                         </div>
                                      @else
-                                        <div class="text-sm text-yellow-600 font-bold">TRIAL / NOT ACTIVATED</div>
+                                        @php
+                                            // 14-Day Trial Logic
+                                            $installDate = $settings->created_at ?? \Carbon\Carbon::now()->subDays(1); // Fallback if null
+                                            $trialEndsAt = $installDate->copy()->addDays(14);
+                                            $daysRemaining = round(now()->floatDiffInDays($trialEndsAt, false)); 
+                                            $isTrialActive = $daysRemaining >= 0;
+                                        @endphp
+                                        
+                                        @if($isTrialActive)
+                                            <div class="text-sm text-orange-500 font-bold">
+                                                TRIAL MODE (Active)
+                                                <span class="block text-xs font-normal text-gray-600 mt-1">
+                                                    {{ $daysRemaining }} Day(s) Remaining. Limit usage to testing.
+                                                </span>
+                                            </div>
+                                        @else
+                                            <div class="text-sm text-red-600 font-bold">
+                                                TRIAL EXPIRED
+                                                <span class="block text-xs font-normal text-gray-600 mt-1">
+                                                    Your 14-day trial has ended. Please activate a license.
+                                                </span>
+                                            </div>
+                                        @endif
                                      @endif
                                 </div>
 
@@ -334,10 +368,93 @@
                         </div>
                     </form>
 
-                    <!-- Separate Form for Update Trigger -->
-                    <form id="update-form" action="{{ route('settings.system_update') }}" method="POST" class="hidden">
-                        @csrf
-                    </form>
+                    <!-- Update Modal (Hidden by default) -->
+                    <div id="update-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+                        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                            <div class="mt-3 text-center">
+                                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100">
+                                    <svg class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                </div>
+                                <h3 class="text-lg leading-6 font-medium text-gray-900 mt-2" id="modal-title">Checking for Updates...</h3>
+                                <div class="mt-2 px-7 py-3">
+                                    <p class="text-sm text-gray-500" id="modal-content">
+                                        Please wait while we check for the latest software version.
+                                    </p>
+                                    <pre id="modal-commits" class="text-left text-xs bg-gray-100 p-2 mt-2 rounded hidden overflow-x-auto"></pre>
+                                </div>
+                                <div class="items-center px-4 py-3">
+                                    <button id="btn-close-modal" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                                        Close
+                                    </button>
+                                    <form id="execute-update-form" action="{{ route('settings.system_update') }}" method="POST" class="hidden mt-2">
+                                        @csrf
+                                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                            Update Now
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const checkBtn = document.getElementById('btn-check-updates');
+                            const modal = document.getElementById('update-modal');
+                            const modalTitle = document.getElementById('modal-title');
+                            const modalContent = document.getElementById('modal-content');
+                            const modalCommits = document.getElementById('modal-commits');
+                            const btnClose = document.getElementById('btn-close-modal');
+                            const formUpdate = document.getElementById('execute-update-form');
+
+                            // Open Modal & Check
+                            checkBtn.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                modal.classList.remove('hidden');
+                                modalTitle.textContent = "Checking for Updates...";
+                                modalContent.textContent = "Connecting to repository...";
+                                modalCommits.classList.add('hidden');
+                                formUpdate.classList.add('hidden');
+                                btnClose.textContent = "Cancel";
+
+                                fetch('{{ route('settings.system_update') }}?check=true', {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                        'Accept': 'application/json'
+                                    }
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.status === 'up_to_date') {
+                                        modalTitle.textContent = "System is Up to Date";
+                                        modalContent.textContent = data.message;
+                                        btnClose.textContent = "Close";
+                                    } else if (data.status === 'update_available') {
+                                        modalTitle.textContent = "Update Available";
+                                        modalContent.textContent = "New versions are available used the following commits:";
+                                        modalCommits.textContent = data.commits;
+                                        modalCommits.classList.remove('hidden');
+                                        formUpdate.classList.remove('hidden');
+                                        btnClose.textContent = "Cancel";
+                                    } else {
+                                        throw new Error(data.message || 'Unknown error');
+                                    }
+                                })
+                                .catch(error => {
+                                    modalTitle.textContent = "Error";
+                                    modalContent.textContent = "Failed to check for updates: " + error.message;
+                                    btnClose.textContent = "Close";
+                                });
+                            });
+
+                            btnClose.addEventListener('click', function() {
+                                modal.classList.add('hidden');
+                            });
+                        });
+                    </script>
 
                 </div>
             </div>

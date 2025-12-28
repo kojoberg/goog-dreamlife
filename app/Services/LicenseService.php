@@ -7,27 +7,26 @@ use Illuminate\Support\Facades\Log;
 
 class LicenseService
 {
-    // In a real app, this secret should be in .env and kept very private
-    private $secret = 'dreamlife-secure-secret-key-2025';
-
-    /**
-     * Generate a license key for a given duration in months.
-     */
-    public function generateKey(int $months): string
-    {
-        $expiry = Carbon::now()->addMonths($months)->format('Y-m-d');
-        $payload = base64_encode(json_encode(['expiry' => $expiry, 'salt' => \Str::random(8)]));
-        $signature = hash_hmac('sha256', $payload, $this->secret);
-
-        return "DL-{$payload}-{$signature}";
-    }
+    // Public Key for Verification (Production Grade)
+    private $publicKey = <<<EOD
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkpv4Zmfktnh6eE4z8W41
+lAWPf2xynbOpHMqnmiDjPiiZFY73+NwM7AX6tQWzeH+HvdBXDPVQfTP2Ra16sSTq
+1VYCzm9y0hvMdDhgYOpuTGT7elzYvMmxO+5keEj1laJFvvzfRGoKIoxTkMexQT1q
+jHwYirJANq2YnAuUjJ5xpJoSCFC0kSSMXZ4pnUZtyKEWBENiQVh+GumEYv2Yjhv0
+c+33K2kj55UxFIvyRVHqYQqIpPSwhigR+rc9xdAzD/XducGwtaRqQAo6WuwOfH5K
+qCipZZ8okCDp/2QFMa4Ab9ah/jr6+886JPMjE/cfEt/Agr6iGDji9WOjuZ2XM6r7
+KwIDAQAB
+-----END PUBLIC KEY-----
+EOD;
 
     /**
      * Validate a license key and return expiry date or false.
+     * key format: UVITECH-{Base64Payload}-{Base64Signature}
      */
     public function validateKey(string $key)
     {
-        if (!str_starts_with($key, 'DL-')) {
+        if (!str_starts_with($key, 'UVITECH-')) {
             return false;
         }
 
@@ -37,15 +36,16 @@ class LicenseService
         }
 
         $payload = $parts[1];
-        $signature = $parts[2];
+        $signature = base64_decode($parts[2]);
 
-        // Verify signature
-        $expectedSignature = hash_hmac('sha256', $payload, $this->secret);
-        if (!hash_equals($expectedSignature, $signature)) {
-            return false;
+        // 1. Verify Signature
+        $result = openssl_verify($payload, $signature, $this->publicKey, OPENSSL_ALGO_SHA256);
+
+        if ($result !== 1) {
+            return false; // Invalid or error
         }
 
-        // Decode payload
+        // 2. Decode and Check Expiry
         $data = json_decode(base64_decode($payload), true);
         if (!isset($data['expiry'])) {
             return false;

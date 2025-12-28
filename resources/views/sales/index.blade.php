@@ -43,7 +43,7 @@
                                             {{ $sale->created_at->format('Y-m-d H:i') }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $sale->receipt_number }}
+                                            {{ str_pad($sale->id, 6, '0', STR_PAD_LEFT) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {{ $sale->user->name ?? 'N/A' }}

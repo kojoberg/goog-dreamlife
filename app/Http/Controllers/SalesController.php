@@ -12,9 +12,13 @@ class SalesController extends Controller
      */
     public function index()
     {
-        $sales = Sale::with(['user', 'patient'])
-            ->latest()
-            ->paginate(15);
+        $query = Sale::with(['user', 'patient']);
+
+        if (!auth()->user()->isAdmin()) {
+            $query->where('user_id', auth()->id());
+        }
+
+        $sales = $query->latest()->paginate(15);
 
         return view('sales.index', compact('sales'));
     }

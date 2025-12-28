@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('settings', function (Blueprint $table) {
             $table->id();
-            $table->string('business_name')->nullable()->default('Dream Life Healthcare');
+            $table->string('business_name')->nullable()->default('UVITECH Healthcare');
             $table->text('address')->nullable();
             $table->string('phone')->nullable();
             $table->string('email')->nullable();

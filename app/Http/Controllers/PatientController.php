@@ -38,7 +38,15 @@ class PatientController extends Controller
             'allergies' => 'nullable|string',
         ]);
 
-        Patient::create($validated);
+        $patient = Patient::create($validated);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'patient' => $patient,
+                'message' => 'Patient registered successfully.'
+            ]);
+        }
 
         return redirect()->route('patients.index')->with('success', 'Patient registered successfully.');
     }

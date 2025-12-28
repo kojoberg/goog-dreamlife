@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dream Life Healthcare | Powered by Uvitech</title>
+    <title>UVITECH RxPMS | Powered by UVITECH</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -67,9 +67,9 @@
                     <div class="flex-shrink-0 flex items-center gap-3">
                         <div
                             class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                            <span class="text-xl font-bold text-white">D</span>
+                            <span class="text-xl font-bold text-white">U</span>
                         </div>
-                        <span class="font-bold text-xl tracking-tight text-white">Dream Life</span>
+                        <span class="font-bold text-xl tracking-tight text-white">UVITECH RxPMS</span>
                     </div>
 
                     <!-- Right Side Actions -->

@@ -11,7 +11,11 @@ class AdminController extends Controller
         // Summary Stats
         $usersCount = \App\Models\User::count();
         $branchesCount = \App\Models\Branch::count();
-        $lowStockCount = \App\Models\Product::where('stock', '<', 5)->count(); // Simple threshold
+        // Calculate low stock using the getStockAttribute accessor logic
+        // We fetch all products and filter because 'stock' is not a database column but a computed sum of batches
+        $lowStockCount = \App\Models\Product::all()->filter(function ($product) {
+            return $product->stock < 5;
+        })->count();
         $todaySales = \App\Models\Sale::whereDate('created_at', today())->sum('total_amount');
 
         return view('admin.dashboard', compact('usersCount', 'branchesCount', 'lowStockCount', 'todaySales'));

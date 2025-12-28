@@ -57,11 +57,11 @@
     <div class="text-center">
         @if($settings->logo_path)
             <?php 
-                    $logoPath = storage_path('app/public/' . $settings->logo_path); 
-                ?>
+                        $logoPath = storage_path('app/public/' . $settings->logo_path); 
+                    ?>
             @if(file_exists($logoPath))
                 <img src="data:image/{{ pathinfo($logoPath, PATHINFO_EXTENSION) }};base64,{{ base64_encode(file_get_contents($logoPath)) }}"
-                    alt="Logo" style="max-width: 100%; max-height: 80px; height: auto; width: auto; margin-bottom: 10px;">
+                    alt="Logo" style="max-width: 100%; max-height: 120px; height: auto; width: auto; margin-bottom: 15px;">
             @endif
         @endif
         <h2 style="margin:0;">{{ $settings->business_name }}</h2>

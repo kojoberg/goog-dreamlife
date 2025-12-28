@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            PO #{{ $order->id }} - {{ $order->supplier->name }}
+            PO #{{ $order->id }} - {{ $order->supplier?->name ?? 'Unknown Supplier' }}
         </h2>
     </x-slot>
 
@@ -41,7 +41,8 @@
                         <div class="mt-4 pt-4 border-t border-gray-100">
                             <h4 class="font-bold text-sm text-gray-700 mb-1">Notes:</h4>
                             <p class="text-gray-600 italic bg-gray-50 p-3 rounded border border-gray-100">
-                                {{ $order->notes }}</p>
+                                {{ $order->notes }}
+                            </p>
                         </div>
                     @endif
                 </div>
@@ -64,7 +65,7 @@
                         <tbody>
                             @foreach($order->items as $item)
                                 <tr class="border-b">
-                                    <td class="p-3">{{ $item->product->name }}</td>
+                                    <td class="p-3">{{ $item->product?->name ?? 'Deleted Product' }}</td>
                                     <td class="p-3 text-right">{{ $item->quantity_ordered }}</td>
                                     <td
                                         class="p-3 text-right font-bold {{ $item->quantity_received < $item->quantity_ordered ? 'text-red-500' : 'text-green-500' }}">
@@ -91,10 +92,12 @@
 
                         <form action="{{ route('procurement.orders.receive', $order) }}" method="POST">
                             @csrf
-                            
+
                             <div class="mb-4">
                                 <label class="block text-gray-700 text-sm font-bold mb-2">Received By (Staff Name)</label>
-                                <input type="text" name="received_by" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required placeholder="Enter name of staff receiving stock">
+                                <input type="text" name="received_by"
+                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    required placeholder="Enter name of staff receiving stock">
                             </div>
 
                             <button type="submit"

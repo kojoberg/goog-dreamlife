@@ -46,7 +46,7 @@
         <div class="text-center">
             @if($settings->logo_path)
                 <img src="{{ $message->embed(storage_path('app/public/' . $settings->logo_path)) }}" alt="Logo"
-                    style="max-height: 80px; width: auto; margin-bottom: 10px;">
+                    style="max-height: 120px; width: auto; margin-bottom: 15px;">
             @endif
             <h2 style="margin:0;">{{ $settings->business_name }}</h2>
             @if($settings->address)

@@ -21,6 +21,18 @@ class AppServiceProvider extends ServiceProvider
     {
         \App\Models\InventoryBatch::observe(\App\Observers\InventoryObserver::class);
 
+        // Runtime Debug Mode Override
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('settings')) {
+                $settings = \App\Models\Setting::find(1);
+                if ($settings && $settings->debug_mode) {
+                    config(['app.debug' => true]);
+                }
+            }
+        } catch (\Exception $e) {
+            // connection might fail during install/migrations
+        }
+
         // Audit Logging
         \App\Models\User::observe(\App\Observers\AuditObserver::class);
         \App\Models\Product::observe(\App\Observers\AuditObserver::class);
@@ -41,8 +53,8 @@ class AppServiceProvider extends ServiceProvider
                     'mail.mailers.smtp.username' => $settings->smtp_username,
                     'mail.mailers.smtp.password' => $settings->smtp_password,
                     'mail.mailers.smtp.encryption' => $settings->smtp_encryption,
-                    'mail.from.address' => $settings->smtp_from_address ?? 'info@dreamlife.com',
-                    'mail.from.name' => $settings->smtp_from_name ?? 'Dream Life Healthcare',
+                    'mail.from.address' => $settings->smtp_from_address ?? 'info@uvitech.com',
+                    'mail.from.name' => $settings->smtp_from_name ?? 'UVITECH Healthcare',
                 ]);
             }
 

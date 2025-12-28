@@ -24,7 +24,15 @@ class CategoryController extends Controller
             'name' => 'required|string|max:50|unique:categories',
         ]);
 
-        Category::create($validated);
+        $category = Category::create($validated);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'category' => $category,
+                'message' => 'Category created successfully.'
+            ]);
+        }
 
         return redirect()->route('categories.index')->with('success', 'Category created successfully.');
     }

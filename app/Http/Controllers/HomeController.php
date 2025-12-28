@@ -13,8 +13,15 @@ class HomeController extends Controller
 {
     public function index()
     {
+        $user = auth()->user();
+        $isAdmin = $user->isAdmin();
+
         // 1. Key Metrics
-        $todaySales = Sale::whereDate('created_at', Carbon::today())->sum('total_amount');
+        $todaySalesQuery = Sale::whereDate('created_at', Carbon::today());
+        if (!$isAdmin) {
+            $todaySalesQuery->where('user_id', $user->id);
+        }
+        $todaySales = $todaySalesQuery->sum('total_amount');
 
         $settings = \App\Models\Setting::first();
         $days = $settings->alert_expiry_days ?? 90;
@@ -36,9 +43,14 @@ class HomeController extends Controller
             $dates->push(Carbon::now()->subDays($i)->format('Y-m-d'));
         }
 
-        $salesData = Sale::select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total_amount) as total'))
-            ->where('created_at', '>=', Carbon::now()->subDays(6)->startOfDay())
-            ->groupBy('date')
+        $salesDataQuery = Sale::select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total_amount) as total'))
+            ->where('created_at', '>=', Carbon::now()->subDays(6)->startOfDay());
+
+        if (!$isAdmin) {
+            $salesDataQuery->where('user_id', $user->id);
+        }
+
+        $salesData = $salesDataQuery->groupBy('date')
             ->orderBy('date', 'asc')
             ->pluck('total', 'date');
 
@@ -53,7 +65,11 @@ class HomeController extends Controller
         });
 
         // 3. Recent Transactions
-        $recentSales = Sale::with('user')->latest()->take(5)->get();
+        $recentSalesQuery = Sale::with('user')->latest();
+        if (!$isAdmin) {
+            $recentSalesQuery->where('user_id', $user->id);
+        }
+        $recentSales = $recentSalesQuery->take(5)->get();
 
         return view('dashboard', compact(
             'todaySales',

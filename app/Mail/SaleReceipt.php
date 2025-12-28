@@ -24,7 +24,7 @@ class SaleReceipt extends Mailable
     public function __construct(Sale $sale)
     {
         $this->sale = $sale;
-        $this->settings = Setting::firstOrCreate(['id' => 1], ['business_name' => 'Dream Life Healthcare']);
+        $this->settings = Setting::firstOrCreate(['id' => 1], ['business_name' => 'UVITECH Healthcare']);
     }
 
     /**

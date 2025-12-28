@@ -228,59 +228,72 @@
 
     <script>
         // Scanner Logic
-        let html5QrcodeScanner = null;
+        let html5QrCode = null;
 
         function startScanner() {
             document.getElementById('scanner-modal').classList.remove('hidden');
 
-            // If already running?
-            if (html5QrcodeScanner) return;
+            if (html5QrCode) {
+                // If instance exists but not running, we might need to restart?
+                // For simplicity, let's just proceed to start.
+            } else {
+                 html5QrCode = new Html5Qrcode("reader");
+            }
 
             const onScanSuccess = (decodedText, decodedResult) => {
-                // handle the scanned code as you like, for example:
                 console.log(`Code matched = ${decodedText}`, decodedResult);
-
-                // Populate search and trigger event
+                
                 const searchInput = document.getElementById('search');
                 searchInput.value = decodedText;
 
-                // Trigger 'Enter' keydown event to execute existing logic
+                // Trigger Enter
                 const event = new KeyboardEvent('keydown', {
-                    key: 'Enter',
-                    code: 'Enter',
-                    which: 13,
-                    bubbles: true
+                    key: 'Enter', code: 'Enter', which: 13, bubbles: true
                 });
                 searchInput.dispatchEvent(event);
 
-                // Stop after successful scan? 
-                // Usually for POS, we might want continuous, but let's pause/close for now to avoid rapid fire
                 stopScanner();
             };
 
-            const onScanFailure = (error) => {
-                // handle scan failure, usually better to ignore and keep scanning.
-                // for example:
-                // console.warn(`Code scan error = ${error}`);
-            };
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
-            html5QrcodeScanner = new Html5QrcodeScanner(
-                "reader",
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                /* verbose= */ false);
-            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+            // Request permission explicitly by listing cameras first
+            Html5Qrcode.getCameras().then(devices => {
+                if (devices && devices.length) {
+                    // Use the first "back" camera or just the first available
+                    // Generally the last one in list is the back camera on mobile
+                    const cameraId = devices[0].id;
+                    
+                    html5QrCode.start(
+                        { facingMode: "environment" }, // Prefer back camera
+                        config,
+                        onScanSuccess
+                    ).catch(err => {
+                        console.error("Error starting scanner", err);
+                        alert("Error starting camera: " + err);
+                        stopScanner();
+                    });
+                } else {
+                    alert("No cameras found.");
+                    stopScanner();
+                }
+            }).catch(err => {
+                console.error("Error getting cameras", err);
+                alert("Camera permission denied or error: " + err);
+                stopScanner();
+            });
         }
 
         function stopScanner() {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.clear().then(_ => {
-                    // the UI should be cleared here      
+            if (html5QrCode) {
+                 html5QrCode.stop().then((ignore) => {
+                    // Stopping finished.
                     document.getElementById('scanner-modal').classList.add('hidden');
-                    html5QrcodeScanner = null;
-                }).catch(error => {
-                    console.error("Failed to clear html5QrcodeScanner. ", error);
-                    document.getElementById('scanner-modal').classList.add('hidden'); // Force hide
-                });
+                 }).catch((err) => {
+                    // Stop failed, handle it.
+                    console.warn("Failed to stop scanner", err);
+                    document.getElementById('scanner-modal').classList.add('hidden');
+                 });
             } else {
                 document.getElementById('scanner-modal').classList.add('hidden');
             }

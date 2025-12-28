@@ -15,14 +15,25 @@
                         <!-- Patient -->
                         <div class="mb-4">
                             <label for="patient_id" class="block text-gray-700 text-sm font-bold mb-2">Patient</label>
-                            <select name="patient_id" id="patient_id"
-                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                required>
-                                <option value="">Select Patient...</option>
-                                @foreach($patients as $patient)
-                                    <option value="{{ $patient->id }}">{{ $patient->name }}</option>
-                                @endforeach
-                            </select>
+                            <div class="flex gap-2">
+                                <select name="patient_id" id="patient_id"
+                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    required>
+                                    <option value="">Select Patient...</option>
+                                    @foreach($patients as $patient)
+                                        <option value="{{ $patient->id }}">{{ $patient->name }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="button" onclick="openPatientModal()"
+                                    class="bg-green-600 text-white px-3 py-2 rounded shadow hover:bg-green-700 transition"
+                                    title="Add New Patient">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                        stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M12 4.5v15m7.5-7.5h-15" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Notes -->
@@ -194,3 +205,89 @@
         </div>
     </div>
 </x-app-layout>
+
+<!-- Patient Modal -->
+<div id="patient-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg w-full max-w-sm">
+        <h3 class="font-bold text-lg mb-4">Add New Patient</h3>
+        <p id="patient-error" class="text-red-500 text-sm mb-2 hidden"></p>
+        
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Name *</label>
+            <input type="text" id="new_patient_name" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Phone</label>
+            <input type="text" id="new_patient_phone" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
+            <input type="email" id="new_patient_email" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+
+        <div class="flex justify-end gap-2">
+            <button onclick="closePatientModal()" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Cancel</button>
+            <button onclick="savePatient()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openPatientModal() {
+        document.getElementById('patient-modal').classList.remove('hidden');
+        document.getElementById('new_patient_name').value = '';
+        document.getElementById('new_patient_phone').value = '';
+        document.getElementById('new_patient_email').value = '';
+        setTimeout(() => document.getElementById('new_patient_name').focus(), 100);
+        document.getElementById('patient-error').classList.add('hidden');
+    }
+
+    function closePatientModal() {
+        document.getElementById('patient-modal').classList.add('hidden');
+    }
+
+    async function savePatient() {
+        const name = document.getElementById('new_patient_name').value.trim();
+        const phone = document.getElementById('new_patient_phone').value.trim();
+        const email = document.getElementById('new_patient_email').value.trim();
+
+        if (!name) {
+             document.getElementById('patient-error').textContent = "Name is required.";
+             document.getElementById('patient-error').classList.remove('hidden');
+             return;
+        }
+
+        try {
+            const res = await fetch('{{ route('patients.store') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ name, phone, email })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                // Add to select
+                const select = document.getElementById('patient_id');
+                const option = new Option(data.patient.name, data.patient.id);
+                select.add(option, undefined);
+                select.value = data.patient.id;
+                closePatientModal();
+            } else {
+                 document.getElementById('patient-error').textContent = data.message || 'Error creating patient';
+                 document.getElementById('patient-error').classList.remove('hidden');
+                 if (data.errors) {
+                     console.log(data.errors); // Log detailed validation errors
+                 }
+            }
+        } catch (e) {
+            console.error(e);
+            document.getElementById('patient-error').textContent = "Failed to save.";
+            document.getElementById('patient-error').classList.remove('hidden');
+        }
+    }
+</script>

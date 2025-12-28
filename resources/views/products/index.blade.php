@@ -38,6 +38,9 @@
                                         Name</th>
                                     <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Barcode</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Category</th>
                                     <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -59,7 +62,11 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach ($products as $product)
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap">{{ $product->name }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
+                                            {{ $product->name }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-gray-500 font-mono text-xs">
+                                            {{ $product->barcode ?? '-' }}
+                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             {{ $product->category->name ?? 'Uncategorized' }}
                                         </td>

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Dream Life PMS - One-Click Installer for Ubuntu 22.04
+# UVITECH RxPMS - One-Click Installer for Ubuntu 22.04
 # Usage: sudo ./install.sh
 
 set -e
@@ -12,7 +12,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}=================================================${NC}"
-echo -e "${BLUE}   Dream Life PMS - Automated Installer          ${NC}"
+echo -e "${BLUE}   UVITECH RxPMS - Automated Installer           ${NC}"
 echo -e "${BLUE}=================================================${NC}"
 
 if [ "$EUID" -ne 0 ]; then
@@ -28,8 +28,8 @@ echo -e "${GREEN}[2/7] Installing Dependencies (PHP, Nginx, MySQL, Node)...${NC}
 add-apt-repository ppa:ondrej/php -y
 apt update
 apt install -y nginx mysql-server composer zip unzip \
-    php8.2-fpm php8.2-mysql php8.2-common php8.2-cli php8.2-xml php8.2-curl \
-    php8.2-mbstring php8.2-zip php8.2-bcmath php8.2-gd php8.2-intl
+    php8.4-fpm php8.4-mysql php8.4-common php8.4-cli php8.4-xml php8.4-curl \
+    php8.4-mbstring php8.4-zip php8.4-bcmath php8.4-gd php8.4-intl
 
 # Node.js 20
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
@@ -134,7 +134,7 @@ server {
     error_page 404 /index.php;
 
     location ~ \.php$ {
-        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
         fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
         include fastcgi_params;
     }
@@ -157,5 +157,5 @@ echo -e "${BLUE}=================================================${NC}"
 echo -e "${GREEN}   INSTALLATION COMPLETE! 🚀                     ${NC}"
 echo -e "${BLUE}=================================================${NC}"
 echo -e "Access your app at: http://$(curl -s ifconfig.me)"
-echo -e "Admin Email: admin@dreamlife.com"
+echo -e "Admin Email: admin@uvitech.com"
 echo -e "Password: password"
