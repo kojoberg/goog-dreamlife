@@ -115,14 +115,7 @@ class SystemHealthController extends Controller
         }
 
         // Git Version
-        try {
-            $branch = trim(exec('git branch --show-current'));
-            $hash = trim(exec('git rev-parse --short HEAD'));
-            if (!empty($branch) || !empty($hash)) {
-                $systemInfo['app_version'] = ($branch ?: 'HEAD') . " (" . ($hash ?: 'Unknown') . ")";
-            }
-        } catch (\Exception $e) {
-        }
+        $systemInfo['app_version'] = \App\Helpers\SystemHelper::getSystemVersion();
 
         return view('admin.system_health', compact('checks', 'systemInfo'));
     }

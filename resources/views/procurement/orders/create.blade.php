@@ -17,12 +17,19 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                             <div>
                                 <label class="block text-gray-700 text-sm font-bold mb-2">Supplier</label>
-                                <select name="supplier_id"
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-white">
-                                    @foreach($suppliers as $supplier)
-                                        <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                                    @endforeach
-                                </select>
+                                <div class="flex gap-2">
+                                    <select name="supplier_id" id="supplier_id"
+                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-white">
+                                        @foreach($suppliers as $supplier)
+                                            <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <button type="button" onclick="openSupplierModal()"
+                                        class="bg-green-600 text-white px-3 py-2 rounded shadow hover:bg-green-700 transition"
+                                        title="Add New Supplier">
+                                        +
+                                    </button>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-gray-700 text-sm font-bold mb-2">Expected Date</label>
@@ -133,3 +140,98 @@
         })
     </script>
 </x-app-layout>
+
+<!-- Supplier Modal -->
+<div id="supplier-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg w-full max-w-md">
+        <h3 class="font-bold text-lg mb-4">Add New Supplier</h3>
+        <p id="supplier-error" class="text-red-500 text-sm mb-2 hidden"></p>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Supplier Name *</label>
+            <input type="text" id="new_supplier_name"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Contact Person</label>
+            <input type="text" id="new_contact_person"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Phone</label>
+            <input type="text" id="new_supplier_phone"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
+            <input type="email" id="new_supplier_email"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+
+        <div class="flex justify-end gap-2">
+            <button onclick="closeSupplierModal()"
+                class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Cancel</button>
+            <button onclick="saveSupplier()"
+                class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openSupplierModal() {
+        document.getElementById('supplier-modal').classList.remove('hidden');
+        document.getElementById('new_supplier_name').value = '';
+        document.getElementById('new_contact_person').value = '';
+        document.getElementById('new_supplier_phone').value = '';
+        document.getElementById('new_supplier_email').value = '';
+        setTimeout(() => document.getElementById('new_supplier_name').focus(), 100);
+        document.getElementById('supplier-error').classList.add('hidden');
+    }
+
+    function closeSupplierModal() {
+        document.getElementById('supplier-modal').classList.add('hidden');
+    }
+
+    async function saveSupplier() {
+        const name = document.getElementById('new_supplier_name').value.trim();
+        const contact_person = document.getElementById('new_contact_person').value.trim();
+        const phone = document.getElementById('new_supplier_phone').value.trim();
+        const email = document.getElementById('new_supplier_email').value.trim();
+
+        if (!name) {
+            document.getElementById('supplier-error').textContent = "Name is required.";
+            document.getElementById('supplier-error').classList.remove('hidden');
+            return;
+        }
+
+        try {
+            const res = await fetch('{{ route('suppliers.store') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ name, contact_person, phone, email })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                // Add to select
+                const select = document.getElementById('supplier_id');
+                const option = new Option(data.supplier.name, data.supplier.id);
+                select.add(option, undefined);
+                select.value = data.supplier.id;
+                closeSupplierModal();
+            } else {
+                document.getElementById('supplier-error').textContent = data.message || 'Error creating supplier';
+                document.getElementById('supplier-error').classList.remove('hidden');
+            }
+        } catch (e) {
+            console.error(e);
+            document.getElementById('supplier-error').textContent = "Failed to save.";
+            document.getElementById('supplier-error').classList.remove('hidden');
+        }
+    }
+</script>

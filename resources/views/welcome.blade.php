@@ -253,7 +253,7 @@
                 <!-- Software Version -->
                 <div class="mt-2">
                     <span class="px-2 py-0.5 rounded text-xs text-gray-400 bg-gray-800/50 border border-gray-700">
-                        v{{ $gitVersion ?? '1.0.0' }}
+                        {{ $gitVersion ?? '1.0.0' }}
                     </span>
                 </div>
             </div>

@@ -24,38 +24,13 @@ class SettingController extends Controller
         );
 
         // Fetch Git Version
+        // Fetch Git Version
         $systemVersion = $settings->current_version ?? 'v1.0';
-        try {
-            // Attempt 1: exec()
-            $branch = trim(shell_exec('git branch --show-current 2>/dev/null'));
-            $hash = trim(shell_exec('git rev-parse --short HEAD 2>/dev/null'));
 
-            // Attempt 2: Read .git files directly (fallback if exec is disabled/fails)
-            if (empty($branch) || empty($hash)) {
-                $headPath = base_path('.git/HEAD');
-                if (file_exists($headPath)) {
-                    $headContent = trim(file_get_contents($headPath));
-                    if (strpos($headContent, 'ref: ') === 0) {
-                        $branchPath = base_path('.git/' . substr($headContent, 5));
-                        $parts = explode('/', $headContent);
-                        $branch = end($parts);
-
-                        if (file_exists($branchPath)) {
-                            $hash = substr(trim(file_get_contents($branchPath)), 0, 7);
-                        }
-                    } else {
-                        // Detached HEAD
-                        $branch = 'HEAD';
-                        $hash = substr($headContent, 0, 7);
-                    }
-                }
-            }
-
-            if ($branch || $hash) {
-                $systemVersion = ($branch ?: 'HEAD') . ' (' . ($hash ?: 'Unknown') . ')';
-            }
-        } catch (\Exception $e) {
-            // Keep default
+        // Use the robust helper
+        $gitVer = \App\Helpers\SystemHelper::getSystemVersion();
+        if ($gitVer && $gitVer !== 'v1.0 (Static)') {
+            $systemVersion = $gitVer;
         }
 
         return view('settings.index', compact('settings', 'systemVersion'));

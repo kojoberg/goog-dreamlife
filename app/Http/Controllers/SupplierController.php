@@ -37,7 +37,15 @@ class SupplierController extends Controller
             'address' => 'nullable|string',
         ]);
 
-        Supplier::create($validated);
+        $supplier = Supplier::create($validated);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'supplier' => $supplier,
+                'message' => 'Supplier registered successfully.'
+            ]);
+        }
 
         return redirect()->route('suppliers.index')->with('success', 'Supplier created successfully.');
     }

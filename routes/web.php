@@ -5,15 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     // Fetch dynamic version from Git
-    $gitVersion = 'v1.0 (Static)';
-    try {
-        $branch = trim(exec('git branch --show-current'));
-        $hash = trim(exec('git rev-parse --short HEAD'));
-        if (!empty($branch) || !empty($hash)) {
-            $gitVersion = ($branch ?: 'HEAD') . " (" . ($hash ?: 'Unknown') . ")";
-        }
-    } catch (\Exception $e) {
-    }
+    $gitVersion = \App\Helpers\SystemHelper::getSystemVersion();
 
     return view('welcome', compact('gitVersion'));
 });
@@ -68,6 +60,7 @@ Route::middleware('auth')->group(function () {
         Route::get('procurement/orders', [\App\Http\Controllers\ProcurementController::class, 'index'])->name('procurement.orders.index');
         Route::get('procurement/orders/create', [\App\Http\Controllers\ProcurementController::class, 'create'])->name('procurement.orders.create');
         Route::post('procurement/orders', [\App\Http\Controllers\ProcurementController::class, 'store'])->name('procurement.orders.store');
+        Route::get('procurement/orders/{order}/print', [\App\Http\Controllers\ProcurementController::class, 'print'])->name('procurement.orders.print');
         Route::get('procurement/orders/{order}', [\App\Http\Controllers\ProcurementController::class, 'show'])->name('procurement.orders.show');
         Route::post('procurement/orders/{order}/receive', [\App\Http\Controllers\ProcurementController::class, 'receive'])->name('procurement.orders.receive');
     });
