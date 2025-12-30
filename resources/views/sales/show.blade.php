@@ -16,6 +16,53 @@
                             <p class="text-sm text-gray-500">Customer: {{ $sale->patient->name ?? 'Walk-in' }}</p>
                         </div>
                         <div>
+                            @if($sale->status === 'completed')
+                                @if(!$sale->refund)
+                                    <div x-data="{ showRefundModal: false }">
+                                        <button @click="showRefundModal = true" type="button" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 font-bold flex items-center gap-2">
+                                            Request Refund
+                                        </button>
+
+                                        <!-- Refund Modal -->
+                                        <div x-show="showRefundModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+                                            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                                                <div class="fixed inset-0 transition-opacity" aria-hidden="true" @click="showRefundModal = false">
+                                                    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                                                </div>
+
+                                                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                                                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                                                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2">Request Refund for Sale #{{ $sale->id }}</h3>
+                                                        <form action="{{ route('refunds.store', $sale) }}" method="POST">
+                                                            @csrf
+                                                            <div class="mb-4">
+                                                                <label class="block text-gray-700 text-sm font-bold mb-2">Reason</label>
+                                                                <textarea name="reason" rows="3" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required placeholder="Reason for refund..."></textarea>
+                                                            </div>
+                                                            <div class="flex justify-end gap-2">
+                                                                <button type="button" @click="showRefundModal = false" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">Cancel</button>
+                                                                <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Submit Request</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @else
+                                    <span class="px-3 py-1 rounded-full text-white
+                                        @if($sale->refund->status === 'pending') bg-yellow-500
+                                        @elseif($sale->refund->status === 'approved') bg-green-500
+                                        @else bg-red-500 @endif">
+                                        Refund: {{ ucfirst($sale->refund->status) }}
+                                    </span>
+                                @endif
+                            @elseif($sale->status === 'refunded')
+                                <span class="bg-red-600 text-white px-3 py-1 rounded-full">Refunded</span>
+                            @endif
+
                             <a href="{{ route('pos.receipt', $sale) }}" target="_blank"
                                 class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-bold flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"

@@ -77,16 +77,30 @@
         <tr>
             <td width="50%">
                 <strong>From:</strong><br>
-                {{ \App\Models\Setting::first()->business_name }}<br>
-                {{ \App\Models\Setting::first()->address }}<br>
-                {{ \App\Models\Setting::first()->phone }}
+                @if($settings->logo_path)
+                    <?php    $logoPath = storage_path('app/public/' . $settings->logo_path); ?>
+                    @if(file_exists($logoPath))
+                        <img src="data:image/{{ pathinfo($logoPath, PATHINFO_EXTENSION) }};base64,{{ base64_encode(file_get_contents($logoPath)) }}"
+                            alt="Logo" style="max-width: 150px; height: auto; margin-bottom: 10px;"><br>
+                    @endif
+                @endif
+                <span style="font-size: 1.2em; font-weight: bold;">{{ $settings->business_name }}</span><br>
+                {{ $settings->address }}<br>
+                Tel: {{ $settings->phone }}<br>
+                Email: {{ $settings->email }}<br>
+                @if($settings->tin_number)
+                    TIN: {{ $settings->tin_number }}
+                @endif
             </td>
-            <td width="50%">
+            <td width="50%" style="text-align: right;">
                 <strong>To (Supplier):</strong><br>
-                {{ $order->supplier->name }}<br>
-                {{ $order->supplier->contact_person }}<br>
-                {{ $order->supplier->phone }}<br>
-                {{ $order->supplier->address }}
+                <div
+                    style="border: 1px solid #ddd; padding: 10px; display: inline-block; text-align: left; min-width: 200px;">
+                    <strong>{{ $order->supplier->name }}</strong><br>
+                    Attn: {{ $order->supplier->contact_person }}<br>
+                    {{ $order->supplier->phone }}<br>
+                    {{ $order->supplier->address }}
+                </div>
             </td>
         </tr>
     </table>

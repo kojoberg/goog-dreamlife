@@ -12,6 +12,24 @@
 
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="text-lg font-medium text-gray-900">System Backups</h3>
+                        
+                        <!-- Google Drive Status -->
+                        <div class="flex items-center space-x-2">
+                             @if(config('filesystems.disks.google.clientId') && config('filesystems.disks.google.clientSecret'))
+                                <span class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm-7 4a1 1 0 112 0 1 1 0 01-2 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                                    Google Drive Connected
+                                </span>
+                             @else
+                                <span class="bg-gray-100 text-gray-800 text-xs font-semibold px-2.5 py-0.5 rounded flex items-center" title="Configure in .env">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                    Google Drive Not Configured
+                                </span>
+                             @endif
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end mb-4">
                         <form action="{{ route('backups.create') }}" method="POST">
                             @csrf
                             <button type="submit"
@@ -86,6 +104,29 @@
                             2. Import `database.sql` into your database tool (phpMyAdmin or Workbench).<br>
                             3. Copy the `storage` folder contents back to `storage/app/public`.
                         </p>
+                    </div>
+
+                    <!-- Cloud Backup Info -->
+                    <div class="mt-4 bg-blue-50 p-4 rounded-md border-l-4 border-blue-400">
+                        <h4 class="text-lg font-bold text-blue-800 mb-2">Cloud Backup (Google Drive)</h4>
+                         @if(config('filesystems.disks.google.clientId'))
+                            <p class="text-sm text-blue-700">
+                                Cloud backup is <strong>ACTIVE</strong>. Backups created here are automatically uploaded to the configured Google Drive folder.
+                            </p>
+                        @else
+                            <p class="text-sm text-blue-700">
+                                Cloud backup is currently <strong>DISABLED</strong>. To enable automatic upload to Google Drive:
+                                <ul class="list-disc pl-5 mt-1">
+                                    <li>Obtain <code>Client ID</code>, <code>Client Secret</code>, and <code>Refresh Token</code> from Google Cloud Console.</li>
+                                    <li>Add the following keys to your <code>.env</code> file:</li>
+                                </ul>
+                                <div class="bg-gray-800 text-white p-2 rounded mt-2 text-xs font-mono">
+                                    GOOGLE_DRIVE_CLIENT_ID=...<br>
+                                    GOOGLE_DRIVE_CLIENT_SECRET=...<br>
+                                    GOOGLE_DRIVE_REFRESH_TOKEN=...
+                                </div>
+                            </p>
+                        @endif
                     </div>
 
                 </div>

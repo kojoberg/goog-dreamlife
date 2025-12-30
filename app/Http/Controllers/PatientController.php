@@ -127,4 +127,19 @@ class PatientController extends Controller
             'patient' => $patient
         ]);
     }
+    /**
+     * Show Loyalty History
+     */
+    public function loyaltyHistory(Patient $patient)
+    {
+        $loyaltyTransactions = \App\Models\Sale::where('patient_id', $patient->id)
+            ->where(function ($q) {
+                $q->where('points_earned', '>', 0)
+                    ->orWhere('points_redeemed', '>', 0);
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return view('patients.loyalty', compact('patient', 'loyaltyTransactions'));
+    }
 }

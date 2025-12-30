@@ -13,10 +13,12 @@ class Branch extends Model
         'name',
         'location',
         'is_main',
+        'has_cashier',
     ];
 
     protected $casts = [
         'is_main' => 'boolean',
+        'has_cashier' => 'boolean',
     ];
 
     public function users()

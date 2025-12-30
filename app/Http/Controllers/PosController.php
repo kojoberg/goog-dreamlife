@@ -15,6 +15,12 @@ use Illuminate\Support\Facades\Log;
 
 class PosController extends Controller
 {
+    protected $inventoryService;
+
+    public function __construct(\App\Services\InventoryService $inventoryService)
+    {
+        $this->inventoryService = $inventoryService;
+    }
     /**
      * Show the POS interface.
      */
@@ -141,15 +147,32 @@ class PosController extends Controller
             }
 
             // Validate Amount Tendered (if provided)
-            if ($request->has('amount_tendered') && $request->amount_tendered < $grandTotal) {
+            // Validate Amount Tendered (if provided) - ONLY if direct completion (not Cashier Mode)
+            // In Cashier Mode, tendered is handled later.
+            $user = Auth::user();
+            $hasCashier = $user->branch && $user->branch->has_cashier;
+
+            if (!$hasCashier && $request->has('amount_tendered') && $request->amount_tendered < $grandTotal) {
                 throw new \Exception("Amount tendered is less than the total payable (GHS " . number_format($grandTotal, 2) . ")");
             }
 
             // 3. Create Sale Record
+            // Check for Cashier Mode (Split Workflow)
+            $user = Auth::user();
+            $hasCashier = $user->branch && $user->branch->has_cashier;
+
+            $status = $hasCashier ? 'pending_payment' : 'completed';
+
+            // If pending, tendered is 0 for now (Cashier will update)
+            // If completed, validation ensures tendered >= total (Line 150)
+
             // Get current open shift
             $shift = \App\Models\Shift::where('user_id', Auth::id())
                 ->whereNull('end_time')
                 ->first();
+
+            $amountTendered = $hasCashier ? 0 : ($request->amount_tendered ?? $grandTotal);
+            $changeAmount = $amountTendered - $grandTotal;
 
             $sale = Sale::create([
                 'user_id' => Auth::id(),
@@ -158,8 +181,11 @@ class PosController extends Controller
                 'subtotal' => $subtotal,
                 'tax_amount' => $totalTax,
                 'total_amount' => $grandTotal,
+                'amount_tendered' => $amountTendered,
+                'change_amount' => $changeAmount,
                 'payment_method' => $request->payment_method,
-                'tax_breakdown' => $taxBreakdown
+                'tax_breakdown' => $taxBreakdown,
+                'status' => $status
             ]);
 
             // 4. Process Grid Items & Deduct Stock
@@ -184,50 +210,21 @@ class PosController extends Controller
                     continue; // Skip batch logic
                 }
 
-                // FIFO Stock Deduction for GOODS
-                $batches = InventoryBatch::where('product_id', $product->id)
-                    ->where('quantity', '>', 0)
-                    ->where('expiry_date', '>=', now())
-                    ->orderBy('expiry_date', 'asc')
-                    ->get();
+                // FIFO Stock Deduction for GOODS via Service
+                $deductions = $this->inventoryService->deductStock($product, $qtyNeeded);
 
-                $qtyToFulfill = $qtyNeeded;
-
-                foreach ($batches as $batch) {
-                    if ($qtyToFulfill <= 0)
-                        break;
-
-                    if ($batch->quantity >= $qtyToFulfill) {
-                        $batch->decrement('quantity', $qtyToFulfill);
-
-                        $saleItem = SaleItem::create([
-                            'sale_id' => $sale->id,
-                            'product_id' => $product->id,
-                            'batch_id' => $batch->id,
-                            'quantity' => $qtyToFulfill,
-                            'unit_price' => $product->getPriceForBranch(Auth::user()->branch_id),
-                            'subtotal' => $qtyToFulfill * $product->getPriceForBranch(Auth::user()->branch_id),
-                        ]);
-
-                        $qtyToFulfill = 0;
-                    } else {
-                        $taken = $batch->quantity;
-                        $batch->update(['quantity' => 0]);
-
-                        $saleItem = SaleItem::create([
-                            'sale_id' => $sale->id,
-                            'product_id' => $product->id,
-                            'batch_id' => $batch->id,
-                            'quantity' => $taken,
-                            'unit_price' => $product->getPriceForBranch(Auth::user()->branch_id),
-                            'subtotal' => $taken * $product->getPriceForBranch(Auth::user()->branch_id),
-                        ]);
-
-                        $qtyToFulfill -= $taken;
-                    }
+                foreach ($deductions as $deduction) {
+                    SaleItem::create([
+                        'sale_id' => $sale->id,
+                        'product_id' => $product->id,
+                        'batch_id' => $deduction['batch_id'],
+                        'quantity' => $deduction['quantity'],
+                        'unit_price' => $product->getPriceForBranch(Auth::user()->branch_id),
+                        'subtotal' => $deduction['quantity'] * $product->getPriceForBranch(Auth::user()->branch_id),
+                    ]);
                 }
 
-                if ($qtyToFulfill > 0) {
+                if (isset($qtyToFulfill) && $qtyToFulfill > 0) {
                     throw new \Exception("Insufficient stock for product: " . $product->name);
                 }
 
@@ -302,8 +299,8 @@ class PosController extends Controller
 
             DB::commit();
 
-            // 5. Send Email Receipt (Optional)
-            if ($request->has('email') && $request->email) {
+            // 5. Send Email Receipt (Only if Completed)
+            if ($status === 'completed' && $request->has('email') && $request->email) {
                 try {
                     \Illuminate\Support\Facades\Mail::to($request->email)->send(new \App\Mail\SaleReceipt($sale));
                 } catch (\Exception $e) {
@@ -311,8 +308,8 @@ class PosController extends Controller
                 }
             }
 
-            // 6. Send SMS Receipt (Optional)
-            if ($request->has('phone') && $request->phone) {
+            // 6. Send SMS Receipt (Only if Completed)
+            if ($status === 'completed' && $request->has('phone') && $request->phone) {
                 try {
                     $smsService = new \App\Services\SmsService();
                     // Customize message
@@ -329,7 +326,11 @@ class PosController extends Controller
                 }
             }
 
-            return response()->json(['success' => true, 'sale_id' => $sale->id]);
+            return response()->json([
+                'success' => true,
+                'sale_id' => $sale->id,
+                'type' => $status === 'pending_payment' ? 'invoice' : 'receipt'
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();

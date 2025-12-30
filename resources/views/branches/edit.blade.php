@@ -1,52 +1,46 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Edit Branch') }}
-        </h2>
-    </x-slot>
-
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
-
-                    <form action="{{ route('branches.update', $branch) }}" method="POST">
-                        @csrf
-                        @method('PUT')
-
-                        <div class="mb-4">
-                            <label class="block text-gray-700 text-sm font-bold mb-2" for="name">
-                                Branch Name
-                            </label>
-                            <input
-                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                id="name" type="text" name="name" value="{{ $branch->name }}" required>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="block text-gray-700 text-sm font-bold mb-2" for="location">
-                                Location / Address
-                            </label>
-                            <input
-                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                id="location" type="text" name="location" value="{{ $branch->location }}">
-                        </div>
-
-                        <div class="flex items-center justify-between">
-                            <button
-                                class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                                type="submit">
-                                Update Branch
-                            </button>
-                            <a class="inline-block align-baseline font-bold text-sm text-indigo-600 hover:text-indigo-800"
-                                href="{{ route('branches.index') }}">
-                                Cancel
-                            </a>
-                        </div>
-                    </form>
-
-                </div>
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 py-10">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Edit Branch</h1>
+                <p class="text-slate-500 text-sm mt-1">Update branch details and settings.</p>
             </div>
+            <a href="{{ route('branches.index') }}"
+                class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold py-2 px-4 rounded-lg shadow-sm transition">
+                &larr; Back to List
+            </a>
         </div>
+
+        <x-card class="max-w-md mx-auto">
+            <form action="{{ route('branches.update', $branch) }}" method="POST" class="space-y-6">
+                @csrf
+                @method('PUT')
+
+                <x-form-input name="name" label="Branch Name" :value="$branch->name" required />
+
+                <x-form-input name="location" label="Location / Address" :value="$branch->location" />
+
+                <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
+                    <label class="flex items-start">
+                        <input type="hidden" name="has_cashier" value="0">
+                        <input type="checkbox" name="has_cashier" value="1" {{ $branch->has_cashier ? 'checked' : '' }}
+                            class="mt-1 form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 transition duration-150 ease-in-out">
+                        <div class="ml-3">
+                            <span class="block text-sm font-bold text-indigo-900">Enable Cashier Mode</span>
+                            <span class="block text-xs text-indigo-700 mt-1">
+                                Pharmacists generate invoices only. A separate cashier finalizes payments.
+                            </span>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <x-primary-button>
+                        Update Branch
+                    </x-primary-button>
+                </div>
+            </form>
+        </x-card>
     </div>
 </x-app-layout>

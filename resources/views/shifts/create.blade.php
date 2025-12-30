@@ -1,80 +1,99 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Shift Management') }}
+            {{ $openShift ? __('Close Shift') : __('Open Shift') }}
         </h2>
     </x-slot>
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
+            <div class="max-w-md mx-auto bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
 
-                    @if($openShift)
-                        <!-- Close Shift View -->
-                        <h3 class="text-lg font-bold mb-4">Close Shift</h3>
-                        <div class="bg-blue-50 border border-blue-200 rounded p-4 mb-4">
-                            <p><strong>Shift Started:</strong> {{ $openShift->start_time->format('d M Y, h:i A') }}</p>
-                            <p><strong>Starting Cash:</strong> GHS {{ number_format($openShift->starting_cash, 2) }}</p>
-                            <!-- Ideal scenario: Show expected cash here? Or keep it hidden for blind count? -->
-                            <!-- Let's keep it simple: Show sales so far -->
-                            <p class="mt-2"><strong>Total Sales (Approx):</strong> GHS
-                                {{ number_format($openShift->sales()->sum('total_amount'), 2) }}</p>
+                @if(!$openShift)
+                    <!-- OPEN SHIFT FORM -->
+                    <form action="{{ route('shifts.store') }}" method="POST">
+                        @csrf
+                        <div class="text-center mb-6">
+                            <h3 class="text-lg font-bold text-gray-900">Start Your Shift</h3>
+                            <p class="text-sm text-gray-500">Record your shift start time.</p>
                         </div>
 
-                        <form action="{{ route('shifts.update', $openShift) }}" method="POST">
-                            @csrf
-                            @method('PUT')
-
+                        @if(Auth::user()->role === 'cashier')
                             <div class="mb-4">
-                                <label for="actual_cash" class="block text-gray-700 text-sm font-bold mb-2">Closing Cash
-                                    Count (GHS)</label>
-                                <input type="number" step="0.01" name="actual_cash" id="actual_cash"
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                    required>
-                                <p class="text-xs text-gray-500 mt-1">Please count all cash in the drawer and enter the
-                                    total.</p>
+                                <label class="block text-sm font-bold mb-2">Starting Cash (Drawer Float)</label>
+                                <input type="number" step="0.01" name="starting_cash"
+                                    class="w-full border rounded p-2 text-center text-xl font-bold" required autofocus
+                                    placeholder="0.00">
+                                <p class="text-xs text-gray-500 mt-1">Enter the total cash currently in the drawer.</p>
                             </div>
-
-                            <div class="mb-4">
-                                <label for="notes" class="block text-gray-700 text-sm font-bold mb-2">Notes</label>
-                                <textarea name="notes" id="notes"
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+                        @else
+                            <div class="bg-blue-50 p-4 rounded mb-4 text-blue-800 text-sm">
+                                As a <strong>{{ ucfirst(Auth::user()->role) }}</strong>, you are not managing the cash drawer
+                                directly.
+                                Click below to start your shift.
                             </div>
+                        @endif
 
-                            <button type="submit"
-                                class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full">
-                                Close Shift & Logout
-                            </button>
-                        </form>
+                        <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg">
+                            Open Shift
+                        </button>
+                    </form>
+                @else
+                    <!-- CLOSE SHIFT FORM -->
+                    <div class="text-center mb-6">
+                        <h3 class="text-lg font-bold text-gray-900">Close Shift</h3>
+                        <p class="text-sm text-gray-500">Shift started at: {{ $openShift->start_time->format('H:i') }}</p>
+                    </div>
 
-                        <div class="mt-8 pt-4 border-t">
-                            <a href="{{ route('pos.index') }}" class="text-blue-600 hover:text-blue-800 font-bold">&larr;
-                                Back to POS</a>
+                    @if(Auth::user()->role === 'cashier')
+                        <div class="bg-gray-50 p-4 rounded mb-6 text-sm">
+                            <div class="flex justify-between mb-2">
+                                <span>Starting Cash:</span>
+                                <span class="font-bold">GHS {{ number_format($openShift->starting_cash, 2) }}</span>
+                            </div>
+                            <div class="flex justify-between mb-2">
+                                <span>Total Sales (Cash):</span>
+                                <span class="font-bold text-green-600">GHS {{ number_format($salesTotal, 2) }}</span>
+                            </div>
+                            <div class="border-t pt-2 flex justify-between">
+                                <span>Expected Cash:</span>
+                                <span class="font-bold text-blue-600">GHS
+                                    {{ number_format($openShift->starting_cash + $salesTotal, 2) }}</span>
+                            </div>
                         </div>
-                    @else
-                        <!-- Open Shift View -->
-                        <h3 class="text-lg font-bold mb-4">Open Shift</h3>
-                        <p class="mb-4 text-gray-600">You must open a shift before making sales.</p>
-
-                        <form action="{{ route('shifts.store') }}" method="POST">
-                            @csrf
-                            <div class="mb-4">
-                                <label for="starting_cash" class="block text-gray-700 text-sm font-bold mb-2">Starting Cash
-                                    / Float (GHS)</label>
-                                <input type="number" step="0.01" name="starting_cash" id="starting_cash" value="0.00"
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                    required>
-                            </div>
-
-                            <button type="submit"
-                                class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full">
-                                Open Shift
-                            </button>
-                        </form>
                     @endif
 
-                </div>
+                    <form action="{{ route('shifts.update', $openShift) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+
+                        @if(Auth::user()->role === 'cashier')
+                            <div class="mb-4">
+                                <label class="block text-sm font-bold mb-2">Actual Cash Count (Drawer)</label>
+                                <input type="number" step="0.01" name="actual_cash"
+                                    class="w-full border rounded p-2 text-center text-xl font-bold" required>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="block text-sm font-bold mb-2">Notes (Optional)</label>
+                                <textarea name="notes" class="w-full border rounded p-2" rows="2"
+                                    placeholder="Explain any variance..."></textarea>
+                            </div>
+                        @else
+                            <div class="bg-yellow-50 p-4 rounded mb-4 text-yellow-800 text-sm">
+                                Ready to close your shift? ensure all your tasks are completed.
+                            </div>
+                        @endif
+
+                        <button type="submit"
+                            class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg"
+                            onclick="return confirm('Are you sure you want to close this shift?')">
+                            Close Shift
+                        </button>
+                    </form>
+                @endif
+
             </div>
         </div>
     </div>

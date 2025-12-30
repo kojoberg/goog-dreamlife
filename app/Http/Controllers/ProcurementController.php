@@ -112,6 +112,11 @@ class ProcurementController extends Controller
     public function print(PurchaseOrder $order)
     {
         $order->load(['items.product', 'supplier', 'user']);
-        return view('procurement.orders.print', compact('order'));
+        $settings = \App\Models\Setting::firstOrCreate(['id' => 1], [
+            'business_name' => 'Dream Life Healthcare',
+            'phone' => '000-000-0000',
+            'currency_symbol' => 'GHS'
+        ]);
+        return view('procurement.orders.print', compact('order', 'settings'));
     }
 }

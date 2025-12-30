@@ -5,14 +5,16 @@
                 {{ __('Products') }}
             </h2>
             <div class="flex space-x-2">
-                <a href="{{ route('products.import') }}"
-                    class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                    Import Products
-                </a>
-                <a href="{{ route('products.create') }}"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    Add New Product
-                </a>
+                @if(auth()->user()->isAdmin())
+                    <a href="{{ route('products.import') }}"
+                        class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                        Import Products
+                    </a>
+                    <a href="{{ route('products.create') }}"
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        Add New Product
+                    </a>
+                @endif
             </div>
         </div>
 
@@ -63,7 +65,8 @@
                                 @foreach ($products as $product)
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                                            {{ $product->name }}</td>
+                                            {{ $product->name }}
+                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-gray-500 font-mono text-xs">
                                             {{ $product->barcode ?? '-' }}
                                         </td>
@@ -103,6 +106,7 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            @if(auth()->user()->isAdmin())
                                             <a href="{{ route('products.edit', $product) }}"
                                                 class="text-indigo-600 hover:text-indigo-900 mr-4">Edit</a>
                                             <form action="{{ route('products.destroy', $product) }}" method="POST"
@@ -112,6 +116,9 @@
                                                 <button type="submit"
                                                     class="text-red-600 hover:text-red-900">Delete</button>
                                             </form>
+                                            @else
+                                            <span class="text-gray-400">View Only</span>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Receipt #{{ $sale->id }}</title>
+    <title>{{ $sale->status === 'pending_payment' ? 'Invoice' : 'Receipt' }} #{{ $sale->id }}</title>
     <style>
         body {
             font-family: monospace;
@@ -57,8 +57,8 @@
     <div class="text-center">
         @if($settings->logo_path)
             <?php 
-                        $logoPath = storage_path('app/public/' . $settings->logo_path); 
-                    ?>
+                                        $logoPath = storage_path('app/public/' . $settings->logo_path); 
+                                    ?>
             @if(file_exists($logoPath))
                 <img src="data:image/{{ pathinfo($logoPath, PATHINFO_EXTENSION) }};base64,{{ base64_encode(file_get_contents($logoPath)) }}"
                     alt="Logo" style="max-width: 100%; max-height: 120px; height: auto; width: auto; margin-bottom: 15px;">
@@ -91,7 +91,7 @@
                 <td class="right">{{ $sale->created_at->format('d/m/Y H:i') }}</td>
             </tr>
             <tr>
-                <td>Receipt #:</td>
+                <td>{{ $sale->status === 'pending_payment' ? 'Invoice' : 'Receipt' }} #:</td>
                 <td class="right">{{ str_pad($sale->id, 6, '0', STR_PAD_LEFT) }}</td>
             </tr>
             <tr>
@@ -181,51 +181,44 @@
             <td>Total</td>
             <td class="right">{{ $settings->currency_symbol }} {{ number_format($sale->total_amount, 2) }}</td>
         </tr>
-    </table>
 
-    <div class="divider"></div>
+        @if($sale->status === 'pending_payment')
+            <div class="text-center bold" style="margin: 10px 0; border: 2px solid #000; padding: 5px;">
+                PAYMENT PENDING
+            </div>
+            <div class="text-center" style="font-size: 12px;">
+                Please pay at the Cashier.
+            </div>
+        @endif
 
-    <table>
-        <tr>
-            <td>Paid ({{ ucfirst(str_replace('_', ' ', $sale->payment_method)) }})</td>
-            <!-- Assuming 'amount_tendered' is stored or accessible. 
-                 It's not in the migration I saw, but PosController receives it.
-                 Wait, Sales table schema in Step 2505 didn't show 'amount_tendered'.
-                 If it's missing, I can't show "Tendered/Change".
-                 But I can show Payment Method.
-            -->
-            <!-- If we want to show Change, we need to store amount_tendered.
-                 Let's assume for now we just show Total if tendered isn't saved.
-                 Actually, checkout sends tendered. If not saved, we lose it.
-                 I'll just omit Tendered/Change for now if column missing, unless I add it.
-                 User said "not give the points back to the customer on the change value".
-                 This implies Change IS calculated.
-                 If I don't store `amount_tendered` in DB, I can't show it on reprint.
-                 But typically it's needed.
-                 I'll check if `amount_tendered` exists in Sales.
-            -->
-            <!-- For now, just show method. -->
-            <td class="right">{{ number_format($sale->total_amount, 2) }}</td>
-        </tr>
-    </table>
+        @if($sale->status === 'completed' && $sale->amount_tendered > 0)
+            <tr>
+                <td>Tendered ({{ ucfirst($sale->payment_method) }})</td>
+                <td class="right">{{ number_format($sale->amount_tendered, 2) }}</td>
+            </tr>
+            <tr>
+                <td>Change</td>
+                <td class="right">{{ number_format($sale->change_amount, 2) }}</td>
+            </tr>
+        @endif
 
-    @if($sale->patient)
-        <div style="font-size: 12px; margin-top: 10px; text-align: center;">
-            Loyalty Points Earned: {{ $sale->points_earned }} <br>
-            Current Balance: {{ $sale->patient->loyalty_points }}
+        @if($sale->patient)
+            <div style="font-size: 12px; margin-top: 10px; text-align: center;">
+                Loyalty Points Earned: {{ $sale->points_earned }} <br>
+                Current Balance: {{ $sale->patient->loyalty_points }}
+            </div>
+        @endif
+
+        <div class="text-center" style="margin-top: 20px;">
+            <p>Thank you for your patronage!</p>
+            <p>Software powered by UviTech, Inc.</p>
         </div>
-    @endif
 
-    <div class="text-center" style="margin-top: 20px;">
-        <p>Thank you for your patronage!</p>
-        <p>Software powered by UviTech, Inc.</p>
-    </div>
-
-    <div class="text-center no-print" style="margin-top: 30px;">
-        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px;">Print Receipt</button>
-        <br><br>
-        <a href="{{ route('pos.index') }}">Back to POS</a>
-    </div>
+        <div class="text-center no-print" style="margin-top: 30px;">
+            <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px;">Print Receipt</button>
+            <br><br>
+            <a href="{{ route('pos.index') }}">Back to POS</a>
+        </div>
 </body>
 
 </html>

@@ -28,8 +28,8 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="font-sans antialiased">
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+<body class="font-sans antialiased text-slate-800 bg-slate-50 selection:bg-indigo-500 selection:text-white">
+    <div class="min-h-screen">
         @include('layouts.navigation')
 
         <!-- Page Heading -->

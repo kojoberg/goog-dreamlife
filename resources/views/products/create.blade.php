@@ -1,93 +1,75 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+        <h2 class="font-bold text-xl text-slate-800 leading-tight">
             {{ __('Add New Product') }}
         </h2>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
-                    <form action="{{ route('products.store') }}" method="POST">
-                        @csrf
+    <div class="py-12" x-data="{ productType: 'goods' }">
+        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+            <x-card>
+                <div class="mb-6">
+                    <h3 class="text-lg font-bold text-slate-800">Product Details</h3>
+                    <p class="text-sm text-slate-500">Enter the information for the new item. Fields marked with * are
+                        required.</p>
+                </div>
 
+                <form action="{{ route('products.store') }}" method="POST" class="space-y-6">
+                    @csrf
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Name -->
-                        <div class="mb-4">
-                            <label for="name" class="block text-gray-700 text-sm font-bold mb-2">Product Name</label>
-                            <input type="text" name="name" id="name"
-                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                required>
+                        <div class="col-span-1 md:col-span-2">
+                            <x-form-input name="name" label="Product Name" placeholder="e.g. Moxclav 625mg" required />
                         </div>
 
-                        <!-- Barcode (New) -->
-                        <div class="mb-4">
-                            <label for="barcode" class="block text-gray-700 text-sm font-bold mb-2">Barcode /
-                                UPC</label>
+                        <!-- Barcode Scanner -->
+                        <div class="col-span-1 md:col-span-2">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Barcode / UPC</label>
                             <div class="flex gap-2">
-                                <input type="text" name="barcode" id="barcode"
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                    placeholder="Scan or type barcode key">
-                                <button type="button" onclick="startScanner()"
-                                    class="bg-blue-600 text-white px-3 py-2 rounded shadow hover:bg-blue-700 transition">
+                                <div class="flex-grow">
+                                    <x-form-input name="barcode" id="barcode" placeholder="Scan or type barcode" />
+                                </div>
+                                <button type="button" @click="$dispatch('open-modal', 'scanner-modal'); startScanner()"
+                                    class="inline-flex items-center justify-center px-4 py-2 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                        stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                        stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-2">
                                         <path stroke-linecap="round" stroke-linejoin="round"
                                             d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
                                         <path stroke-linecap="round" stroke-linejoin="round"
                                             d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75zM16.5 19.5h.75v.75h-.75v-.75z" />
                                     </svg>
+                                    Scan
                                 </button>
                             </div>
-                            <p class="text-xs text-gray-500 mt-1">Press Enter after typing to auto-fetch details from
-                                OpenFoodFacts.</p>
+                            <p class="text-xs text-slate-500 mt-1">Press Enter after typing to auto-fetch details.</p>
                         </div>
 
-                        <!-- Product Type -->
-                        <div class="mb-4">
-                            <label for="product_type" class="block text-gray-700 text-sm font-bold mb-2">Type</label>
-                            <select name="product_type" id="product_type"
-                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        <!-- Type & Category -->
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Type</label>
+                            <select name="product_type" x-model="productType"
+                                class="block w-full rounded-md border-slate-300 py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                 <option value="goods">Goods (Physical Stock)</option>
-                                <option value="service">Service (Consultation, BP Check, etc.)</option>
+                                <option value="service">Service (Consultation, etc.)</option>
                             </select>
                         </div>
 
-                        <!-- Price and Cost Price -->
-                        <div class="mb-4 grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="unit_price" class="block text-gray-700 text-sm font-bold mb-2">Selling Price
-                                    (GHS)</label>
-                                <input type="number" step="0.01" name="unit_price" id="unit_price"
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                    required>
-                            </div>
-                            <div>
-                                <label for="cost_price" class="block text-gray-700 text-sm font-bold mb-2">Cost Price
-                                    (GHS)</label>
-                                <input type="number" step="0.01" name="cost_price" id="cost_price"
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                    value="0">
-                                <p class="text-xs text-gray-500 mt-1">Used for profit calculation.</p>
-                            </div>
-                        </div>
-
-                        <!-- Category -->
-                        <div class="mb-4">
-                            <label for="category_id" class="block text-gray-700 text-sm font-bold mb-2">Category</label>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
                             <div class="flex gap-2">
                                 <select name="category_id" id="category_id"
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                    class="block w-full rounded-md border-slate-300 py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                     <option value="">Select Category...</option>
                                     @foreach($categories as $category)
                                         <option value="{{ $category->id }}">{{ $category->name }}</option>
                                     @endforeach
                                 </select>
-                                <button type="button" onclick="openCategoryModal()"
-                                    class="bg-green-600 text-white px-3 py-2 rounded shadow hover:bg-green-700 transition"
-                                    title="Add New Category">
+                                <button type="button"
+                                    @click="$dispatch('open-modal', 'category-modal'); focusCategoryInput()"
+                                    class="inline-flex items-center justify-center p-2 border border-transparent rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none ring-offset-2 focus:ring-2 focus:ring-green-500 transition">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                        stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                        stroke-width="2" stroke="currentColor" class="w-5 h-5">
                                         <path stroke-linecap="round" stroke-linejoin="round"
                                             d="M12 4.5v15m7.5-7.5h-15" />
                                     </svg>
@@ -95,17 +77,29 @@
                             </div>
                         </div>
 
-                        <!-- Dosage / Drug Info -->
-                        <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Price & Cost -->
+                        <x-form-input type="number" step="0.01" name="unit_price" label="Selling Price (GHS)"
+                            required />
+
+                        <div>
+                            <x-form-input type="number" step="0.01" name="cost_price" label="Cost Price (GHS)" value="0"
+                                helper="Used for profit calculation." />
+                        </div>
+                    </div>
+
+                    <!-- Goods Specific Details -->
+                    <div x-show="productType === 'goods'" x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 -translate-y-2"
+                        x-transition:enter-end="opacity-100 translate-y-0" class="pt-6 border-t border-slate-100">
+                        <h4 class="text-sm font-bold text-slate-900 mb-4 uppercase tracking-wide">Pharmacy Details</h4>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            <x-form-input name="dosage" label="Dosage" placeholder="e.g. 500mg" />
+
                             <div>
-                                <label for="dosage" class="block text-gray-700 text-sm font-bold mb-2">Dosage</label>
-                                <input type="text" name="dosage" id="dosage" placeholder="e.g. 500mg"
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                            </div>
-                            <div>
-                                <label for="drug_form" class="block text-gray-700 text-sm font-bold mb-2">Form</label>
-                                <select name="drug_form" id="drug_form"
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Form</label>
+                                <select name="drug_form"
+                                    class="block w-full rounded-md border-slate-300 py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                     <option value="">Select Form...</option>
                                     <option value="Tablet">Tablet</option>
                                     <option value="Capsule">Capsule</option>
@@ -117,10 +111,11 @@
                                     <option value="Other">Other</option>
                                 </select>
                             </div>
+
                             <div>
-                                <label for="drug_route" class="block text-gray-700 text-sm font-bold mb-2">Route</label>
-                                <select name="drug_route" id="drug_route"
-                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Route</label>
+                                <select name="drug_route"
+                                    class="block w-full rounded-md border-slate-300 py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                     <option value="">Select Route...</option>
                                     <option value="Oral">Oral</option>
                                     <option value="Topical">Topical</option>
@@ -133,220 +128,225 @@
                             </div>
                         </div>
 
-                        <!-- Reorder Level -->
-                        <div class="mb-4">
-                            <label for="reorder_level" class="block text-gray-700 text-sm font-bold mb-2">Reorder Level
-                                Alert</label>
-                            <input type="number" name="reorder_level" id="reorder_level" value="10"
-                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                required>
-                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <x-form-input type="number" name="reorder_level" label="Reorder Level Alert" value="10"
+                                required />
 
-                        <div class="mb-4">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="is_chronic" value="1"
-                                    class="form-checkbox h-5 w-5 text-blue-600">
-                                <span class="ml-2 text-gray-700 font-bold">Chronic Medication (Refill Reminders)</span>
-                            </label>
-                            <p class="text-xs text-gray-500 mt-1 ml-7">If checked, POS will prompt for "Days Supply" and
-                                system will schedule SMS reminders.</p>
+                            <div class="flex items-start pt-6">
+                                <div class="flex items-center h-5">
+                                    <input id="is_chronic" name="is_chronic" value="1" type="checkbox"
+                                        class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                </div>
+                                <div class="ml-3 text-sm">
+                                    <label for="is_chronic" class="font-medium text-slate-700">Chronic
+                                        Medication</label>
+                                    <p class="text-slate-500">Enables refill reminders and supply days tracking.</p>
+                                </div>
+                            </div>
                         </div>
+                    </div>
 
-                        <!-- Description -->
-                        <div class="mb-4">
-                            <label for="description"
-                                class="block text-gray-700 text-sm font-bold mb-2">Description</label>
-                            <textarea name="description" id="description"
-                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
-                        </div>
+                    <!-- Description -->
+                    <div>
+                        <label for="description"
+                            class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                        <textarea name="description" id="description" rows="3"
+                            class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
+                    </div>
 
-                        <div class="flex items-center justify-between">
-                            <button type="submit"
-                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                                Save Product
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    <div class="flex items-center justify-end pt-4 border-t border-slate-100">
+                        <x-primary-button class="w-full sm:w-auto">
+                            Save Product
+                        </x-primary-button>
+                    </div>
+                </form>
+            </x-card>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <x-modal name="category-modal" maxWidth="sm">
+        <div class="p-6">
+            <h3 class="text-lg font-bold text-slate-900 mb-4">Add New Category</h3>
+            <p id="cat-error" class="text-red-600 text-sm mb-3 hidden bg-red-50 p-2 rounded"></p>
+
+            <div class="mb-6">
+                <x-form-input name="new_category_name" id="new_category_name" label="Category Name"
+                    placeholder="e.g. Antibiotics" />
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button @click="$dispatch('close-modal')"
+                    class="px-4 py-2 border border-slate-300 rounded-md text-slate-700 text-sm font-medium hover:bg-slate-50 transition">
+                    Cancel
+                </button>
+                <x-primary-button onclick="saveCategory()">
+                    Save Category
+                </x-primary-button>
             </div>
         </div>
-    </div>
-</x-app-layout>
+    </x-modal>
 
-<!-- Category Modal -->
-<div id="category-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center">
-    <div class="bg-white p-6 rounded-lg w-full max-w-sm">
-        <h3 class="font-bold text-lg mb-4">Add New Category</h3>
-        <p id="cat-error" class="text-red-500 text-sm mb-2 hidden"></p>
-        <div class="mb-4">
-            <label class="block text-gray-700 text-sm font-bold mb-2">Category Name</label>
-            <input type="text" id="new_category_name" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+    <!-- Scanner Modal -->
+    <x-modal name="scanner-modal" maxWidth="md">
+        <div class="p-4 relative">
+            <button @click="stopScanner()" class="absolute top-2 right-2 text-slate-400 hover:text-slate-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+            <h3 class="text-lg font-bold text-slate-900 mb-2 text-center">Scan Barcode</h3>
+            <div id="reader" class="w-full bg-slate-100 rounded-lg overflow-hidden h-64"></div>
+            <p class="text-xs text-slate-500 mt-3 text-center">Position the barcode within the frame</p>
         </div>
-        <div class="flex justify-end gap-2">
-            <button onclick="closeCategoryModal()" class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">Cancel</button>
-            <button onclick="saveCategory()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
-        </div>
-    </div>
-</div>
+    </x-modal>
 
-<script>
-    function openCategoryModal() {
-        document.getElementById('category-modal').classList.remove('hidden');
-        document.getElementById('new_category_name').value = '';
-        setTimeout(() => document.getElementById('new_category_name').focus(), 100);
-        document.getElementById('cat-error').classList.add('hidden');
-    }
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script>
+        function focusCategoryInput() {
+            setTimeout(() => {
+                const input = document.getElementById('new_category_name');
+                if (input) input.focus();
+            }, 100);
+            document.getElementById('cat-error').classList.add('hidden');
+        }
 
-    function closeCategoryModal() {
-        document.getElementById('category-modal').classList.add('hidden');
-    }
+        async function saveCategory() {
+            const nameInput = document.getElementById('new_category_name');
+            const name = nameInput.value.trim();
+            if (!name) return;
 
-    async function saveCategory() {
-        const name = document.getElementById('new_category_name').value.trim();
-        if (!name) return;
+            try {
+                const res = await fetch('{{ route('categories.store') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ name: name })
+                });
 
-        try {
-            const res = await fetch('{{ route('categories.store') }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({ name: name })
+                const data = await res.json();
+
+                if (data.success) {
+                    const select = document.getElementById('category_id');
+                    const option = new Option(data.category.name, data.category.id);
+                    select.add(option, undefined);
+                    select.value = data.category.id;
+                    window.dispatchEvent(new CustomEvent('close-modal'));
+                    nameInput.value = '';
+                } else {
+                    const err = document.getElementById('cat-error');
+                    err.textContent = data.message || 'Error creating category';
+                    err.classList.remove('hidden');
+                }
+            } catch (e) {
+                console.error(e);
+                const err = document.getElementById('cat-error');
+                err.textContent = "Failed to save.";
+                err.classList.remove('hidden');
+            }
+        }
+
+        // --- Barcode Lookup Logic ---
+        const barcodeInput = document.getElementById('barcode');
+        if (barcodeInput) {
+            barcodeInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const code = barcodeInput.value.trim();
+                    if (code.length > 3) {
+                        fetchMetadata(code);
+                    }
+                }
             });
-
-            const data = await res.json();
-
-            if (data.success) {
-                // Add to select
-                const select = document.getElementById('category_id');
-                const option = new Option(data.category.name, data.category.id);
-                select.add(option, undefined);
-                select.value = data.category.id;
-                closeCategoryModal();
-            } else {
-                 document.getElementById('cat-error').textContent = data.message || 'Error creating category';
-                 document.getElementById('cat-error').classList.remove('hidden');
-            }
-        } catch (e) {
-            console.error(e);
-            document.getElementById('cat-error').textContent = "Failed to save.";
-            document.getElementById('cat-error').classList.remove('hidden');
         }
-    }
-</script>
 
-<!-- Scanner Modal -->
-<div id="scanner-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center">
-    <div class="bg-white p-4 rounded-lg w-full max-w-md">
-        <div class="flex justify-between items-center mb-2">
-            <h3 class="font-bold">Scan Barcode</h3>
-            <button onclick="stopScanner()" class="text-red-500 font-bold">X</button>
-        </div>
-        <div id="reader" class="w-full"></div>
-        <p class="text-xs text-gray-500 mt-2 text-center">Point camera at barcode</p>
-    </div>
-</div>
+        async function fetchMetadata(barcode) {
+            const nameInput = document.getElementById('name');
+            const descInput = document.getElementById('description');
+            const originalName = nameInput.value;
 
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-<script>
-    // --- Barcode Lookup Logic ---
-    const barcodeInput = document.getElementById('barcode');
+            nameInput.value = "Searching...";
+            nameInput.disabled = true;
 
-    barcodeInput.addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            e.preventDefault(); // Prevent form submit
-            const code = barcodeInput.value.trim();
-            if (code.length > 3) {
-                fetchMetadata(code);
+            try {
+                const res = await fetch(`{{ route('products.lookup') }}?barcode=${barcode}`);
+                const data = await res.json();
+
+                if (data.success) {
+                    nameInput.value = data.data.name;
+                    descInput.value = data.data.description;
+                } else {
+                    nameInput.value = originalName;
+                    alert('Product not found in global database. Please enter details manually.');
+                }
+            } catch (e) {
+                console.error(e);
+                nameInput.value = originalName;
+                alert('Error fetching data.');
+            } finally {
+                nameInput.disabled = false;
             }
         }
-    });
 
-    async function fetchMetadata(barcode) {
-        // Show loading state?
-        const nameInput = document.getElementById('name');
-        const descInput = document.getElementById('description');
-        const originalName = nameInput.value;
+        // --- Camera Scanner Logic ---
+        let html5QrCode = null;
 
-        nameInput.value = "Searching...";
-        nameInput.disabled = true;
+        function startScanner() {
+            // Wait for modal transition
+            setTimeout(() => {
+                if (!html5QrCode) {
+                    html5QrCode = new Html5Qrcode("reader");
+                }
 
-        try {
-            const res = await fetch(`{{ route('products.lookup') }}?barcode=${barcode}`);
-            const data = await res.json();
+                const onScanSuccess = (decodedText, decodedResult) => {
+                    document.getElementById('barcode').value = decodedText;
+                    stopScanner();
+                    fetchMetadata(decodedText);
+                };
 
-            if (data.success) {
-                nameInput.value = data.data.name;
-                descInput.value = data.data.description;
-                // Optional: Show success toast
-            } else {
-                nameInput.value = originalName; // Revert
-                alert('Product not found in global database. Please enter details manually.');
-            }
-        } catch (e) {
-            console.error(e);
-            nameInput.value = originalName;
-            alert('Error fetching data.');
-        } finally {
-            nameInput.disabled = false;
-        }
-    }
+                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
-    // --- Camera Scanner Logic (Reused from POS) ---
-    let html5QrCode = null;
-
-    function startScanner() {
-        document.getElementById('scanner-modal').classList.remove('hidden');
-
-        if (!html5QrCode) {
-            html5QrCode = new Html5Qrcode("reader");
-        }
-
-        const onScanSuccess = (decodedText, decodedResult) => {
-            console.log(`Code matched = ${decodedText}`, decodedResult);
-
-            document.getElementById('barcode').value = decodedText;
-            stopScanner();
-
-            // Auto fetch
-            fetchMetadata(decodedText);
-        };
-
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-        Html5Qrcode.getCameras().then(devices => {
-            if (devices && devices.length) {
-                const cameraId = devices[0].id;
-                html5QrCode.start(
-                    { facingMode: "environment" },
-                    config,
-                    onScanSuccess
-                ).catch(err => {
-                    alert("Error starting camera: " + err);
+                Html5Qrcode.getCameras().then(devices => {
+                    if (devices && devices.length) {
+                        html5QrCode.start(
+                            { facingMode: "environment" },
+                            config,
+                            onScanSuccess
+                        ).catch(err => {
+                            alert("Error starting camera: " + err);
+                            stopScanner();
+                        });
+                    } else {
+                        alert("No cameras found.");
+                        stopScanner();
+                    }
+                }).catch(err => {
+                    console.error("Error getting cameras", err);
+                    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                        alert("⚠️ Camera Access Error\n\nBrowsers block camera access on insecure (HTTP) connections.\n\nPlease:\n1. Use a USB Barcode Scanner.\n2. Or type the barcode manually.\n3. Or secure this site with HTTPS.");
+                    } else {
+                        alert("Camera permission error: " + err);
+                    }
                     stopScanner();
                 });
-            } else {
-                alert("No cameras found.");
-                stopScanner();
-            }
-        }).catch(err => {
-            alert("Camera permission denied or error: " + err);
-            stopScanner();
-        });
-    }
-
-    function stopScanner() {
-        if (html5QrCode) {
-            html5QrCode.stop().then((ignore) => {
-                document.getElementById('scanner-modal').classList.add('hidden');
-            }).catch((err) => {
-                console.warn("Failed to stop scanner", err);
-                document.getElementById('scanner-modal').classList.add('hidden');
-            });
-        } else {
-            document.getElementById('scanner-modal').classList.add('hidden');
+            }, 300);
         }
-    }
-</script>
+
+        function stopScanner() {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    window.dispatchEvent(new CustomEvent('close-modal'));
+                }).catch((err) => {
+                    console.warn("Failed to stop scanner", err);
+                    window.dispatchEvent(new CustomEvent('close-modal'));
+                });
+            } else {
+                window.dispatchEvent(new CustomEvent('close-modal'));
+            }
+        }
+    </script>
+</x-app-layout>

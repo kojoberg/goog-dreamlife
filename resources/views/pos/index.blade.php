@@ -237,12 +237,12 @@
                 // If instance exists but not running, we might need to restart?
                 // For simplicity, let's just proceed to start.
             } else {
-                 html5QrCode = new Html5Qrcode("reader");
+                html5QrCode = new Html5Qrcode("reader");
             }
 
             const onScanSuccess = (decodedText, decodedResult) => {
                 console.log(`Code matched = ${decodedText}`, decodedResult);
-                
+
                 const searchInput = document.getElementById('search');
                 searchInput.value = decodedText;
 
@@ -263,7 +263,7 @@
                     // Use the first "back" camera or just the first available
                     // Generally the last one in list is the back camera on mobile
                     const cameraId = devices[0].id;
-                    
+
                     html5QrCode.start(
                         { facingMode: "environment" }, // Prefer back camera
                         config,
@@ -279,21 +279,25 @@
                 }
             }).catch(err => {
                 console.error("Error getting cameras", err);
-                alert("Camera permission denied or error: " + err);
+                if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                    alert("⚠️ Camera Access Error\n\nBrowsers block camera access on insecure (HTTP) connections.\n\nPlease:\n1. Use a USB Barcode Scanner (works without camera).\n2. Or type the barcode manually in the search box.\n3. Or secure this site with HTTPS (SSL Certificate).");
+                } else {
+                    alert("Camera scanning error: " + err);
+                }
                 stopScanner();
             });
         }
 
         function stopScanner() {
             if (html5QrCode) {
-                 html5QrCode.stop().then((ignore) => {
+                html5QrCode.stop().then((ignore) => {
                     // Stopping finished.
                     document.getElementById('scanner-modal').classList.add('hidden');
-                 }).catch((err) => {
+                }).catch((err) => {
                     // Stop failed, handle it.
                     console.warn("Failed to stop scanner", err);
                     document.getElementById('scanner-modal').classList.add('hidden');
-                 });
+                });
             } else {
                 document.getElementById('scanner-modal').classList.add('hidden');
             }
@@ -722,7 +726,8 @@
                 return;
             }
 
-            if (!confirm('Process transaction?')) return;
+            // Removed blocking confirm() for smoother flow & testing
+            // if (!confirm('Process transaction?')) return;
 
             try {
                 const response = await fetch('{{ route('pos.store') }}', {

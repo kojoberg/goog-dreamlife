@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Branch;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class BranchController extends Controller
 {
@@ -32,7 +33,16 @@ class BranchController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'location' => 'nullable|string|max:255',
+            'has_cashier' => 'boolean',
         ]);
+
+        if (!Auth::user()->isAdmin()) {
+            unset($validated['has_cashier']);
+        }
+
+        if (!Auth::user()->isAdmin()) {
+            unset($validated['has_cashier']);
+        }
 
         Branch::create($validated);
 
@@ -55,7 +65,12 @@ class BranchController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'location' => 'nullable|string|max:255',
+            'has_cashier' => 'boolean',
         ]);
+
+        if (!Auth::user()->isAdmin()) {
+            unset($validated['has_cashier']);
+        }
 
         $branch->update($validated);
 

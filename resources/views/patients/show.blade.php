@@ -59,7 +59,7 @@
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Purchase History</h3>
                      <ul class="divide-y divide-gray-200">
-                        @forelse($patient->sales as $sale)
+                        @forelse($patient->sales->sortByDesc('created_at')->take(5) as $sale)
                             <li class="py-3">
                                 <div class="flex justify-between items-center">
                                     <div>
@@ -76,6 +76,61 @@
                              <li class="text-gray-500 text-sm">No purchases found.</li>
                         @endforelse
                      </ul>
+                </div>
+
+                <!-- Loyalty History (#9) -->
+                <div class="col-span-1 lg:col-span-2 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <div class="flex justify-between items-center border-b pb-2 mb-4">
+                        <h3 class="text-lg font-bold text-gray-900">Loyalty Points History</h3>
+                        <div class="flex items-center gap-2">
+                            <a href="{{ route('patients.loyalty', $patient) }}" class="text-sm text-blue-600 hover:text-blue-800 hover:underline">View Full History</a>
+                            <span class="bg-indigo-100 text-indigo-800 text-sm font-semibold px-3 py-1 rounded-full">
+                                Balance: {{ $patient->loyalty_points }} pts
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Input</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Change</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Effect</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                             @forelse($patient->sales->where(fn($s) => $s->points_earned > 0 || $s->points_redeemed > 0)->sortByDesc('created_at') as $sale)
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{ $sale->created_at->format('M d, Y H:i') }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        Purchase (Order #{{ $sale->id }})
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        @if($sale->points_earned > 0)
+                                            <span class="text-green-600 font-bold">+{{ $sale->points_earned }}</span>
+                                        @endif
+                                        @if($sale->points_redeemed > 0)
+                                            <span class="text-red-600 font-bold">-{{ $sale->points_redeemed }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        @if($sale->points_redeemed > 0)
+                                            Saved GHS {{ number_format($sale->discount_amount, 2) }}
+                                        @else
+                                            Earned on GHS {{ number_format($sale->total_amount, 2) }}
+                                        @endif
+                                    </td>
+                                </tr>
+                             @empty
+                                <tr>
+                                    <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No loyalty activity yet.</td>
+                                </tr>
+                             @endforelse
+                        </tbody>
+                    </table>
                 </div>
 
             </div>

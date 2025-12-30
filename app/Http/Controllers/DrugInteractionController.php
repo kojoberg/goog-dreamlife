@@ -14,11 +14,11 @@ class DrugInteractionController extends Controller
 
         try {
             $service = new \App\Services\DrugInteractionService();
-            $service->syncInteractions();
+            $count = $service->dispatchSyncJobs();
 
-            return back()->with('success', 'Drug interaction sync initiated and completed for this batch.');
+            return back()->with('success', "Sync initiated for {$count} products in the background.");
         } catch (\Exception $e) {
-            return back()->with('error', 'Sync failed: ' . $e->getMessage());
+            return back()->with('error', 'Sync launch failed: ' . $e->getMessage());
         }
     }
 

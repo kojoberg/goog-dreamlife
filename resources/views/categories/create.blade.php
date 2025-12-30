@@ -1,34 +1,29 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Add New Category') }}
-        </h2>
-    </x-slot>
-
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
-                    <form action="{{ route('categories.store') }}" method="POST">
-                        @csrf
-
-                        <!-- Name -->
-                        <div class="mb-4">
-                            <label for="name" class="block text-gray-700 text-sm font-bold mb-2">Category Name</label>
-                            <input type="text" name="name" id="name"
-                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                required>
-                        </div>
-
-                        <div class="flex items-center justify-between">
-                            <button type="submit"
-                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                                Save Category
-                            </button>
-                        </div>
-                    </form>
-                </div>
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 py-10">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Add Category</h1>
+                <p class="text-slate-500 text-sm mt-1">Create a new product category.</p>
             </div>
+            <a href="{{ route('categories.index') }}"
+                class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold py-2 px-4 rounded-lg shadow-sm transition">
+                &larr; Back to List
+            </a>
         </div>
+
+        <x-card class="max-w-md mx-auto">
+            <form action="{{ route('categories.store') }}" method="POST" class="space-y-6">
+                @csrf
+
+                <x-form-input name="name" label="Category Name" placeholder="e.g. Antibiotics" required autofocus />
+
+                <div class="flex justify-end pt-2">
+                    <x-primary-button>
+                        Save Category
+                    </x-primary-button>
+                </div>
+            </form>
+        </x-card>
     </div>
 </x-app-layout>

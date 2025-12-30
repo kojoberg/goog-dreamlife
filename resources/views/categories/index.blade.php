@@ -27,6 +27,9 @@
                             <tr>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    ID</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Name</th>
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -36,6 +39,7 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach ($categories as $category)
                                 <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-gray-500">{{ $category->id }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $category->name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <a href="{{ route('categories.edit', $category) }}"

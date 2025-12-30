@@ -15,48 +15,112 @@ class ShiftController extends Controller
             ->whereNull('end_time')
             ->first();
 
-        return view('shifts.create', compact('openShift'));
+        $salesTotal = 0;
+        if ($openShift) {
+            // Calculate total sales for this shift
+            // Assuming we only care about CASH sales for the drawer check, 
+            // but for now, let's sum 'amount_tendered' or 'total' where payment is cash?
+            // "Expected Cash" usually implies Cash Sales only.
+
+            $salesTotal = $openShift->sales()
+                ->where('payment_method', 'cash')
+                ->sum('total_amount');
+        }
+
+        return view('shifts.create', compact('openShift', 'salesTotal'));
     }
 
     public function store(Request $request)
     {
-        // Open a shift
-        $request->validate([
-            'starting_cash' => 'required|numeric|min:0',
-        ]);
+        $isCashier = Auth::user()->role === 'cashier';
+
+        // Pharmacists don't need to count cash if cashier enabled (implied by role check request)
+        // If not cashier, we can default starting_cash to 0 or make it optional
+        if ($isCashier) {
+            $request->validate(['starting_cash' => 'required|numeric|min:0']);
+        }
 
         Shift::create([
             'user_id' => Auth::id(),
             'start_time' => now(),
-            'starting_cash' => $request->starting_cash,
+            'starting_cash' => $isCashier ? $request->starting_cash : 0,
         ]);
+
+        if ($isCashier) {
+            return redirect()->route('cashier.index')->with('success', 'Shift opened successfully.');
+        }
 
         return redirect()->route('pos.index')->with('success', 'Shift opened successfully.');
     }
 
     public function update(Request $request, Shift $shift)
     {
-        // Close a shift
-        $request->validate([
-            'actual_cash' => 'required|numeric|min:0',
-        ]);
+        $isCashier = Auth::user()->role === 'cashier';
 
-        // Calculate expected cash 
-        // Expected = Starting + (Cash Sales - Cash Refunds) ... 
-        // For simplicity: Starting + Sum of Sales (Total Amount) for this shift
-        // Ideally we differentiate payment methods (Cash, Card, Momo). 
-        // Assuming all sales are cash for now or we just sum total sales.
+        if ($isCashier) {
+            $request->validate([
+                'actual_cash' => 'required|numeric|min:0',
+                'notes' => 'nullable|string'
+            ]);
+        }
 
-        $totalSales = $shift->sales()->sum('total_amount'); // Add payment method filter later if needed
-        $expected = $shift->starting_cash + $totalSales;
+        // Calculate expected from CASH SALES only (Drawer logic)
+        $cashSales = $shift->sales()->where('payment_method', 'cash')->sum('total_amount');
+        $expected = $shift->starting_cash + $cashSales;
 
         $shift->update([
             'end_time' => now(),
-            'actual_cash' => $request->actual_cash,
+            'actual_cash' => $isCashier ? $request->actual_cash : 0,
             'expected_cash' => $expected,
             'notes' => $request->notes,
         ]);
 
         return redirect()->route('dashboard')->with('success', 'Shift closed.');
+    }
+
+    // Admin: List all shifts
+    public function index()
+    {
+        $shifts = Shift::with('user')->latest()->paginate(20);
+        return view('admin.shifts.index', compact('shifts'));
+    }
+
+    // Admin: Show shift details
+    public function show(Shift $shift)
+    {
+        // Load relationships: User, Sales (and their items for detail?)
+        $shift->load(['user', 'sales.user', 'sales.customer']);
+
+        // Calculate detailed breakdown
+        $cashSales = $shift->sales()->where('payment_method', 'cash')->sum('total_amount');
+        $cardSales = $shift->sales()->where('payment_method', 'card')->sum('total_amount');
+        $momoSales = $shift->sales()->where('payment_method', 'momo')->sum('total_amount'); // Mobile Money
+        $totalSales = $shift->sales()->sum('total_amount');
+
+        $variance = 0;
+        if ($shift->end_time) {
+            $variance = $shift->actual_cash - $shift->expected_cash;
+        }
+
+        return view('admin.shifts.show', compact('shift', 'cashSales', 'cardSales', 'momoSales', 'totalSales', 'variance'));
+    }
+
+
+    public function print(Shift $shift)
+    {
+        // Authorization: Admin or Owner of the shift
+        if (Auth::user()->role !== 'admin' && Auth::id() !== $shift->user_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $shift->load(['user', 'sales']);
+
+        return view('reports.shift_print', compact('shift'));
+    }
+
+    public function myShifts()
+    {
+        $shifts = Shift::where('user_id', Auth::id())->latest()->paginate(10);
+        return view('shifts.my_index', compact('shifts'));
     }
 }

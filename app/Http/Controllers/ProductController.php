@@ -18,17 +18,26 @@ class ProductController extends Controller
         // Let's retrieve all for now if filtered.
 
         if ($request->filter === 'low_stock') {
-            // We can't easily paginate AFTER filtering a collection without manually building a Paginator.
-            // Strategy: Get IDs of low stock items first?
-            // Or better: Filter in memory. If dataset is huge -> performance hit.
-            // Optimized approach: SQL check.
-            // sum(inventory_batches.quantity) <= reorder_level
+            // Use query scope or raw query to allow pagination
+            // "reorder_level" is a column, "stock" is NOT a column (it's likely an accessor or sum of batches).
+            // If 'stock' is calculated via relation, we need a refined query.
+            // Assuming Product hasMany InventoryBatch. 
+            // Simplest fix for MVP: Fetch all, filter, then paginate manually (LengthAwarePaginator).
 
-            // Let's use get() then filter then manual pagination or just show all (assuming < 1000 products for now)
-            $products = $query->get()->filter(function ($p) {
+            $allProducts = $query->get()->filter(function ($p) {
                 return $p->stock <= $p->reorder_level;
             });
-            // No pagination for filtered view to keep it simple
+
+            // Manually Paginate the Collection
+            $page = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
+            $perPage = 10;
+            $products = new \Illuminate\Pagination\LengthAwarePaginator(
+                $allProducts->forPage($page, $perPage),
+                $allProducts->count(),
+                $perPage,
+                $page,
+                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+            );
         } else {
             $products = $query->paginate(10);
         }
@@ -38,12 +47,18 @@ class ProductController extends Controller
 
     public function create()
     {
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
         $categories = Category::all();
         return view('products.create', compact('categories'));
     }
 
     public function store(Request $request)
     {
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'nullable|exists:categories,id',
@@ -86,12 +101,18 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
         $categories = Category::all();
         return view('products.edit', compact('product', 'categories'));
     }
 
     public function update(Request $request, Product $product)
     {
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'nullable|exists:categories,id',
@@ -133,12 +154,18 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
         $product->delete();
         return redirect()->route('products.index')->with('success', 'Product deleted successfully.');
     }
 
     public function importForm()
     {
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
         return view('products.import');
     }
 
@@ -181,6 +208,9 @@ class ProductController extends Controller
 
     public function processImport(Request $request)
     {
+        if (!auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
         $request->validate([
             'file' => 'required|file|mimes:csv,txt|max:2048',
         ]);

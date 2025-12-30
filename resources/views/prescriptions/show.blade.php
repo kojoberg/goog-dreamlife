@@ -49,11 +49,33 @@
 
                     @if($prescription->status === 'pending')
                         <div class="mt-6 border-t pt-4">
-                            <form action="{{ route('prescriptions.dispense', $prescription) }}" method="POST">
+                            <form action="{{ route('prescriptions.dispense', $prescription) }}" method="POST"
+                                onsubmit="return confirm('Are you sure you want to dispense this prescription? Stock will be deduction and a Sale recorded.');">
+                                @csrf
+                                <div class="flex items-center space-x-2">
+                                    <select name="payment_method" class="border-gray-300 rounded-md shadow-sm text-sm"
+                                        required>
+                                        <option value="cash">Cash</option>
+                                        <option value="mobile_money">Mobile Money</option>
+                                        <option value="card">Card</option>
+                                    </select>
+                                    <button type="submit"
+                                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                                        Dispense & Process Sale
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    @endif
+
+                    @if($prescription->status === 'dispensed')
+                        <div class="mt-6 border-t pt-4">
+                            <form action="{{ route('prescriptions.refill', $prescription) }}" method="POST"
+                                onsubmit="return confirm('Create a new refill prescription based on this one?');">
                                 @csrf
                                 <button type="submit"
-                                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                                    Mark as Dispensed
+                                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                    Refill Prescription
                                 </button>
                             </form>
                         </div>
