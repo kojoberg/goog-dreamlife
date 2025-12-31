@@ -185,11 +185,13 @@
                                     class="w-full border rounded p-2">
                             </div>
 
-                            <div class="mb-4">
-                                <label class="block text-sm font-bold mb-1">Amount Tendered</label>
-                                <input type="number" step="0.01" id="amount-tendered" class="w-full border rounded p-2"
-                                    oninput="calculateChange()">
-                            </div>
+                            @if(!Auth::user()->branch || !Auth::user()->branch->has_cashier)
+                                <div class="mb-4">
+                                    <label class="block text-sm font-bold mb-1">Amount Tendered</label>
+                                    <input type="number" step="0.01" id="amount-tendered" class="w-full border rounded p-2"
+                                        oninput="calculateChange()">
+                                </div>
+                            @endif
 
                             <div class="flex justify-between mb-4 text-green-600 font-bold" id="change-display"
                                 style="display:none">
@@ -427,8 +429,12 @@
 
         async function addToCart(product) {
             // 1. Check for Interactions
+            // 1. Check for Interactions
             const cartIds = cart.map(item => item.id);
+            // Even if cart is empty, we might want to know if the NEW product interacts with ITSELF (rare, but let's stick to B-to-B)
+            // Logic requires at least 1 item in cart + new item.
             if (cartIds.length > 0) {
+                console.log("Checking interactions...", cartIds, product.id);
                 try {
                     const res = await fetch('{{ route('pos.check-interactions') }}', {
                         method: 'POST',
@@ -668,11 +674,9 @@
 
         function calculateRedemption() {
             if (!document.getElementById('redeem-check').checked) {
-                // Remove discount visually from total? 
-                // For now, we handle logic in backend, but frontend total display 
-                // might need adjustment if we want to show "Net Payable".
-                // Let's just update the "Value" text for now.
                 document.getElementById('redeem-value').innerText = '0.00';
+                // Reset to subtotal
+                document.getElementById('cart-total').innerText = 'GHS ' + total.toFixed(2);
                 return;
             }
 
@@ -682,8 +686,14 @@
                 document.getElementById('redeem-amount').value = points;
             }
 
-            const value = points * loyaltyPointValue;
-            document.getElementById('redeem-value').innerText = value.toFixed(2);
+            const discountValue = points * loyaltyPointValue;
+            let netPayable = total - discountValue;
+            if (netPayable < 0) netPayable = 0;
+
+            document.getElementById('redeem-value').innerText = discountValue.toFixed(2);
+
+            // Visual Update: Show Net Payable
+            document.getElementById('cart-total').innerText = 'GHS ' + netPayable.toFixed(2);
         }
 
         async function openQuickRegister() {

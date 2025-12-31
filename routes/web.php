@@ -55,12 +55,14 @@ Route::middleware('auth')->group(function () {
         Route::resource('categories', \App\Http\Controllers\CategoryController::class);
 
         // Product Management
+        // Products & Inventory
         Route::get('products/import', [\App\Http\Controllers\ProductController::class, 'importForm'])->name('products.import');
         Route::get('products/import/template', [\App\Http\Controllers\ProductController::class, 'downloadTemplate'])->name('products.import.template');
         Route::post('products/import', [\App\Http\Controllers\ProductController::class, 'processImport'])->name('products.import.store');
         Route::get('products/lookup', [\App\Http\Controllers\ProductController::class, 'lookup'])->name('products.lookup');
         Route::resource('products', \App\Http\Controllers\ProductController::class);
 
+        Route::get('inventory/history', [\App\Http\Controllers\InventoryController::class, 'history'])->name('inventory.history');
         Route::resource('inventory', \App\Http\Controllers\InventoryController::class);
 
         // Clinical

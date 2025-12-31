@@ -55,6 +55,10 @@ class RefundController extends Controller
             'status' => 'pending'
         ]);
 
+        // Notify Admins
+        $admins = \App\Models\User::where('role', 'admin')->get();
+        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\RefundRequestNotification($sale, Auth::user()));
+
         return back()->with('success', 'Refund request submitted for approval.');
     }
 

@@ -27,11 +27,16 @@
                                 <p class="text-xs text-gray-500 mt-1">Enter the total cash currently in the drawer.</p>
                             </div>
                         @else
-                            <div class="bg-blue-50 p-4 rounded mb-4 text-blue-800 text-sm">
-                                As a <strong>{{ ucfirst(Auth::user()->role) }}</strong>, you are not managing the cash drawer
-                                directly.
-                                Click below to start your shift.
-                            </div>
+                            @if(Auth::user()->branch && Auth::user()->branch->has_cashier)
+                                <p class="text-sm text-yellow-700 mt-2">
+                                    As a <strong>{{ ucfirst(Auth::user()->role) }}</strong>, you are not managing the cash drawer
+                                    directly. Click below to start your shift.
+                                </p>
+                            @else
+                                <p class="text-sm text-blue-700 mt-2">
+                                    Click below to start your shift.
+                                </p>
+                            @endif
                         @endif
 
                         <button type="submit"

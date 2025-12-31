@@ -63,9 +63,11 @@ class DrugInteractionService
     public function processProduct(Product $product)
     {
         // 1. Fetch Interactions from OpenFDA
-        // We search for labels that mention this drug in their interactions section.
-        // The results represent the "Other Drug" in the interaction pair.
-        $interactingLabels = $this->fetchInteractionsFromOpenFDA($product->name);
+        // Sanitize name: remove dosage (e.g. 500mg, 5 ml) to get the generic name for search
+        $cleanName = preg_replace('/\s+\d+[\d\.]*[a-zA-Z]+\b/', '', $product->name);
+        $cleanName = trim($cleanName);
+
+        $interactingLabels = $this->fetchInteractionsFromOpenFDA($cleanName);
 
         if (empty($interactingLabels)) {
             $product->update(['last_interaction_sync' => now()]);
@@ -79,12 +81,14 @@ class DrugInteractionService
             $genericNames = $label['openfda']['generic_name'] ?? [];
             $potentialNames = array_merge($brandNames, $genericNames);
 
+            // Clean potential names too (remove duplicates, normalize)
+            $potentialNames = array_unique(array_map('trim', $potentialNames));
+
             if (empty($potentialNames)) {
                 continue;
             }
 
             // Extract the detailed interaction text
-            // The field is usually an array of strings (paragraphs)
             $interactionText = $label['drug_interactions'] ?? [];
             if (is_array($interactionText)) {
                 $interactionText = implode("\n\n", $interactionText);
@@ -97,12 +101,16 @@ class DrugInteractionService
             }
 
             if (empty($description)) {
-                $description = "OpenFDA Warning: The label for {$potentialNames[0]} mentions an interaction queries.";
+                $description = "OpenFDA Warning: The label for {$cleanName} mentions an interaction.";
             }
 
             // Find valid local products that match any of these names
-            // Simple WHERE IN match for now. Could be improved with fuzzy search.
-            $matchingProducts = Product::whereIn('name', $potentialNames)
+            // Improved Matching: Check if local product name STARTS WITH any of the potential names
+            $matchingProducts = Product::where(function ($query) use ($potentialNames) {
+                foreach ($potentialNames as $name) {
+                    $query->orWhere('name', 'LIKE', $name . '%'); // e.g. "Warfarin" matches "Warfarin 5mg"
+                }
+            })
                 ->where('id', '!=', $product->id)
                 ->get();
 
@@ -116,7 +124,7 @@ class DrugInteractionService
                         'drug_b_id' => $drugB,
                     ],
                     [
-                        'severity' => 'Moderate', // Default to moderate as we don't parse severity yet
+                        'severity' => 'Moderate',
                         'description' => $description,
                         'source' => 'OpenFDA'
                     ]
@@ -126,7 +134,7 @@ class DrugInteractionService
         }
 
         $product->update(['last_interaction_sync' => now()]);
-        Log::info("Synced interactions for {$product->name} via OpenFDA. Found/Verified {$count} local links.");
+        Log::info("Synced interactions for {$cleanName} via OpenFDA. Found/Verified {$count} local links.");
     }
 
     /**

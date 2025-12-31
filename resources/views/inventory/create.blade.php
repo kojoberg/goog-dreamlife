@@ -1,8 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Receive New Stock') }}
-        </h2>
+        <div class="flex justify-between items-center">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                {{ __('Receive New Stock') }}
+            </h2>
+            <a href="{{ route('inventory.history') }}"
+                class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded border border-gray-300">
+                View History
+            </a>
+        </div>
     </x-slot>
 
     <div class="py-12">
@@ -51,9 +57,12 @@
 
 
 
-                        <!-- Supplier -->
                         <div class="mb-4">
-                            <label for="supplier_id" class="block text-gray-700 text-sm font-bold mb-2">Supplier</label>
+                            <div class="flex justify-between items-center mb-2">
+                                <label for="supplier_id" class="block text-gray-700 text-sm font-bold">Supplier</label>
+                                <a href="{{ route('suppliers.index') }}"
+                                    class="text-sm text-blue-600 hover:text-blue-900">+ New Supplier</a>
+                            </div>
                             <select name="supplier_id" id="supplier_id"
                                 class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                                 <option value="">Select Supplier...</option>
@@ -141,7 +150,7 @@
                 let debugMsg = `<div class="text-[10px] text-gray-500 mt-1 bg-gray-50 p-1 rounded border">
                     Parsed: GTIN=${p.gtin || 'N/A'}, Batch=${p.batch || 'N/A'}, Exp=${p.expiry || 'N/A'}
                 </div>`;
-                
+
                 // 1. Fill Fields
                 if (p.batch) document.getElementById('batch_number').value = p.batch;
                 if (p.expiry) document.getElementById('expiry_date').value = p.expiry;
@@ -171,13 +180,13 @@
                     if (match) {
                         select.selectedIndex = i;
                         found = true;
-                        
+
                         let msg = `<span class="text-green-600 font-bold">Product Found: ${select.options[i].text}</span>`;
-                        if(p.batch || p.expiry) msg += ' <span class="text-blue-600 text-xs">(GS1 Data Filled)</span>';
+                        if (p.batch || p.expiry) msg += ' <span class="text-blue-600 text-xs">(GS1 Data Filled)</span>';
                         msg += debugMsg;
-                        
+
                         document.getElementById('scan-status').innerHTML = msg;
-                        this.value = ''; 
+                        this.value = '';
                         break;
                     }
                 }
@@ -200,8 +209,8 @@
                 const ai17 = code.match(/\(17\)(\d{6,8})/);
                 if (ai17) result.expiry = formatGS1Date(ai17[1]);
 
-                const ai11 = code.match(/\(11\)(\d{6,8})/); 
-                
+                const ai11 = code.match(/\(11\)(\d{6,8})/);
+
                 const ai10 = code.match(/\(10\)([^\(\)]+)/);
                 if (ai10) result.batch = ai10[1];
 
@@ -209,58 +218,58 @@
             }
 
             // Raw Loop with Lookahead
-            const knownAIs = ['01', '10', '11', '15', '17', '21', '30']; 
+            const knownAIs = ['01', '10', '11', '15', '17', '21', '30'];
             const startsWithAI = (s) => knownAIs.some(a => s.startsWith(a));
 
             let loops = 0;
-            while(temp.length > 0 && loops < 20) {
+            while (temp.length > 0 && loops < 20) {
                 loops++;
-                
+
                 if (temp.startsWith('01') && temp.length >= 16) {
                     result.gtin = temp.substring(2, 16);
                     temp = temp.substring(16);
-                } 
+                }
                 else if (temp.startsWith('11') || temp.startsWith('17') || temp.startsWith('15')) {
                     // Dates: 11 (Prod), 17 (Exp), 15 (BestBefore)
                     let ai = temp.substring(0, 2);
                     let rest = temp.substring(2);
-                    
+
                     let cand6 = rest.substring(0, 6);
                     let cand8 = rest.substring(0, 8);
-                    
+
                     let valid6 = isValidYYMMDD(cand6) || isValidYYYYMM(cand6);
                     let valid8 = (rest.length >= 8) && isValidYYYYMMDD(cand8);
-                    
+
                     let take8 = false;
 
                     if (valid6 && valid8) {
                         let follow6 = rest.substring(6);
                         let follow8 = rest.substring(8);
-                        
+
                         let aiAfter6 = startsWithAI(follow6);
                         let aiAfter8 = startsWithAI(follow8);
-                        
+
                         if (aiAfter6 && !aiAfter8) take8 = false;
                         else if (!aiAfter6 && aiAfter8) take8 = true;
                         else take8 = false; // Default to 6
-                    } 
+                    }
                     else if (valid8) take8 = true;
                     else take8 = false;
 
                     let len = take8 ? 8 : 6;
                     let val = rest.substring(0, len);
-                    let isYm = isValidYYYYMM(val) && !isValidYYMMDD(val); 
-                    
+                    let isYm = isValidYYYYMM(val) && !isValidYYMMDD(val);
+
                     if (ai === '17') result.expiry = formatGS1Date(val, isYm);
-                    
+
                     temp = temp.substring(2 + len);
                 }
                 else if (temp.startsWith('10')) {
                     result.batch = temp.substring(2);
-                    temp = ""; 
+                    temp = "";
                 }
-                else if (temp.startsWith('21')) { 
-                     temp = ""; 
+                else if (temp.startsWith('21')) {
+                    temp = "";
                 }
                 else {
                     break;
@@ -271,35 +280,35 @@
         }
 
         function isValidYYYYMM(d) {
-             if (!d || d.length !== 6) return false;
-             // Heuristic: Ends in 01-12, Starts with 19 or 20
-             if (!d.startsWith('19') && !d.startsWith('20')) return false; 
-             let mm = parseInt(d.substring(4, 6));
-             if (mm < 1 || mm > 12) return false;
-             return true;
+            if (!d || d.length !== 6) return false;
+            // Heuristic: Ends in 01-12, Starts with 19 or 20
+            if (!d.startsWith('19') && !d.startsWith('20')) return false;
+            let mm = parseInt(d.substring(4, 6));
+            if (mm < 1 || mm > 12) return false;
+            return true;
         }
 
         function isValidYYMMDD(d) {
-             if (!d || d.length !== 6) return false;
-             let mm = parseInt(d.substring(2, 4));
-             let dd = parseInt(d.substring(4, 6));
-             if (mm < 1 || mm > 12) return false;
-             if (dd < 0 || dd > 31) return false; // 00 allowed sometimes
-             return true;
+            if (!d || d.length !== 6) return false;
+            let mm = parseInt(d.substring(2, 4));
+            let dd = parseInt(d.substring(4, 6));
+            if (mm < 1 || mm > 12) return false;
+            if (dd < 0 || dd > 31) return false; // 00 allowed sometimes
+            return true;
         }
 
         function isValidYYYYMMDD(d) {
-             if (!d || d.length !== 8) return false;
-             let mm = parseInt(d.substring(4, 6));
-             let dd = parseInt(d.substring(6, 8));
-             if (mm < 1 || mm > 12) return false;
-             if (dd < 0 || dd > 31) return false;
-             return true;
+            if (!d || d.length !== 8) return false;
+            let mm = parseInt(d.substring(4, 6));
+            let dd = parseInt(d.substring(6, 8));
+            if (mm < 1 || mm > 12) return false;
+            if (dd < 0 || dd > 31) return false;
+            return true;
         }
 
         function formatGS1Date(dateStr, isYYYYMM = false) {
             if (!dateStr) return null;
-            
+
             // YYYYMMDD
             if (dateStr.length === 8) {
                 let yyyy = dateStr.substring(0, 4);
@@ -310,10 +319,10 @@
             }
 
             if (isYYYYMM) {
-                 let yyyy = dateStr.substring(0, 4);
-                 let mm = dateStr.substring(4, 6);
-                 let dd = '01'; 
-                 return `${yyyy}-${mm}-${dd}`;
+                let yyyy = dateStr.substring(0, 4);
+                let mm = dateStr.substring(4, 6);
+                let dd = '01';
+                return `${yyyy}-${mm}-${dd}`;
             }
 
             // YYMMDD
@@ -322,7 +331,7 @@
                 let mm = dateStr.substring(2, 4);
                 let dd = dateStr.substring(4, 6);
                 let year = (yy >= 50) ? (1900 + yy) : (2000 + yy);
-                if (dd === '00') dd = '01'; 
+                if (dd === '00') dd = '01';
                 return `${year}-${mm}-${dd}`;
             }
 
@@ -360,15 +369,15 @@
 
             Html5Qrcode.getCameras().then(devices => {
                 if (devices && devices.length) {
-                     // Try to find back camera
-                     let cameraId = devices[0].id;
-                     for(let d of devices) {
-                         if(d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('environment')) {
-                             cameraId = d.id;
-                             break;
-                         }
-                     }
-                    
+                    // Try to find back camera
+                    let cameraId = devices[0].id;
+                    for (let d of devices) {
+                        if (d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('environment')) {
+                            cameraId = d.id;
+                            break;
+                        }
+                    }
+
                     html5QrCode.start(
                         cameraId,
                         config,

@@ -57,8 +57,8 @@
     <div class="text-center">
         @if($settings->logo_path)
             <?php 
-                                        $logoPath = storage_path('app/public/' . $settings->logo_path); 
-                                    ?>
+                                            $logoPath = storage_path('app/public/' . $settings->logo_path); 
+                                        ?>
             @if(file_exists($logoPath))
                 <img src="data:image/{{ pathinfo($logoPath, PATHINFO_EXTENSION) }};base64,{{ base64_encode(file_get_contents($logoPath)) }}"
                     alt="Logo" style="max-width: 100%; max-height: 120px; height: auto; width: auto; margin-bottom: 15px;">
@@ -209,7 +209,7 @@
             </div>
         @endif
 
-        <div class="text-center" style="margin-top: 20px;">
+        <div class="footer-print" style="margin-top: 20px; text-align: center;">
             <p>Thank you for your patronage!</p>
             <p>Software powered by UviTech, Inc.</p>
         </div>
@@ -220,5 +220,23 @@
             <a href="{{ route('pos.index') }}">Back to POS</a>
         </div>
 </body>
+
+<style>
+    @media print {
+        .footer-print {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            padding-bottom: 10px;
+        }
+
+        body {
+            padding-bottom: 50px;
+            /* Space for footer */
+        }
+    }
+</style>
 
 </html>

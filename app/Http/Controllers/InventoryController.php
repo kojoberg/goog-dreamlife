@@ -57,4 +57,15 @@ class InventoryController extends Controller
 
         return redirect()->route('inventory.index')->with('success', 'Stock received successfully.');
     }
+    /**
+     * Show history of received stock.
+     */
+    public function history()
+    {
+        $batches = InventoryBatch::with(['product', 'supplier'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return view('inventory.history', compact('batches'));
+    }
 }
