@@ -146,111 +146,11 @@ class PosController extends Controller
                 $taxBreakdown = null;
             }
 
-            // Validate Amount Tendered (if provided)
-            // Validate Amount Tendered (if provided) - ONLY if direct completion (not Cashier Mode)
-            // In Cashier Mode, tendered is handled later.
-            $user = Auth::user();
-            $hasCashier = $user->branch && $user->branch->has_cashier;
-
-            if (!$hasCashier && $request->has('amount_tendered') && $request->amount_tendered < $grandTotal) {
-                throw new \Exception("Amount tendered is less than the total payable (GHS " . number_format($grandTotal, 2) . ")");
-            }
-
-            // 3. Create Sale Record
-            // Check for Cashier Mode (Split Workflow)
-            $user = Auth::user();
-            $hasCashier = $user->branch && $user->branch->has_cashier;
-
-            $status = $hasCashier ? 'pending_payment' : 'completed';
-
-            // If pending, tendered is 0 for now (Cashier will update)
-            // If completed, validation ensures tendered >= total (Line 150)
-
-            // Get current open shift
-            $shift = \App\Models\Shift::where('user_id', Auth::id())
-                ->whereNull('end_time')
-                ->first();
-
-            $amountTendered = $hasCashier ? 0 : ($request->amount_tendered ?? $grandTotal);
-            $changeAmount = $amountTendered - $grandTotal;
-
-            $sale = Sale::create([
-                'user_id' => Auth::id(),
-                'patient_id' => $request->patient_id ?? null, // Can be null
-                'shift_id' => $shift ? $shift->id : null,
-                'subtotal' => $subtotal,
-                'tax_amount' => $totalTax,
-                'total_amount' => $grandTotal,
-                'amount_tendered' => $amountTendered,
-                'change_amount' => $changeAmount,
-                'payment_method' => $request->payment_method,
-                'tax_breakdown' => $taxBreakdown,
-                'status' => $status
-            ]);
-
-            // 4. Process Grid Items & Deduct Stock
-            foreach ($request->cart as $item) {
-                $product = Product::find($item['id']);
-                $qtyNeeded = $item['qty'];
-
-                if ($product->product_type === 'service') {
-                    // Just create SaleItem, no stock deduction
-                    // Resolve price again to be safe
-                    $branchId = Auth::user()->branch_id;
-                    $unitPrice = $product->getPriceForBranch($branchId);
-
-                    $saleItem = SaleItem::create([
-                        'sale_id' => $sale->id,
-                        'product_id' => $product->id,
-                        'batch_id' => null, // No batch for services
-                        'quantity' => $qtyNeeded,
-                        'unit_price' => $unitPrice,
-                        'subtotal' => $qtyNeeded * $unitPrice,
-                    ]);
-                    continue; // Skip batch logic
-                }
-
-                // FIFO Stock Deduction for GOODS via Service
-                $deductions = $this->inventoryService->deductStock($product, $qtyNeeded);
-
-                foreach ($deductions as $deduction) {
-                    SaleItem::create([
-                        'sale_id' => $sale->id,
-                        'product_id' => $product->id,
-                        'batch_id' => $deduction['batch_id'],
-                        'quantity' => $deduction['quantity'],
-                        'unit_price' => $product->getPriceForBranch(Auth::user()->branch_id),
-                        'subtotal' => $deduction['quantity'] * $product->getPriceForBranch(Auth::user()->branch_id),
-                    ]);
-                }
-
-                if (isset($qtyToFulfill) && $qtyToFulfill > 0) {
-                    throw new \Exception("Insufficient stock for product: " . $product->name);
-                }
-
-                // 3. Refill Reminder
-                // We use the last created saleItem for the link.
-                if ($product->is_chronic && $request->patient_id) {
-                    $cartItem = collect($request->cart)->firstWhere('id', $product->id);
-                    $daysSupply = $cartItem['days_supply'] ?? 30;
-
-                    if ($daysSupply > 0 && isset($saleItem)) {
-                        $saleItem->update(['days_supply' => $daysSupply]);
-
-                        \App\Models\RefillQueue::create([
-                            'patient_id' => $request->patient_id,
-                            'sale_item_id' => $saleItem->id,
-                            'product_name' => $product->name,
-                            'scheduled_date' => now()->addDays($daysSupply - 2),
-                            'status' => 'pending'
-                        ]);
-                    }
-                }
-            }
-
-            // --- LOYALTY PROGRAM LOGIC ---
+            // --- LOYALTY PROGRAM LOGIC (MOVED UP) ---
             $settings = Setting::first();
             $discountValue = 0;
+            $pointsToRedeem = 0;
+            $pointsEarned = 0;
 
             // 1. Redemption (Calculate Discount)
             if ($request->redeem_points && $request->patient_id) {
@@ -267,25 +167,38 @@ class PosController extends Controller
 
                     // Deduct Points
                     $patient->decrement('loyalty_points', $pointsToRedeem);
-
-                    // Update Sale
-                    $sale->points_redeemed = $pointsToRedeem;
-                    $sale->discount_amount = $discountValue;
-
-                    // Adjust Total Amount (Net Payable)
-                    $sale->total_amount = $grandTotal - $discountValue;
-                    // Note: Tax is still based on the original subtotal (statutory requirement usually).
                 }
             }
 
-            // 2. Earning (Based on Net Paybale Amount, or Gross? Usually Net)
-            // Let's assume points are earned on the amount actually paid (Net).
+            // Calculate Final Payable Amount
             $netPayable = $grandTotal - $discountValue;
 
+            // 3. Create Sale Record
+            // Check for Cashier Mode (Split Workflow)
+            $user = Auth::user();
+            $hasCashier = $user->branch && $user->branch->has_cashier;
+
+            // Validate Amount Tendered (if provided) - ONLY if direct completion (not Cashier Mode)
+            if (!$hasCashier && $request->has('amount_tendered') && $request->amount_tendered < $netPayable) {
+                throw new \Exception("Amount tendered is less than the total payable (GHS " . number_format($netPayable, 2) . ")");
+            }
+
+            $status = $hasCashier ? 'pending_payment' : 'completed';
+
+            // Get current open shift
+            $shift = \App\Models\Shift::where('user_id', Auth::id())
+                ->whereNull('end_time')
+                ->first();
+
+            $amountTendered = $hasCashier ? 0 : ($request->amount_tendered ?? $netPayable);
+            $changeAmount = $amountTendered - $netPayable;
+
+            // 2. Earning (Based on Net Paybale Amount)
             if ($request->patient_id && $settings->loyalty_spend_per_point > 0 && $netPayable > 0) {
                 $pointsEarned = floor($netPayable / $settings->loyalty_spend_per_point);
                 if ($pointsEarned > 0) {
-                    $sale->points_earned = $pointsEarned;
+                    // We update the patient points typically AFTER success, but decrement was already done.
+                    // Increment is fine here since transaction rollbacks cover it.
                     $patient = Patient::find($request->patient_id);
                     if ($patient) {
                         $patient->increment('loyalty_points', $pointsEarned);
@@ -293,8 +206,22 @@ class PosController extends Controller
                 }
             }
 
-            $sale->patient_id = $request->patient_id;
-            $sale->save();
+            $sale = Sale::create([
+                'user_id' => Auth::id(),
+                'patient_id' => $request->patient_id ?? null,
+                'shift_id' => $shift ? $shift->id : null,
+                'subtotal' => $subtotal,
+                'tax_amount' => $totalTax,
+                'discount_amount' => $discountValue, // Save discount
+                'total_amount' => $netPayable, // Save discounted total
+                'amount_tendered' => $amountTendered,
+                'change_amount' => $changeAmount,
+                'payment_method' => $request->payment_method,
+                'tax_breakdown' => $taxBreakdown,
+                'points_redeemed' => $pointsToRedeem,
+                'points_earned' => $pointsEarned,
+                'status' => $status
+            ]);
             // -----------------------------
 
             DB::commit();

@@ -74,4 +74,14 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Branch::class);
     }
+
+    public function shifts()
+    {
+        return $this->hasMany(Shift::class);
+    }
+
+    public function hasOpenShift()
+    {
+        return $this->shifts()->whereNull('end_time')->exists();
+    }
 }

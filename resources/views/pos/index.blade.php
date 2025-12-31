@@ -719,9 +719,15 @@
             }
         }
 
+        // Checkout Logic
+        let hasCashier = {{ (Auth::user()->branch && Auth::user()->branch->has_cashier) ? 'true' : 'false' }};
+
         async function checkout() {
             const method = document.getElementById('payment-method').value;
-            const tendered = parseFloat(document.getElementById('amount-tendered').value) || 0;
+            // Get value safely (element might not exist)
+            const tenderedEl = document.getElementById('amount-tendered');
+            const tendered = tenderedEl ? (parseFloat(tenderedEl.value) || 0) : 0;
+
             const redeemPoints = document.getElementById('redeem-check').checked ? (document.getElementById('redeem-amount').value || 0) : 0;
 
             // Calculate Payble
@@ -731,7 +737,8 @@
             }
             if (payable < 0) payable = 0;
 
-            if (tendered < payable) {
+            // Validation: Only enforce full payment if NOT in cashier mode
+            if (!hasCashier && tendered < payable) {
                 alert(`Amount tendered is less than payable amount (GHS ${payable.toFixed(2)})!`);
                 return;
             }

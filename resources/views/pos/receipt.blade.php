@@ -57,8 +57,8 @@
     <div class="text-center">
         @if($settings->logo_path)
             <?php 
-                                            $logoPath = storage_path('app/public/' . $settings->logo_path); 
-                                        ?>
+                                                    $logoPath = storage_path('app/public/' . $settings->logo_path); 
+                                                ?>
             @if(file_exists($logoPath))
                 <img src="data:image/{{ pathinfo($logoPath, PATHINFO_EXTENSION) }};base64,{{ base64_encode(file_get_contents($logoPath)) }}"
                     alt="Logo" style="max-width: 100%; max-height: 120px; height: auto; width: auto; margin-bottom: 15px;">
@@ -182,15 +182,6 @@
             <td class="right">{{ $settings->currency_symbol }} {{ number_format($sale->total_amount, 2) }}</td>
         </tr>
 
-        @if($sale->status === 'pending_payment')
-            <div class="text-center bold" style="margin: 10px 0; border: 2px solid #000; padding: 5px;">
-                PAYMENT PENDING
-            </div>
-            <div class="text-center" style="font-size: 12px;">
-                Please pay at the Cashier.
-            </div>
-        @endif
-
         @if($sale->status === 'completed' && $sale->amount_tendered > 0)
             <tr>
                 <td>Tendered ({{ ucfirst($sale->payment_method) }})</td>
@@ -201,42 +192,36 @@
                 <td class="right">{{ number_format($sale->change_amount, 2) }}</td>
             </tr>
         @endif
+    </table>
 
-        @if($sale->patient)
-            <div style="font-size: 12px; margin-top: 10px; text-align: center;">
-                Loyalty Points Earned: {{ $sale->points_earned }} <br>
-                Current Balance: {{ $sale->patient->loyalty_points }}
-            </div>
-        @endif
-
-        <div class="footer-print" style="margin-top: 20px; text-align: center;">
-            <p>Thank you for your patronage!</p>
-            <p>Software powered by UviTech, Inc.</p>
+    @if($sale->status === 'pending_payment')
+        <div class="text-center bold" style="margin: 10px 0; border: 2px solid #000; padding: 5px;">
+            PAYMENT PENDING
         </div>
-
-        <div class="text-center no-print" style="margin-top: 30px;">
-            <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px;">Print Receipt</button>
-            <br><br>
-            <a href="{{ route('pos.index') }}">Back to POS</a>
+        <div class="text-center" style="font-size: 12px;">
+            Please pay at the Cashier.
         </div>
+    @endif
+
+    @if($sale->patient)
+        <div style="font-size: 12px; margin-top: 10px; text-align: center;">
+            Loyalty Points Earned: {{ $sale->points_earned }} <br>
+            Current Balance: {{ $sale->patient->loyalty_points }}
+        </div>
+    @endif
+
+    <div class="footer-print" style="margin-top: 20px; text-align: center;">
+        <p>Thank you for your patronage!</p>
+        <p>Software powered by UviTech, Inc.</p>
+    </div>
+
+    <div class="text-center no-print" style="margin-top: 30px;">
+        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px;">Print Receipt</button>
+        <br><br>
+        <a href="{{ route('pos.index') }}">Back to POS</a>
+    </div>
 </body>
 
-<style>
-    @media print {
-        .footer-print {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            text-align: center;
-            padding-bottom: 10px;
-        }
 
-        body {
-            padding-bottom: 50px;
-            /* Space for footer */
-        }
-    }
-</style>
 
 </html>

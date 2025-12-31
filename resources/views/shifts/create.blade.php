@@ -18,7 +18,9 @@
                             <p class="text-sm text-gray-500">Record your shift start time.</p>
                         </div>
 
-                        @if(Auth::user()->role === 'cashier')
+                        {{-- Show Cash Input if User is Cashier OR Branch has NO dedicated cashier (User manages drawer)
+                        --}}
+                        @if(Auth::user()->role === 'cashier' || (Auth::user()->branch && !Auth::user()->branch->has_cashier))
                             <div class="mb-4">
                                 <label class="block text-sm font-bold mb-2">Starting Cash (Drawer Float)</label>
                                 <input type="number" step="0.01" name="starting_cash"
@@ -27,16 +29,10 @@
                                 <p class="text-xs text-gray-500 mt-1">Enter the total cash currently in the drawer.</p>
                             </div>
                         @else
-                            @if(Auth::user()->branch && Auth::user()->branch->has_cashier)
-                                <p class="text-sm text-yellow-700 mt-2">
-                                    As a <strong>{{ ucfirst(Auth::user()->role) }}</strong>, you are not managing the cash drawer
-                                    directly. Click below to start your shift.
-                                </p>
-                            @else
-                                <p class="text-sm text-blue-700 mt-2">
-                                    Click below to start your shift.
-                                </p>
-                            @endif
+                            <p class="text-sm text-yellow-700 mt-2">
+                                As a <strong>{{ ucfirst(Auth::user()->role) }}</strong>, you are not managing the cash drawer
+                                directly. Click below to start your shift.
+                            </p>
                         @endif
 
                         <button type="submit"
@@ -51,7 +47,7 @@
                         <p class="text-sm text-gray-500">Shift started at: {{ $openShift->start_time->format('H:i') }}</p>
                     </div>
 
-                    @if(Auth::user()->role === 'cashier')
+                    @if(Auth::user()->role === 'cashier' || (Auth::user()->branch && !Auth::user()->branch->has_cashier))
                         <div class="bg-gray-50 p-4 rounded mb-6 text-sm">
                             <div class="flex justify-between mb-2">
                                 <span>Starting Cash:</span>
@@ -73,7 +69,7 @@
                         @csrf
                         @method('PUT')
 
-                        @if(Auth::user()->role === 'cashier')
+                        @if(Auth::user()->role === 'cashier' || (Auth::user()->branch && !Auth::user()->branch->has_cashier))
                             <div class="mb-4">
                                 <label class="block text-sm font-bold mb-2">Actual Cash Count (Drawer)</label>
                                 <input type="number" step="0.01" name="actual_cash"

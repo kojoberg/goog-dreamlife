@@ -103,8 +103,22 @@ class PrescriptionController extends Controller
                 'total_amount' => $totalAmount,
                 'subtotal' => $totalAmount, // Assuming no tax/discount logic for simple dispense yet
                 'tax_amount' => 0,
-                'payment_method' => $request->payment_method ?? 'cash', // From form
+                'payment_method' => $request->payment_method ?? 'cash',
             ]);
+
+            // --- LOYALTY POINTS LOGIC ---
+            $settings = \App\Models\Setting::first();
+            if ($settings && $settings->loyalty_spend_per_point > 0 && $totalAmount > 0) {
+                $pointsEarned = floor($totalAmount / $settings->loyalty_spend_per_point);
+                if ($pointsEarned > 0) {
+                    $sale->update(['points_earned' => $pointsEarned]);
+                    $patient = \App\Models\Patient::find($prescription->patient_id);
+                    if ($patient) {
+                        $patient->increment('loyalty_points', $pointsEarned);
+                    }
+                }
+            }
+            // ----------------------------
 
             // 3. Process Items & Inventory
             foreach ($itemsToProcess as $item) {
