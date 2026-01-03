@@ -19,7 +19,12 @@ class HomeController extends Controller
         // 1. Key Metrics
         $todaySalesQuery = Sale::whereDate('created_at', Carbon::today());
         if (!$isAdmin) {
-            $todaySalesQuery->where('user_id', $user->id);
+            $todaySalesQuery->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhereHas('shift', function ($subQ) use ($user) {
+                        $subQ->where('user_id', $user->id);
+                    });
+            });
         }
         $todaySales = $todaySalesQuery->sum('total_amount');
 
@@ -36,6 +41,8 @@ class HomeController extends Controller
             return $product->stock <= $product->reorder_level;
         })->count();
 
+        $totalPatients = \App\Models\Patient::count();
+
         // 2. Chart Data (Last 7 Days)
         // Generate last 7 days array
         $dates = collect();
@@ -47,7 +54,12 @@ class HomeController extends Controller
             ->where('created_at', '>=', Carbon::now()->subDays(6)->startOfDay());
 
         if (!$isAdmin) {
-            $salesDataQuery->where('user_id', $user->id);
+            $salesDataQuery->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhereHas('shift', function ($subQ) use ($user) {
+                        $subQ->where('user_id', $user->id);
+                    });
+            });
         }
 
         $salesData = $salesDataQuery->groupBy('date')
@@ -67,7 +79,12 @@ class HomeController extends Controller
         // 3. Recent Transactions
         $recentSalesQuery = Sale::with('user')->latest();
         if (!$isAdmin) {
-            $recentSalesQuery->where('user_id', $user->id);
+            $recentSalesQuery->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhereHas('shift', function ($subQ) use ($user) {
+                        $subQ->where('user_id', $user->id);
+                    });
+            });
         }
         $recentSales = $recentSalesQuery->take(5)->get();
 
@@ -77,7 +94,9 @@ class HomeController extends Controller
             'lowStockCount',
             'displayDates',
             'totals',
-            'recentSales'
+            'totals',
+            'recentSales',
+            'totalPatients'
         ));
     }
 }

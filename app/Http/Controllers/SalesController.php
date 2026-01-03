@@ -12,10 +12,16 @@ class SalesController extends Controller
      */
     public function index()
     {
-        $query = Sale::with(['user', 'patient']);
+        $query = Sale::with(['user', 'patient', 'shift.user']);
 
         if (!auth()->user()->isAdmin()) {
-            $query->where('user_id', auth()->id());
+            $user = auth()->user();
+            $query->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhereHas('shift', function ($subQ) use ($user) {
+                        $subQ->where('user_id', $user->id);
+                    });
+            });
         }
 
         $sales = $query->latest()->paginate(15);

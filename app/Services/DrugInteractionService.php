@@ -2,164 +2,147 @@
 
 namespace App\Services;
 
-use App\Models\Product;
 use App\Models\DrugInteraction;
+use App\Models\Product;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class DrugInteractionService
 {
-    protected $baseUrl = 'https://rxnav.nlm.nih.gov/REST/';
+    protected $baseUrl = 'https://rxnav.nlm.nih.gov/REST';
 
     /**
-     * Main entry point: Syncs interactions for all products or a specific one.
+     * Resolve and Cache RxCUI for a product.
      */
+    public function resolveRxCui(Product $product)
+    {
+        // Skip if already has RxCUI or is a service/device
+        if ($product->rxcui || $product->product_type !== 'goods') {
+            return $product->rxcui;
+        }
+
+        // Clean name (remove dosage/form for search if needed, but RxNav approximate matching handles well)
+        // For better results, stripping dosage might help if precise match fails, but let's try raw name first.
+        // Or search 'approximateTerm'
+        $response = Http::get("{$this->baseUrl}/approximateTerm.json", [
+            'term' => $product->name,
+            'maxEntries' => 1
+        ]);
+
+        if ($response->successful()) {
+            $data = $response->json();
+            $candidates = $data['approximateGroup']['candidate'] ?? [];
+
+            if (!empty($candidates)) {
+                $candidateRxcui = $candidates[0]['rxcui'];
+
+                // Refine to Ingredient (IN) or Precise Ingredient (PIN) to ensuring matching with Interaction API outputs
+                $relatedResponse = Http::get("{$this->baseUrl}/rxcui/{$candidateRxcui}/related.json", ['tty' => 'IN']);
+
+                $finalRxcui = $candidateRxcui; // Fallback
+
+                if ($relatedResponse->successful()) {
+                    $relatedData = $relatedResponse->json();
+                    $conceptGroup = $relatedData['relatedGroup']['conceptGroup'] ?? [];
+                    foreach ($conceptGroup as $group) {
+                        if ($group['tty'] === 'IN' && !empty($group['conceptProperties'])) {
+                            $finalRxcui = $group['conceptProperties'][0]['rxcui'];
+                            break;
+                        }
+                    }
+                }
+
+                $product->update(['rxcui' => $finalRxcui]);
+                Log::info("Resolved RxCUI for {$product->name}: $finalRxcui (Original: $candidateRxcui)");
+                return $finalRxcui;
+            }
+        }
+
+        Log::warning("Could not resolve RxCUI for {$product->name}");
+        return null;
+    }
+
     /**
-     * Dispatch sync jobs for background processing.
+     * Sync interactions for all products.
      */
     public function dispatchSyncJobs()
     {
-        $products = Product::where('product_type', 'goods')
-            ->orderBy('last_interaction_sync', 'asc')
-            ->get();
+        // For simplicity in this iteration, we run sync synchronously or dispatch a command.
+        // Let's implement the logic to check interactions for a single product here, 
+        // and loop in the command/controller.
 
-        foreach ($products as $p) {
-            \App\Jobs\SyncDrugInteractionsJob::dispatch($p);
-        }
-
-        return count($products);
-    }
-
-    /**
-     * Main entry point: Syncs interactions for all products or a specific one.
-     * @deprecated Use dispatchSyncJobs for bulk updates to avoid timeouts.
-     */
-    public function syncInteractions(?Product $product = null)
-    {
-        if ($product) {
-            $this->processProduct($product);
-        } else {
-            // Process all products, prioritize those never synced
-            $products = Product::where('product_type', 'goods') // Only physical drugs
-                ->orderBy('last_interaction_sync', 'asc')
-                ->get();
-
-            foreach ($products as $p) {
-                $this->processProduct($p);
-                // Sleep to be nice to the API
-                usleep(200000); // 200ms
-            }
-        }
-    }
-
-    /**
-     * Process a single product: identify RxCUI and fetch matches
-     */
-    /**
-     * Process a single product: Search OpenFDA for interactions.
-     * Strategy: Search for OTHER drugs whose label warns about THIS drug.
-     * Query: drug_interactions:"Product Name"
-     */
-    public function processProduct(Product $product)
-    {
-        // 1. Fetch Interactions from OpenFDA
-        // Sanitize name: remove dosage (e.g. 500mg, 5 ml) to get the generic name for search
-        $cleanName = preg_replace('/\s+\d+[\d\.]*[a-zA-Z]+\b/', '', $product->name);
-        $cleanName = trim($cleanName);
-
-        $interactingLabels = $this->fetchInteractionsFromOpenFDA($cleanName);
-
-        if (empty($interactingLabels)) {
-            $product->update(['last_interaction_sync' => now()]);
-            return;
-        }
+        $products = Product::where('product_type', 'goods')->whereNotNull('rxcui')->get();
+        // Since API rate limits exist, we should process in chunks or job queue.
+        // For "MVP" feature: Loop all products with RxCUIs.
 
         $count = 0;
-        foreach ($interactingLabels as $label) {
-            // Extract potential names for the interacting drug
-            $brandNames = $label['openfda']['brand_name'] ?? [];
-            $genericNames = $label['openfda']['generic_name'] ?? [];
-            $potentialNames = array_merge($brandNames, $genericNames);
-
-            // Clean potential names too (remove duplicates, normalize)
-            $potentialNames = array_unique(array_map('trim', $potentialNames));
-
-            if (empty($potentialNames)) {
-                continue;
-            }
-
-            // Extract the detailed interaction text
-            $interactionText = $label['drug_interactions'] ?? [];
-            if (is_array($interactionText)) {
-                $interactionText = implode("\n\n", $interactionText);
-            }
-
-            // Truncate if too long (e.g. 1000 chars) to be safe for UI/DB
-            $description = substr($interactionText, 0, 1000);
-            if (strlen($interactionText) > 1000) {
-                $description .= '... (consult full label)';
-            }
-
-            if (empty($description)) {
-                $description = "OpenFDA Warning: The label for {$cleanName} mentions an interaction.";
-            }
-
-            // Find valid local products that match any of these names
-            // Improved Matching: Check if local product name STARTS WITH any of the potential names
-            $matchingProducts = Product::where(function ($query) use ($potentialNames) {
-                foreach ($potentialNames as $name) {
-                    $query->orWhere('name', 'LIKE', $name . '%'); // e.g. "Warfarin" matches "Warfarin 5mg"
-                }
-            })
-                ->where('id', '!=', $product->id)
-                ->get();
-
-            foreach ($matchingProducts as $otherProduct) {
-                $drugA = $product->id < $otherProduct->id ? $product->id : $otherProduct->id;
-                $drugB = $product->id < $otherProduct->id ? $otherProduct->id : $product->id;
-
-                DrugInteraction::updateOrCreate(
-                    [
-                        'drug_a_id' => $drugA,
-                        'drug_b_id' => $drugB,
-                    ],
-                    [
-                        'severity' => 'Moderate',
-                        'description' => $description,
-                        'source' => 'OpenFDA'
-                    ]
-                );
-                $count++;
-            }
+        foreach ($products as $product) {
+            $this->findInteractionsFor($product);
+            $count++;
         }
 
-        $product->update(['last_interaction_sync' => now()]);
-        Log::info("Synced interactions for {$cleanName} via OpenFDA. Found/Verified {$count} local links.");
+        return $count;
     }
 
     /**
-     * Fetch labels of drugs that interact with the given drug name.
+     * Find interactions for a specific product against ALL other known products.
+     * RxNav interaction/interaction.json?rxcui=... returns ALL interactions for that drug.
+     * We then filter that list against proper RxCUIs we have in our DB.
      */
-    protected function fetchInteractionsFromOpenFDA($drugName)
+    public function findInteractionsFor(Product $product)
     {
-        try {
-            // Search for labels where 'drug_interactions' field contains the drug name.
-            // Limit to 50 to avoid huge payloads, can paginate if needed.
-            $response = Http::timeout(20)->get('https://api.fda.gov/drug/label.json', [
-                'search' => 'drug_interactions:"' . $drugName . '"',
-                'limit' => 100
-            ]);
+        if (!$product->rxcui)
+            return;
 
-            if ($response->successful()) {
-                $data = $response->json();
-                return $data['results'] ?? [];
+        $response = Http::get("{$this->baseUrl}/interaction/interaction.json", [
+            'rxcui' => $product->rxcui
+        ]);
+
+        if ($response->successful()) {
+            $data = $response->json();
+            $interactionTypeGroup = $data['interactionTypeGroup'] ?? [];
+
+            foreach ($interactionTypeGroup as $group) {
+                foreach ($group['interactionType'] ?? [] as $type) {
+                    foreach ($type['interactionPair'] ?? [] as $pair) {
+                        // The pair contains the interaction concept.
+                        // We need to check if the *other* drug in the pair exists in our DB.
+
+                        $otherRxcui = $pair['interactionConcept'][1]['minConceptItem']['rxcui'];
+                        $description = $pair['description'];
+                        $severity = 'moderate'; // RxNav doesn't always strictly give mild/severe in this endpoint, default to moderate or parse description.
+
+                        // Find matching product in DB
+                        $otherProduct = Product::where('rxcui', $otherRxcui)->first();
+
+                        if ($otherProduct && $otherProduct->id !== $product->id) {
+                            $this->recordInteraction($product, $otherProduct, $severity, $description);
+                        }
+                    }
+                }
             }
-        } catch (\Exception $e) {
-            Log::error("OpenFDA Search Error for {$drugName}: " . $e->getMessage());
         }
-
-        return [];
     }
 
-    // Deprecated helpers removed (findRxCui, fetchInteractionsFromApi)
+    protected function recordInteraction(Product $a, Product $b, $severity, $description)
+    {
+        // Avoid duplicate (A-B vs B-A)
+        // We enforce A < B by ID
+        $firstId = $a->id < $b->id ? $a->id : $b->id;
+        $secondId = $a->id < $b->id ? $b->id : $a->id;
+
+        $exists = DrugInteraction::where('drug_a_id', $firstId)
+            ->where('drug_b_id', $secondId)
+            ->exists();
+
+        if (!$exists) {
+            DrugInteraction::create([
+                'drug_a_id' => $firstId,
+                'drug_b_id' => $secondId,
+                'severity' => $severity,
+                'description' => substr($description, 0, 500) // Truncate if too long
+            ]);
+            Log::info("Recorded interaction: {$a->name} <-> {$b->name}");
+        }
+    }
 }

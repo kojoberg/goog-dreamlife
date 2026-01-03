@@ -129,12 +129,18 @@
                                 <x-dropdown-link :href="route('shifts.my_index')">
                                     {{ __('My Shift Reports') }}
                                 </x-dropdown-link>
+                                <x-dropdown-link :href="route('refunds.my-history')">
+                                    {{ __('My Refunds') }}
+                                </x-dropdown-link>
                                 @if(Auth::user()->isAdmin())
                                     <x-dropdown-link :href="route('admin.shifts.index')" class="bg-blue-50 border-b">
                                         {{ __('Shift Reports') }}
                                     </x-dropdown-link>
                                     <x-dropdown-link :href="route('expenses.index')">
                                         {{ __('Expenses') }}
+                                    </x-dropdown-link>
+                                    <x-dropdown-link :href="route('admin.refunds.index')">
+                                        {{ __('Refund Approvals') }}
                                     </x-dropdown-link>
                                 @endif
                             </x-slot>

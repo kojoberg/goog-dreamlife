@@ -38,7 +38,8 @@
                 <div class="text-center mb-6 hidden print-block">
                     <h1 class="text-2xl font-bold">Sales Report</h1>
                     <p class="text-gray-600">Period: {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} -
-                        {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}</p>
+                        {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
+                    </p>
                 </div>
 
                 <div class="mb-6">
@@ -50,7 +51,8 @@
                         </div>
                         <div class="bg-gray-50 p-4 rounded">
                             <span class="block text-gray-500 text-sm">Total Revenue</span>
-                            <span class="text-xl font-bold text-green-600">${{ number_format($totalSales, 2) }}</span>
+                            <span class="text-xl font-bold text-green-600">GHS
+                                {{ number_format($totalSales, 2) }}</span>
                         </div>
                     </div>
                 </div>
@@ -74,15 +76,18 @@
                         @foreach($sales as $sale)
                             <tr>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {{ $sale->created_at->format('Y-m-d H:i') }}</td>
+                                    {{ $sale->created_at->format('Y-m-d H:i') }}
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {{ $sale->reference_number ?? 'SALE-' . $sale->id }}</td>
+                                    {{ $sale->reference_number ?? 'SALE-' . $sale->id }}
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {{ $sale->user->name ?? 'Unknown' }}</td>
+                                    {{ $sale->user->name ?? 'Unknown' }}
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $sale->items->count() }}
                                     items</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold">
-                                    ${{ number_format($sale->total_amount, 2) }}</td>
+                                    GHS {{ number_format($sale->total_amount, 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>

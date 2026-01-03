@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'shift.open' => \App\Http\Middleware\EnsureShiftIsOpen::class,
             'role' => \App\Http\Middleware\CheckRole::class,
         ]);
+
+        $middleware->web(append: [
+            \App\Http\Middleware\EnsureAppSetup::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

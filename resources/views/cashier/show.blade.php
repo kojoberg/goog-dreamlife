@@ -10,11 +10,7 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
 
-                    @if(session('error'))
-                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-                            {{ session('error') }}
-                        </div>
-                    @endif
+
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Invoice Details -->

@@ -2,12 +2,10 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Cashier Dashboard - Pending Invoices') }}
+                {{ __('My Payment History') }}
             </h2>
-            <a href="{{ route('cashier.history') }}"
-                class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded text-sm">
-                View Payment History
-            </a>
+            <a href="{{ route('cashier.index') }}"
+                class="text-sm text-indigo-600 hover:text-indigo-900 font-bold">&larr; Back to Pending</a>
         </div>
     </x-slot>
 
@@ -16,14 +14,10 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
 
-
-
-                    @if($pendingSales->isEmpty())
+                    @if($sales->isEmpty())
                         <div class="text-center py-10 text-gray-500">
-                            <p class="text-xl">No pending invoices found.</p>
-                            <p class="text-sm mt-2">New invoices from the pharmacy will appear here.</p>
-                            <a href="{{ route('cashier.index') }}"
-                                class="mt-4 inline-block bg-indigo-100 text-indigo-700 px-4 py-2 rounded">Refresh</a>
+                            <p class="text-xl">No payment history found.</p>
+                            <p class="text-sm mt-2">Transactions processed during your shifts will appear here.</p>
                         </div>
                     @else
                         <div class="overflow-x-auto">
@@ -35,30 +29,29 @@
                                             Invoice #</th>
                                         <th
                                             class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Time</th>
+                                            Date/Time</th>
                                         <th
                                             class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Patient</th>
                                         <th
                                             class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Amount (GHS)</th>
+                                            Total (GHS)</th>
                                         <th
                                             class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Status</th>
+                                            Method</th>
                                         <th
                                             class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Action</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    @foreach($pendingSales as $sale)
+                                    @foreach($sales as $sale)
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap font-mono text-sm text-gray-900">
                                                 #{{ str_pad($sale->id, 6, '0', STR_PAD_LEFT) }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {{ $sale->created_at->format('H:i:s') }} <br>
-                                                <span class="text-xs">{{ $sale->created_at->diffForHumans() }}</span>
+                                                {{ $sale->updated_at->format('M d, Y H:i') }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 {{ $sale->patient ? $sale->patient->name : 'Walk-in Customer' }}
@@ -66,16 +59,13 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-gray-900">
                                                 {{ number_format($sale->total_amount, 2) }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                                <span
-                                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                                    Pending Payment
-                                                </span>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                {{ ucfirst($sale->payment_method) }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <a href="{{ route('cashier.show', $sale) }}"
-                                                    class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded">
-                                                    Process Payment
+                                                <a href="{{ route('pos.receipt', $sale->id) }}" target="_blank"
+                                                    class="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1 rounded">
+                                                    View Receipt
                                                 </a>
                                             </td>
                                         </tr>
@@ -83,7 +73,12 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <div class="mt-4">
+                            {{ $sales->links() }}
+                        </div>
                     @endif
+
                 </div>
             </div>
         </div>

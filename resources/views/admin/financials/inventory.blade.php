@@ -22,11 +22,11 @@
                 <div class="grid grid-cols-2 gap-4 mb-8">
                     <div class="bg-blue-50 p-4 rounded">
                         <span class="block text-gray-500 text-sm">Total Retail Value</span>
-                        <span class="text-xl font-bold text-blue-700">${{ number_format($totalValue, 2) }}</span>
+                        <span class="text-xl font-bold text-blue-700">GHS {{ number_format($totalValue, 2) }}</span>
                     </div>
                     <div class="bg-yellow-50 p-4 rounded">
                         <span class="block text-gray-500 text-sm">Total Cost Value</span>
-                        <span class="text-xl font-bold text-yellow-700">${{ number_format($totalCost, 2) }}</span>
+                        <span class="text-xl font-bold text-yellow-700">GHS {{ number_format($totalCost, 2) }}</span>
                     </div>
                 </div>
 
@@ -50,15 +50,17 @@
                         @foreach($products->sortByDesc(fn($p) => $p->stock * $p->unit_price)->take(50) as $product)
                             <tr>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {{ $product->name }}</td>
+                                    {{ $product->name }}
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">
-                                    {{ $product->stock }}</td>
+                                    {{ $product->stock }}
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">
-                                    ${{ number_format($product->cost_price, 2) }}</td>
+                                    GHS {{ number_format($product->cost_price, 2) }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500">
-                                    ${{ number_format($product->unit_price, 2) }}</td>
+                                    GHS {{ number_format($product->unit_price, 2) }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold">
-                                    ${{ number_format($product->stock * $product->unit_price, 2) }}</td>
+                                    GHS {{ number_format($product->stock * $product->unit_price, 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>

@@ -22,8 +22,10 @@ trait HasBranchScope
                 // For now, let's strictly enforce branch if set, unless explicitly ignored.
 
                 if ($user->branch_id) {
-                    $builder->where('branch_id', $user->branch_id);
-                    // Note: You must ensure tables using this trait actually have 'branch_id'
+                    $builder->where(function ($query) use ($user) {
+                        $query->where('branch_id', $user->branch_id)
+                            ->orWhereNull('branch_id');
+                    });
                 }
             }
         });

@@ -18,6 +18,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Default Users Removed for Fresh Install Workflow
+        // The Setup Wizard will handle the creation of the first Admin and Branch.
+
+        /*
         // Admin User
         User::create([
             'name' => 'Administrator',
@@ -41,6 +45,7 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password'),
             'role' => 'cashier',
         ]);
+        */
 
         // Sample Data Removed for Clean Install
         // Users will create their own Suppliers, Categories, and Products.

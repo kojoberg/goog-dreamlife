@@ -88,6 +88,14 @@ class PosController extends Controller
             // 'amount_tendered' => 'required|numeric', // Check logic later
         ]);
 
+        // Enforce Shift Check
+        if (!Auth::user()->hasOpenShift()) {
+            return response()->json([
+                'success' => false, // or handle as error 
+                'message' => 'You must open a shift before processing sales.'
+            ], 403);
+        }
+
         try {
             DB::beginTransaction();
 
@@ -222,7 +230,44 @@ class PosController extends Controller
                 'points_earned' => $pointsEarned,
                 'status' => $status
             ]);
-            // -----------------------------
+
+            // 4. Process Items & Deduct Stock
+            foreach ($request->cart as $cartItem) {
+                $product = Product::find($cartItem['id']);
+                $qtyRequested = $cartItem['qty'];
+
+                // Re-fetch price to be safe/consistent
+                $branchId = Auth::user()->branch_id;
+                $unitPrice = $product->getPriceForBranch($branchId);
+
+                // Try to deduct stock
+                // This throws Exception if Refill failed or insufficient
+                $deductions = $this->inventoryService->deductStock($product, $qtyRequested);
+
+                if (empty($deductions) && $product->product_type === 'service') {
+                    // Service Item (No Batch)
+                    SaleItem::create([
+                        'sale_id' => $sale->id,
+                        'product_id' => $product->id,
+                        'batch_id' => null,
+                        'quantity' => $qtyRequested,
+                        'unit_price' => $unitPrice,
+                        'subtotal' => $qtyRequested * $unitPrice,
+                    ]);
+                } else {
+                    // Physical Items (Batched)
+                    foreach ($deductions as $deduction) {
+                        SaleItem::create([
+                            'sale_id' => $sale->id,
+                            'product_id' => $product->id,
+                            'batch_id' => $deduction['batch_id'],
+                            'quantity' => $deduction['quantity'],
+                            'unit_price' => $unitPrice,
+                            'subtotal' => $deduction['quantity'] * $unitPrice,
+                        ]);
+                    }
+                }
+            }
 
             DB::commit();
 

@@ -46,10 +46,7 @@ class ShiftController extends Controller
             'starting_cash' => $isCashier ? $request->starting_cash : 0,
         ]);
 
-        if ($isCashier) {
-            return redirect()->route('cashier.index')->with('success', 'Shift opened successfully.');
-        }
-
+        // Redirect everyone to POS for unified experience
         return redirect()->route('pos.index')->with('success', 'Shift opened successfully.');
     }
 

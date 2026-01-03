@@ -1,0 +1,38 @@
+[
+    {
+        "drug_a": "Aspirin",
+        "drug_b": "Warfarin",
+        "severity": "severe",
+        "description": "Significantly increased risk of bleeding. Concurrent use should generally be avoided unless strictly monitored."
+    },
+    {
+        "drug_a": "Ibuprofen",
+        "drug_b": "Warfarin",
+        "severity": "severe",
+        "description": "NSAIDs like Ibuprofen increase the risk of bleeding when taken with Warfarin. Avoid combination."
+    },
+    {
+        "drug_a": "Sildenafil",
+        "drug_b": "Nitroglycerin",
+        "severity": "severe",
+        "description": "FATAL HYPOTENSION risk. Never combine Sildenafil (Viagra) with Nitrates (GTN)."
+    },
+    {
+        "drug_a": "Simvastatin",
+        "drug_b": "Clarithromycin",
+        "severity": "severe",
+        "description": "Increased risk of myopathy/rhabdomyolysis. Suspend Simvastatin while taking Clarithromycin."
+    },
+    {
+        "drug_a": "Amitriptyline",
+        "drug_b": "Tramadol",
+        "severity": "moderate",
+        "description": "Increased risk of Serotonin Syndrome and seizures."
+    },
+    {
+        "drug_a": "Ciprofloxacin",
+        "drug_b": "Theophylline",
+        "severity": "moderate",
+        "description": "Ciprofloxacin may increase the serum concentration of Theophylline, leading to toxicity."
+    }
+]

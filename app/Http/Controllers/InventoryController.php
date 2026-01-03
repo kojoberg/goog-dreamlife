@@ -7,8 +7,19 @@ use App\Models\Product;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 
+use Illuminate\Support\Facades\Artisan;
+
 class InventoryController extends Controller
 {
+    /**
+     * Import standard interactions.
+     */
+    public function importStandardInteractions()
+    {
+        Artisan::call('interactions:import-standard');
+        return back()->with('success', 'Standard interactions imported successfully.');
+    }
+
     /**
      * Display current inventory batches.
      */
@@ -67,5 +78,13 @@ class InventoryController extends Controller
             ->paginate(20);
 
         return view('inventory.history', compact('batches'));
+    }
+    /**
+     * Show detailed view of a stock batch.
+     */
+    public function show($id)
+    {
+        $batch = InventoryBatch::with(['product', 'supplier'])->findOrFail($id);
+        return view('inventory.show', compact('batch'));
     }
 }

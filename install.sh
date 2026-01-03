@@ -106,7 +106,7 @@ npm install
 npm run build
 
 echo -e "${GREEN}[6/7] Migrating Database...${NC}"
-php artisan migrate --force --seed
+php artisan migrate:fresh --force --seed
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache

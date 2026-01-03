@@ -10,6 +10,10 @@ Route::get('/', function () {
     return view('welcome', compact('gitVersion'));
 });
 
+// Setup Routes (Accessible only if Middleware redirects or manually visited when no users)
+Route::get('/setup', [\App\Http\Controllers\SetupController::class, 'index'])->name('setup.index');
+Route::post('/setup', [\App\Http\Controllers\SetupController::class, 'store'])->name('setup.store');
+
 Route::get('/dashboard', [\App\Http\Controllers\HomeController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
@@ -30,6 +34,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/shifts/my-history', [\App\Http\Controllers\ShiftController::class, 'myShifts'])->name('shifts.my_index');
         Route::get('/shifts/{shift}/print', [\App\Http\Controllers\ShiftController::class, 'print'])->name('shifts.print');
         Route::resource('sales', \App\Http\Controllers\SalesController::class)->only(['index', 'show']);
+        Route::get('/cashier/history', [\App\Http\Controllers\CashierController::class, 'history'])->name('cashier.history');
         Route::resource('cashier', \App\Http\Controllers\CashierController::class)->only(['index', 'show', 'update'])->parameters(['cashier' => 'sale']);
 
         // Patients
@@ -37,8 +42,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/patients/api/store', [\App\Http\Controllers\PatientController::class, 'apiStore'])->name('patients.api.store');
     });
 
-    // --- Active POS Interface (Admin & Pharmacist Only) ---
-    Route::middleware(['role:admin,pharmacist', 'shift.open'])->group(function () {
+    // --- Active POS Interface (Admin, Pharmacist & Cashier) ---
+    Route::middleware(['role:admin,pharmacist,cashier', 'shift.open'])->group(function () {
         Route::get('/pos', [\App\Http\Controllers\PosController::class, 'index'])->name('pos.index');
         Route::post('/pos/checkout', [\App\Http\Controllers\PosController::class, 'store'])->name('pos.store');
         Route::post('/pos/check-interactions', [\App\Http\Controllers\PosController::class, 'checkInteractions'])->name('pos.check-interactions');
@@ -64,6 +69,8 @@ Route::middleware('auth')->group(function () {
 
         Route::get('inventory/history', [\App\Http\Controllers\InventoryController::class, 'history'])->name('inventory.history');
         Route::resource('inventory', \App\Http\Controllers\InventoryController::class);
+        Route::post('inventory/import-interactions', [\App\Http\Controllers\InventoryController::class, 'importStandardInteractions'])->name('inventory.import-interactions');
+
 
         // Clinical
         Route::get('/patients/{patient}/loyalty', [\App\Http\Controllers\PatientController::class, 'loyaltyHistory'])->name('patients.loyalty');
@@ -89,6 +96,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware(['auth'])->group(function () {
         // Cashier/Pharmacist can request
         Route::post('/sales/{sale}/refund', [\App\Http\Controllers\RefundController::class, 'store'])->name('refunds.store');
+        Route::get('/refunds/my-history', [\App\Http\Controllers\RefundController::class, 'myHistory'])->name('refunds.my-history');
     });
 
     // --- Administration (Admin Only) ---

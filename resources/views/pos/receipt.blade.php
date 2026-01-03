@@ -57,8 +57,8 @@
     <div class="text-center">
         @if($settings->logo_path)
             <?php 
-                                                    $logoPath = storage_path('app/public/' . $settings->logo_path); 
-                                                ?>
+                                                                $logoPath = storage_path('app/public/' . $settings->logo_path); 
+                                                            ?>
             @if(file_exists($logoPath))
                 <img src="data:image/{{ pathinfo($logoPath, PATHINFO_EXTENSION) }};base64,{{ base64_encode(file_get_contents($logoPath)) }}"
                     alt="Logo" style="max-width: 100%; max-height: 120px; height: auto; width: auto; margin-bottom: 15px;">
@@ -95,9 +95,15 @@
                 <td class="right">{{ str_pad($sale->id, 6, '0', STR_PAD_LEFT) }}</td>
             </tr>
             <tr>
-                <td>Cashier:</td>
-                <td class="right">{{ $sale->user->name ?? 'N/A' }}</td>
+                <td>Prescribed/Served By:</td>
+                <td class="right">{{ $sale->user ? $sale->user->name : 'N/A' }}</td>
             </tr>
+            @if($sale->shift && $sale->shift->user)
+                <tr>
+                    <td>Cashier:</td>
+                    <td class="right">{{ $sale->shift->user->name }}</td>
+                </tr>
+            @endif
             @if($sale->patient)
                 <tr>
                     <td>Customer:</td>
@@ -216,9 +222,55 @@
     </div>
 
     <div class="text-center no-print" style="margin-top: 30px;">
-        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px;">Print Receipt</button>
+        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">Print
+            Receipt</button>
         <br><br>
-        <a href="{{ route('pos.index') }}">Back to POS</a>
+
+        @auth
+            @if($sale->status === 'completed' && !$sale->refund)
+                <div x-data="{ open: false }" style="margin-bottom: 20px;">
+                    <button @click="open = true"
+                        style="color: red; text-decoration: underline; background: none; border: none; cursor: pointer; font-size: 14px;">
+                        Request Refund
+                    </button>
+
+                    <!-- Refund Modal (Simple JS/CSS for standalone page) -->
+                    <div x-show="open"
+                        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+                        <div
+                            style="background: white; width: 90%; max-width: 400px; margin: 100px auto; padding: 20px; border-radius: 8px; text-align: left;">
+                            <h3 style="margin-top: 0;">Request Refund</h3>
+                            <p>Please provide a reason for this refund request.</p>
+
+                            <form action="{{ route('refunds.store', $sale) }}" method="POST">
+                                @csrf
+                                <textarea name="reason" rows="3" required
+                                    style="width: 100%; padding: 8px; margin-bottom: 10px;"
+                                    placeholder="Reason (e.g., Wrong item, customer changed mind)"></textarea>
+
+                                <div style="text-align: right;">
+                                    <button type="button" @click="open = false"
+                                        style="padding: 8px 16px; margin-right: 10px; cursor: pointer;">Cancel</button>
+                                    <button type="submit"
+                                        style="padding: 8px 16px; background: red; color: white; border: none; border-radius: 4px; cursor: pointer;">Submit
+                                        Request</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <!-- Load Alpine.js for this page if not present in layout (Receipt is standalone) -->
+                <script src="//unpkg.com/alpinejs" defer></script>
+            @elseif($sale->refund)
+                <p style="color: orange; font-style: italic;">Refund Status: {{ ucfirst($sale->refund->status) }}</p>
+            @endif
+        @endauth
+
+        @if(auth()->check() && auth()->user()->isCashier())
+            <a href="{{ route('cashier.index') }}">Back to Dashboard</a>
+        @else
+            <a href="{{ route('pos.index') }}">Back to POS</a>
+        @endif
     </div>
 </body>
 

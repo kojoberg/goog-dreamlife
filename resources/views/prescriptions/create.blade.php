@@ -1,9 +1,14 @@
 <x-app-layout>
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 py-10" x-data="{ 
-            medications: [{name: '', product_id: '', dosage: '', frequency: '', quantity: '', days_supply: '', refill_reminder: false}],
+            medications: [{name: '', product_id: '', dosage: '', frequency: '', quantity: '', days_supply: '', refill_reminder: false, price: 0}],
             showPatientModal: false,
             newPatient: { name: '', phone: '', email: '' },
             patientError: '',
+            get totalCost() {
+                return this.medications.reduce((sum, med) => {
+                    return sum + (med.price * (med.quantity || 0));
+                }, 0).toFixed(2);
+            },
             async savePatient() {
                 this.patientError = '';
                 if (!this.newPatient.name) {
@@ -96,7 +101,7 @@
                         <div class="flex justify-between items-center mb-4 border-b pb-2">
                             <h3 class="text-lg font-semibold text-slate-800">Medications</h3>
                             <button type="button"
-                                @click="medications.push({name: '', product_id: '', dosage: '', frequency: '', quantity: '', days_supply: '', refill_reminder: false})"
+                                @click="medications.push({name: '', product_id: '', dosage: '', frequency: '', quantity: '', days_supply: '', refill_reminder: false, price: 0})"
                                 class="text-sm text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                     stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
@@ -158,8 +163,9 @@
                                                         med.product_id = product.id;
                                                         med.name = product.name;
                                                         med.dosage = product.dosage || '';
-                                                        med.form = product.form || ''; 
-                                                        med.route = product.route || '';
+                                                        med.frequency = ''; // Specific to prescription, reset or keep default
+                                                        med.route = product.drug_route || ''; // DB column is drug_route
+                                                        med.price = parseFloat(product.unit_price || 0);
                                                         search = product.name;
                                                         showResults = false;
                                                     "
@@ -263,9 +269,12 @@
 
                     </x-card>
 
-                    <div class="mt-6 flex justify-end">
+                    <div class="mt-6 flex flex-col items-end">
+                        <div class="mb-4 text-xl font-bold text-slate-800" x-show="totalCost > 0">
+                            Estimated Total: GHS <span x-text="totalCost"></span>
+                        </div>
                         <x-primary-button class="px-8 py-3 text-lg shadow-lg">
-                            Dispense Prescription
+                            Create Prescription
                         </x-primary-button>
                     </div>
                 </div>

@@ -10,15 +10,15 @@ class DrugInteractionController extends Controller
 {
     public function sync()
     {
-        set_time_limit(300); // 5 minutes
+        set_time_limit(600); // 10 minutes
 
         try {
-            $service = new \App\Services\DrugInteractionService();
-            $count = $service->dispatchSyncJobs();
+            // Run the command to ensure RxCUI resolution happens first
+            \Illuminate\Support\Facades\Artisan::call('drugs:sync');
 
-            return back()->with('success', "Sync initiated for {$count} products in the background.");
+            return back()->with('success', "Sync completed successfully.");
         } catch (\Exception $e) {
-            return back()->with('error', 'Sync launch failed: ' . $e->getMessage());
+            return back()->with('error', 'Sync failed: ' . $e->getMessage());
         }
     }
 

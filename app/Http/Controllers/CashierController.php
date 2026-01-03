@@ -18,14 +18,7 @@ class CashierController extends Controller
         $branchId = Auth::user()->branch_id;
 
         // Fetch valid pending sales for this branch
-        // Note: Sale model uses HasBranchScope, but we should be explicit or rely on Global Scope if active.
-        // Assuming global scope handles it, or manual where.
-        // Also assuming 'pending_payment' status.
-
         $pendingSales = Sale::where('status', 'pending_payment')
-            // If Branch Scope isn't global, we'd add where('branch_id', $branchId) - but Sale logic usually implies current context via User relation?
-            // Actually Sale stores user_id. We need to filter sales by Branch of the CREATOR or explicit branch_id column if it existed.
-            // Our schema has user_id. User belongs to Branch.
             ->whereHas('user', function ($q) use ($branchId) {
                 $q->where('branch_id', $branchId);
             })
@@ -37,10 +30,53 @@ class CashierController extends Controller
     }
 
     /**
+     * Display sales history processed by this cashier.
+     */
+    public function history()
+    {
+        // Sales processed by this cashier are linked to their shifts
+        $sales = Sale::where('status', 'completed')
+            ->whereHas('shift', function ($q) {
+                $q->where('user_id', Auth::id());
+            })
+            ->with(['patient', 'items'])
+            ->latest()
+            ->paginate(20);
+
+        return view('cashier.history', compact('sales'));
+    }
+
+    /**
      * Show the payment form for a specific sale.
      */
     public function show(Sale $sale)
     {
+        // Enforce Shift Check
+        if (!Auth::user()->hasOpenShift()) {
+            return redirect()->route('shifts.create')
+                ->with('error', 'You must open a shift before processing payments.');
+        }
+
+        $sale->load('items.product', 'patient', 'user');
+        return view('cashier.show', compact('sale'));
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     * This method might be used to select a sale for payment after a shift check.
+     */
+    public function store(Request $request)
+    {
+        // Enforce Shift Check
+        if (!Auth::user()->hasOpenShift()) {
+            return redirect()->route('shifts.create')
+                ->with('error', 'You must open a shift before processing payments.');
+        }
+
+        $sale = Sale::findOrFail($request->sale_id);
+        // The original snippet had 'uct', 'patient', 'user');' which seems like a copy-paste error.
+        // Assuming the intent was to load relations if needed, or simply find the sale.
+        // If this method is meant to *show* the sale after selection, it should load relations.
         $sale->load('items.product', 'patient', 'user');
         return view('cashier.show', compact('sale'));
     }

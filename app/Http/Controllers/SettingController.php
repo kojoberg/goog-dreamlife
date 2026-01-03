@@ -249,6 +249,18 @@ class SettingController extends Controller
             }
 
             // Re-optimize
+            // 1. Run Migrations
+            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+            $log .= "\nMigrations executed successfully.";
+
+            // 2. Composer Install (if composer exists)
+            $composerPath = trim(shell_exec('which composer'));
+            if ($composerPath && file_exists($basePath . '/composer.lock')) {
+                exec("cd {$basePath} && {$composerPath} install --no-dev --optimize-autoloader {$param}", $compOutput, $compReturn);
+                $log .= "\nComposer: " . implode("\n", $compOutput);
+            }
+
+            // 3. Clear Caches
             \Illuminate\Support\Facades\Artisan::call('optimize:clear');
             \Illuminate\Support\Facades\Artisan::call('view:clear');
 

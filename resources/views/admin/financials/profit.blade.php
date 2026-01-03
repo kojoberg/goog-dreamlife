@@ -38,22 +38,24 @@
                 <div class="text-center mb-6 hidden print-block">
                     <h1 class="text-2xl font-bold">Profit & Loss Statement (Gross)</h1>
                     <p class="text-gray-600">Period: {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} -
-                        {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}</p>
+                        {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
+                    </p>
                 </div>
 
                 <div class="max-w-xl mx-auto">
                     <div class="bg-gray-50 rounded-lg p-6">
                         <div class="flex justify-between items-center mb-4">
                             <span class="text-lg text-gray-600">Total Revenue (Sales)</span>
-                            <span class="text-xl font-bold text-gray-900">${{ number_format($revenue, 2) }}</span>
+                            <span class="text-xl font-bold text-gray-900">GHS {{ number_format($revenue, 2) }}</span>
                         </div>
                         <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-200">
                             <span class="text-lg text-gray-600">Cost of Goods Sold (COGS)</span>
-                            <span class="text-xl font-bold text-red-600">-${{ number_format($cogs, 2) }}</span>
+                            <span class="text-xl font-bold text-red-600">-GHS {{ number_format($cogs, 2) }}</span>
                         </div>
                         <div class="flex justify-between items-center pt-2">
                             <span class="text-xl font-bold text-gray-800">Gross Profit</span>
-                            <span class="text-2xl font-bold text-green-600">${{ number_format($grossProfit, 2) }}</span>
+                            <span class="text-2xl font-bold text-green-600">GHS
+                                {{ number_format($grossProfit, 2) }}</span>
                         </div>
                     </div>
                 </div>

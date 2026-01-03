@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
@@ -62,7 +63,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'nullable|exists:categories,id',
-            'barcode' => 'nullable|string|max:255|unique:products,barcode',
+            'barcode' => ['nullable', 'string', 'max:255', Rule::unique('products')->withoutTrashed()],
             'product_type' => 'required|in:goods,service', // New
             'unit_price' => 'required|numeric|min:0',
             'cost_price' => 'nullable|numeric|min:0',
@@ -81,7 +82,7 @@ class ProductController extends Controller
             $validated['is_chronic'] = true;
         }
 
-        Product::create([
+        $product = Product::create([
             'name' => $validated['name'],
             'category_id' => $validated['category_id'],
             'barcode' => $validated['barcode'] ?? null,
@@ -95,6 +96,9 @@ class ProductController extends Controller
             'dosage' => $validated['dosage'] ?? null,
             'is_chronic' => $validated['is_chronic'],
         ]);
+
+        // Trigger interaction sync
+        \App\Jobs\SyncDrugInteractionsJob::dispatch($product);
 
         return redirect()->route('products.index')->with('success', 'Product created successfully.');
     }
@@ -116,7 +120,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'nullable|exists:categories,id',
-            'barcode' => 'nullable|string|max:255|unique:products,barcode,' . $product->id,
+            'barcode' => ['nullable', 'string', 'max:255', Rule::unique('products')->ignore($product->id)->withoutTrashed()],
             'product_type' => 'required|in:goods,service', // New
             'unit_price' => 'required|numeric|min:0',
             'cost_price' => 'nullable|numeric|min:0',
@@ -148,6 +152,9 @@ class ProductController extends Controller
             'dosage' => $validated['dosage'] ?? null,
             'is_chronic' => $validated['is_chronic'],
         ]);
+
+        // Trigger interaction sync
+        \App\Jobs\SyncDrugInteractionsJob::dispatch($product);
 
         return redirect()->route('products.index')->with('success', 'Product updated successfully.');
     }

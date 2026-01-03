@@ -63,6 +63,19 @@ class RefundController extends Controller
     }
 
     /**
+     * List current user's refund history.
+     */
+    public function myHistory()
+    {
+        $refunds = Refund::where('user_id', Auth::id())
+            ->with(['sale.items', 'sale.patient'])
+            ->latest()
+            ->paginate(20);
+
+        return view('refunds.history', compact('refunds'));
+    }
+
+    /**
      * Admin: Approve refund.
      */
     public function approve(Request $request, Refund $refund)
@@ -86,6 +99,21 @@ class RefundController extends Controller
                 'approved_by' => Auth::id(),
                 'admin_note' => $request->admin_note
             ]);
+
+            // 4. Reverse Loyalty Points
+            if ($refund->sale->patient) {
+                $patient = $refund->sale->patient;
+
+                // Remove points earned from this sale
+                if ($refund->sale->points_earned > 0) {
+                    $patient->decrement('loyalty_points', $refund->sale->points_earned);
+                }
+
+                // Return points redeemed in this sale
+                if ($refund->sale->points_redeemed > 0) {
+                    $patient->increment('loyalty_points', $refund->sale->points_redeemed);
+                }
+            }
 
             DB::commit();
 

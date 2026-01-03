@@ -49,14 +49,28 @@ class PrescriptionController extends Controller
 
         $validated['user_id'] = Auth::id();
 
-        Prescription::create($validated);
+        $prescription = Prescription::create($validated);
 
-        return redirect()->route('prescriptions.index')->with('success', 'Prescription created successfully.');
+        return redirect()->route('prescriptions.show', $prescription)->with('success', 'Prescription created successfully. You can now dispense it.');
     }
 
     public function show(Prescription $prescription)
     {
-        return view('prescriptions.show', compact('prescription'));
+        // Calculate estimated total for display
+        $estimatedTotal = 0;
+        $medications = $prescription->medications ?? [];
+        foreach ($medications as $med) {
+            if (!empty($med['product_id']) && !empty($med['quantity'])) {
+                $product = \App\Models\Product::find($med['product_id']);
+                if ($product) {
+                    $estimatedTotal += $product->unit_price * $med['quantity'];
+                }
+            }
+        }
+
+        $settings = \App\Models\Setting::first();
+
+        return view('prescriptions.show', compact('prescription', 'estimatedTotal', 'settings'));
     }
 
     public function dispense(Request $request, Prescription $prescription)
@@ -72,6 +86,7 @@ class PrescriptionController extends Controller
             $itemsToProcess = [];
 
             // 1. Calculate Total and Prepare Items
+            // 1. Calculate Total and Prepare Items
             foreach ($medications as $med) {
                 if (!empty($med['product_id']) && !empty($med['quantity'])) {
                     $product = \App\Models\Product::find($med['product_id']);
@@ -79,7 +94,7 @@ class PrescriptionController extends Controller
                         continue;
 
                     $qtyNeeded = (int) $med['quantity'];
-                    $price = $product->unit_price; // Or branch price logic if needed
+                    $price = $product->unit_price;
                     $lineTotal = $price * $qtyNeeded;
                     $totalAmount += $lineTotal;
 
@@ -95,23 +110,59 @@ class PrescriptionController extends Controller
                 }
             }
 
+            // --- LOYALTY REDEMPTION LOGIC ---
+            $settings = \App\Models\Setting::first();
+            $pointsRedeemed = (int) $request->input('points_redeemed', 0);
+            $discountAmount = 0;
+            $subtotal = $totalAmount;
+
+            if ($pointsRedeemed > 0 && $settings && $settings->loyalty_point_value > 0) {
+                $patient = \App\Models\Patient::find($prescription->patient_id);
+                // Validate balance
+                if (!$patient || $patient->loyalty_points < $pointsRedeemed) {
+                    throw new \Exception("Insufficient loyalty points balance.");
+                }
+
+                $maxDiscount = $pointsRedeemed * $settings->loyalty_point_value;
+
+                // Cap discount at total amount (cannot pay negative)
+                if ($maxDiscount > $totalAmount) {
+                    $discountAmount = $totalAmount;
+                    // Optional: Adjust points redeemed to match strict total? 
+                    // For simplicity, we accept the points user explicitly chose, even if value exceeds bill slightly (unlikely UX).
+                    // Better: Set discount to total, and maybe refund excess points? 
+                    // Let's just clamp discount.
+                } else {
+                    $discountAmount = $maxDiscount;
+                }
+
+                $totalAmount = max(0, $totalAmount - $discountAmount);
+
+                // Deduct points from patient
+                $patient->decrement('loyalty_points', $pointsRedeemed);
+            }
+            // --------------------------------
+
             // 2. Create Sale Record
             $sale = \App\Models\Sale::create([
                 'user_id' => Auth::id(), // Pharmacist dispensing
                 'patient_id' => $prescription->patient_id,
                 'prescription_id' => $prescription->id,
+                'subtotal' => $subtotal,
+                'discount_amount' => $discountAmount,
                 'total_amount' => $totalAmount,
-                'subtotal' => $totalAmount, // Assuming no tax/discount logic for simple dispense yet
+                'points_redeemed' => $pointsRedeemed,
                 'tax_amount' => 0,
                 'payment_method' => $request->payment_method ?? 'cash',
             ]);
 
-            // --- LOYALTY POINTS LOGIC ---
-            $settings = \App\Models\Setting::first();
+            // --- LOYALTY POINTS EARNING (On Final Paid Amount) ---
             if ($settings && $settings->loyalty_spend_per_point > 0 && $totalAmount > 0) {
                 $pointsEarned = floor($totalAmount / $settings->loyalty_spend_per_point);
                 if ($pointsEarned > 0) {
                     $sale->update(['points_earned' => $pointsEarned]);
+
+                    // Re-fetch patient to ensure sync if we just acted on it
                     $patient = \App\Models\Patient::find($prescription->patient_id);
                     if ($patient) {
                         $patient->increment('loyalty_points', $pointsEarned);
@@ -156,7 +207,10 @@ class PrescriptionController extends Controller
 
             // Redirect to Sale Receipt or back with success
             // return redirect()->route('pos.receipt', $sale)->with('success', 'Dispensed & Sale Created.');
-            return back()->with('success', 'Prescription dispensed. Sale #' . $sale->id . ' created.');
+            return back()->with([
+                'success' => 'Prescription dispensed. Sale #' . $sale->id . ' created.',
+                'success_sale_id' => $sale->id
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
