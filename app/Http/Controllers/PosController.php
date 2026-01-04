@@ -359,6 +359,12 @@ class PosController extends Controller
         $warnings = [];
         foreach ($interactions as $interaction) {
             $otherDrug = $interaction->drug_a_id == $newProductId ? $interaction->drugB : $interaction->drugA;
+
+            // Skip if the other drug is deleted/missing
+            if (!$otherDrug) {
+                continue;
+            }
+
             $warnings[] = [
                 'drug' => $otherDrug->name,
                 'severity' => ucfirst($interaction->severity),

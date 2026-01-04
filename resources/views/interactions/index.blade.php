@@ -47,10 +47,10 @@
                                 @foreach($interactions as $interaction)
                                     <tr>
                                         <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm font-bold">
-                                            {{ $interaction->drugA->name }}
+                                            {{ $interaction->drugA?->name ?? '[Deleted Product]' }}
                                         </td>
                                         <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm font-bold">
-                                            {{ $interaction->drugB->name }}
+                                            {{ $interaction->drugB?->name ?? '[Deleted Product]' }}
                                         </td>
                                         <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
                                             @php

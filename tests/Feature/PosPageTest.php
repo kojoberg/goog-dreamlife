@@ -15,7 +15,7 @@ class PosPageTest extends TestCase
     public function test_pos_page_loads_with_default_settings()
     {
         // 1. Arrange: Create User & Open Shift
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'admin']);
 
         Shift::create([
             'user_id' => $user->id,

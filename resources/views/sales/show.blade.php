@@ -91,7 +91,7 @@
                                     <td class="px-6 py-4">{{ $item->product->name ?? 'Unknown Item' }}</td>
                                     <td class="px-6 py-4">{{ $item->quantity }}</td>
                                     <td class="px-6 py-4">GHS {{ number_format($item->unit_price, 2) }}</td>
-                                    <td class="px-6 py-4">GHS {{ number_format($item->total_price, 2) }}</td>
+                                    <td class="px-6 py-4">GHS {{ number_format($item->subtotal, 2) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

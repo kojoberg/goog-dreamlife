@@ -31,7 +31,7 @@
                             id="product-grid">
                             @foreach ($products as $product)
                                 <div class="product-card bg-gray-50 border rounded-lg p-4 cursor-pointer hover:bg-blue-50 transition"
-                                    onclick="addToCart({{ json_encode($product) }})"
+                                    onclick="addToCart({{ json_encode($product, JSON_HEX_APOS | JSON_HEX_QUOT) }})"
                                     data-name="{{ strtolower($product['name']) }}"
                                     data-barcode="{{ $product['barcode'] ?? '' }}">
                                     <div class="font-bold text-gray-800">{{ $product['name'] }}</div>
@@ -307,6 +307,8 @@
     </script>
 
     <script>
+
+
         // Loyalty Variables
         let selectedPatient = null;
         let loyaltyPointValue = {{ $settings->loyalty_point_value ?? 0.10 }};
@@ -426,166 +428,179 @@
             showHeldCarts(); // Refresh list
             updateHeldCount();
         }
+    </script>
 
-            <!-- Interaction Modal -->
-            <div id="interaction-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center">
-                <div class="bg-white p-6 rounded-lg w-full max-w-lg">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-red-600 flex items-center gap-2">
-                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="non" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                             </svg>
-                            Drug Interaction Warning
-                        </h3>
-                        <button onclick="closeInteractionModal()" class="text-gray-500 hover:text-gray-700 font-bold text-xl">&times;</button>
-                    </div>
-                    
-                    <div id="interaction-list" class="space-y-3 max-h-64 overflow-y-auto mb-6">
-                        <!-- Warnings injected here -->
-                    </div>
-
-                    <div class="flex justify-end gap-3">
-                        <button onclick="closeInteractionModal()" class="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-100">
-                            Cancel
-                        </button>
-                        <button onclick="confirmAddTask()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-                            Proceed Anyway
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!--Loading Overlay-- >
-             <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-25 hidden z-50 flex items-center justify-center">
-                <div class="bg-white p-4 rounded shadow-lg flex items-center gap-3">
-                    <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    <!-- Interaction Modal -->
+    <div id="interaction-modal"
+        class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-lg w-full max-w-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-red-600 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="non" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
-                    <span class="font-medium text-gray-700">Checking interactions...</span>
-                </div>
+                    Drug Interaction Warning
+                </h3>
+                <button onclick="closeInteractionModal()"
+                    class="text-gray-500 hover:text-gray-700 font-bold text-xl">&times;</button>
             </div>
 
-            <script>
-                // Modal State
-                let pendingProduct = null;
-    
-                function showInteractionModal(warnings, product) {
-                    pendingProduct = product;
-                    const list = document.getElementById('interaction-list');
-                    list.innerHTML = '';
-                    
-                    warnings.forEach(w => {
-                        const div = document.createElement('div');
-                        div.className = 'p-3 bg-red-50 border border-red-100 rounded';
-                        div.innerHTML = `
+            <div id="interaction-list" class="space-y-3 max-h-64 overflow-y-auto mb-6">
+                <!-- Warnings injected here -->
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button onclick="closeInteractionModal()"
+                    class="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-100">
+                    Cancel
+                </button>
+                <button onclick="confirmAddTask()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                    Proceed Anyway
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-25 hidden z-50 flex items-center justify-center">
+        <div class="bg-white p-4 rounded shadow-lg flex items-center gap-3">
+            <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+            </svg>
+            <span class="font-medium text-gray-700">Checking interactions...</span>
+        </div>
+    </div>
+
+    <script>
+        // Modal State
+        let pendingProduct = null;
+
+        function showInteractionModal(warnings, product) {
+            pendingProduct = product;
+            const list = document.getElementById('interaction-list');
+            list.innerHTML = '';
+
+            warnings.forEach(w => {
+                const div = document.createElement('div');
+                div.className = 'p-3 bg-red-50 border border-red-100 rounded';
+                div.innerHTML = `
                             <div class="font-bold text-red-800">${w.drug} (${w.severity})</div>
                             <div class="text-sm text-red-700">${w.description}</div>
                         `;
-                        list.appendChild(div);
-                    });
+                list.appendChild(div);
+            });
 
-                    document.getElementById('interaction-modal').classList.remove('hidden');
-                }
+            document.getElementById('interaction-modal').classList.remove('hidden');
+        }
 
-                function closeInteractionModal() {
-                    pendingProduct = null;
-                    document.getElementById('interaction-modal').classList.add('hidden');
-                }
+        function closeInteractionModal() {
+            pendingProduct = null;
+            document.getElementById('interaction-modal').classList.add('hidden');
+        }
 
-                function confirmAddTask() {
-                    if (pendingProduct) {
-                        addToCart(pendingProduct, true); // Force add
-                    }
-                    closeInteractionModal();
-                }
+        function confirmAddTask() {
+            if (pendingProduct) {
+                addToCart(pendingProduct, true); // Force add
+            }
+            closeInteractionModal();
+        }
 
-                function showLoading(show) {
-                    const el = document.getElementById('loading-overlay');
-                    if (show) el.classList.remove('hidden');
-                    else el.classList.add('hidden');
-                }
+        function showLoading(show) {
+            const el = document.getElementById('loading-overlay');
+            if (show) el.classList.remove('hidden');
+            else el.classList.add('hidden');
+        }
+
+
     </script>
 
     <script>
-            async function addToCart(product, force = false) {
-                // 1. Check for Interactions (if not forced)
-                const cartIds = cart.map(item => item.id);
-                
-                if (!force && cartIds.length > 0) {
-                    console.log("Checking interactions...", cartIds, product.id);
-                    showLoading(true);
-                    
-                    try {
-                        const controller = new AbortController();
-                        const id = setTimeout(() => controller.abort(), 5000); // 5s timeout
+        async function addToCart(product, force = false) {
+            // 1. Check for Interactions (if not forced)
+            const cartIds = cart.map(item => item.id);
 
-                        const res = await fetch('{{ route('pos.check-interactions') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            },
-                            body: JSON.stringify({
-                                cart_ids: cartIds,
-                                new_product_id: product.id
-                            }),
-                            signal: controller.signal
-                        });
-                        clearTimeout(id);
+            if (!force && cartIds.length > 0) {
+                console.log("Checking interactions...", cartIds, product.id);
+                showLoading(true);
 
-                        if (!res.ok) throw new Error('Network response was not ok');
+                try {
+                    const controller = new AbortController();
+                    const id = setTimeout(() => controller.abort(), 5000); // 5s timeout
 
-                        const data = await res.json();
-    
-                        if (data.interactions && data.interactions.length > 0) {
-                            showLoading(false);
-                            showInteractionModal(data.interactions, product);
-                            return; // Stop here, wait for modal
-                        }
-                    } catch (e) {
-                         console.error("Interaction check failed", e);
-                         // Optional: Alert user on network error but still allow add? 
-                         // For now, we silently log and proceed to avoid blocking sales if internet is flaky.
-                         // alert("Warning: Could not check drug interactions. Proceeding...");
-                    } finally {
-                        showLoading(false);
-                    }
-                }
-    
-                // 2. Add to Cart
-                const existing = cart.find(item => item.id == product.id);
-                if (existing) {
-                    existing.qty++;
-                } else {
-                    cart.push({
-                        ...product,
-                        qty: 1
+                    const res = await fetch('{{ route('pos.check-interactions') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            cart_ids: cartIds,
+                            new_product_id: product.id
+                        }),
+                        signal: controller.signal
                     });
+                    clearTimeout(id);
+
+                    if (!res.ok) throw new Error('Network response was not ok');
+
+                    const data = await res.json();
+
+                    if (data.interactions && data.interactions.length > 0) {
+                        showLoading(false);
+                        showInteractionModal(data.interactions, product);
+                        return; // Stop here, wait for modal
+                    }
+                } catch (e) {
+                    console.error("Interaction check failed", e);
+                    // Optional: Alert user on network error but still allow add? 
+                    // For now, we silently log and proceed to avoid blocking sales if internet is flaky.
+                    // alert("Warning: Could not check drug interactions. Proceeding...");
+                } finally {
+                    showLoading(false);
                 }
-                updateCartUI();
             }
 
+            // 2. Add to Cart
+            const existing = cart.find(item => item.id == product.id);
+            if (existing) {
+                existing.qty++;
+            } else {
+                cart.push({
+                    ...product,
+                    qty: 1
+                });
+            }
+            updateCartUI();
+        }
 
 
-    function removeFromCart(index) {
-    cart.splice(index, 1);
-    updateCartUI();
-    }
 
-    function updateQty(index, qty) {
-    if (qty < 1) return; cart[index].qty=parseInt(qty); updateCartUI(); } function updateCartUI() { // Save persistence
-        localStorage.setItem('pos_cart', JSON.stringify(cart)); const container=document.getElementById('cart-items');
-        const totalEl=document.getElementById('cart-total'); const checkoutBtn=document.getElementById('checkout-btn');
-        container.innerHTML='' ; total=0; if (cart.length===0) {
-        container.innerHTML='<div class="text-center text-gray-400 mt-10">Cart is empty</div>' ;
-        totalEl.innerText='GHS 0.00' ; checkoutBtn.disabled=true; return; } cart.forEach((item, index)=> {
-        const itemTotal = item.price * item.qty;
-        total += itemTotal;
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartUI();
+        }
 
-        const div = document.createElement('div');
-        div.className = 'flex justify-between items-center mb-3 p-2 bg-gray-50 rounded';
-        div.innerHTML = `
+        function updateQty(index, qty) {
+            if (qty < 1) return; cart[index].qty = parseInt(qty); updateCartUI();
+        } function updateCartUI() { // Save persistence
+            localStorage.setItem('pos_cart', JSON.stringify(cart)); const container = document.getElementById('cart-items');
+            const totalEl = document.getElementById('cart-total'); const checkoutBtn = document.getElementById('checkout-btn');
+            container.innerHTML = ''; total = 0; if (cart.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 mt-10">Cart is empty</div>';
+                totalEl.innerText = 'GHS 0.00'; checkoutBtn.disabled = true; return;
+            } cart.forEach((item, index) => {
+                const itemTotal = item.price * item.qty;
+                total += itemTotal;
+
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center mb-3 p-2 bg-gray-50 rounded';
+                div.innerHTML = `
         <div class="flex-1">
             <div class="font-bold text-sm">${item.name}</div>
             <div class="text-xs text-gray-500">GHS ${item.price} x
@@ -596,212 +611,241 @@
         <div class="font-bold text-sm px-2">GHS ${itemTotal.toFixed(2)}</div>
         <button onclick="removeFromCart(${index})" class="text-red-500 hover:text-red-700">x</button>
         `;
-        container.appendChild(div);
-        });
+                container.appendChild(div);
+            });
 
-        totalEl.innerText = 'GHS ' + total.toFixed(2);
-        checkoutBtn.disabled = false;
+            totalEl.innerText = 'GHS ' + total.toFixed(2);
+            checkoutBtn.disabled = false;
 
-        // Recalculate redemption if active
-        calculateRedemption();
+            // Recalculate redemption if active
+            calculateRedemption();
         }
 
         function filterProducts() {
-        const query = document.getElementById('search').value.toLowerCase();
-        const products = document.querySelectorAll('.product-card');
+            const query = document.getElementById('search').value.toLowerCase();
+            const products = document.querySelectorAll('.product-card');
 
-        products.forEach(card => {
-        const name = card.getAttribute('data-name');
-        const barcode = card.getAttribute('data-barcode');
+            products.forEach(card => {
+                const name = card.getAttribute('data-name');
+                const barcode = card.getAttribute('data-barcode');
 
-        if (name.includes(query) || (barcode && barcode.includes(query))) {
-        card.style.display = 'block';
-        } else {
-        card.style.display = 'none';
-        }
-        });
+                if (name.includes(query) || (barcode && barcode.includes(query))) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
         }
 
         function handleBarcodeScan(e) {
-        if (e.key === 'Enter') {
-        const query = document.getElementById('search').value.trim();
-        const products = document.querySelectorAll('.product-card');
+            if (e.key === 'Enter') {
+                const query = document.getElementById('search').value.trim();
+                const products = document.querySelectorAll('.product-card');
 
-        // Find EXACT barcode match
-        let match = null;
-        for (let card of products) {
-        if (card.getAttribute('data-barcode') === query) {
-        match = card;
-        break;
-        }
-        }
+                // Find EXACT barcode match
+                let match = null;
+                for (let card of products) {
+                    if (card.getAttribute('data-barcode') === query) {
+                        match = card;
+                        break;
+                    }
+                }
 
-        if (match) {
-        match.click(); // Trigger addToCart
-        document.getElementById('search').value = ''; // Clear input
-        filterProducts(); // Reset grid
-        e.preventDefault();
-        }
-        }
+                if (match) {
+                    match.click(); // Trigger addToCart
+                    document.getElementById('search').value = ''; // Clear input
+                    filterProducts(); // Reset grid
+                    e.preventDefault();
+                }
+            }
         }
 
         function calculateChange() {
-        const tendered = parseFloat(document.getElementById('amount-tendered').value) || 0;
-        const redeemPoints = document.getElementById('redeem-check')?.checked ?
-        (document.getElementById('redeem-amount').value || 0) : 0;
+            const tendered = parseFloat(document.getElementById('amount-tendered').value) || 0;
+            const redeemPoints = document.getElementById('redeem-check')?.checked ?
+                (document.getElementById('redeem-amount').value || 0) : 0;
 
-        let payable = total;
-        if (redeemPoints > 0) {
-        payable -= (redeemPoints * loyaltyPointValue);
+            let payable = total;
+            if (redeemPoints > 0) {
+                payable -= (redeemPoints * loyaltyPointValue);
+            }
+            if (payable < 0) payable = 0; const change = tendered - payable; const
+                display = document.getElementById('change-display'); const amountEl = document.getElementById('change-amount');
+            if (tendered > 0) {
+                display.style.display = 'flex';
+                amountEl.innerText = 'GHS ' + change.toFixed(2);
+                if (change < 0) amountEl.classList.add('text-red-500'); else amountEl.classList.remove('text-red-500');
+            } else {
+                display.style.display = 'none';
+            }
         }
-        if (payable < 0) payable=0; const change=tendered - payable; const
-            display=document.getElementById('change-display'); const amountEl=document.getElementById('change-amount');
-            if (tendered> 0) {
-            display.style.display = 'flex';
-            amountEl.innerText = 'GHS ' + change.toFixed(2);
-            if (change < 0) amountEl.classList.add('text-red-500'); else amountEl.classList.remove('text-red-500'); }
-                else { display.style.display='none' ; } } function debounceSearchPatient() {
-                clearTimeout(searchTimeout); searchTimeout=setTimeout(searchPatient, 300); } async function
-                searchPatient() { const query=document.getElementById('patient-search').value; const
-                resultsDiv=document.getElementById('patient-results'); if (query.length < 2) {
-                resultsDiv.classList.add('hidden'); return; } try { const res=await
-                fetch(`/patients/search?query=${query}`); const patients=await res.json(); resultsDiv.innerHTML='' ; if
-                (patients.length> 0) {
-                patients.forEach(p => {
-                const div = document.createElement('div');
-                div.className = 'p-2 hover:bg-gray-100 cursor-pointer text-sm border-b';
-                div.innerHTML = `<b>${p.name}</b> <br> <span class="text-xs text-gray-500">${p.phone} | Pts:
-                    ${p.loyalty_points}</span>`;
-                div.onclick = () => selectPatient(p);
-                resultsDiv.appendChild(div);
-                });
-                resultsDiv.classList.remove('hidden');
-                } else {
+
+        function debounceSearchPatient() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(searchPatient, 300);
+        }
+
+        async function searchPatient() {
+            const query = document.getElementById('patient-search').value;
+            const resultsDiv = document.getElementById('patient-results');
+
+            if (query.length < 2) {
                 resultsDiv.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/patients/search?query=${query}`);
+                const patients = await res.json();
+
+                resultsDiv.innerHTML = '';
+
+                if (patients.length > 0) {
+                    patients.forEach(p => {
+                        const div = document.createElement('div');
+                        div.className = 'p-2 hover:bg-gray-100 cursor-pointer text-sm border-b';
+                        div.innerHTML = `<b>${p.name}</b> <br> <span class="text-xs text-gray-500">${p.phone} | Pts: ${p.loyalty_points}</span>`;
+                        div.onclick = () => selectPatient(p);
+                        resultsDiv.appendChild(div);
+                    });
+                    resultsDiv.classList.remove('hidden');
+                } else {
+                    resultsDiv.classList.add('hidden');
                 }
-                } catch (e) {
+            } catch (e) {
                 console.error(e);
-                }
-                }
+            }
+        }
 
-                function selectPatient(patient) {
-                selectedPatient = patient;
-                document.getElementById('patient-results').classList.add('hidden');
-                document.getElementById('patient-search').value = '';
+        function selectPatient(patient) {
+            selectedPatient = patient;
+            document.getElementById('patient-results').classList.add('hidden');
+            document.getElementById('patient-search').value = '';
 
-                // Show Info
-                document.getElementById('selected-patient-info').classList.remove('hidden');
-                document.getElementById('sp-name').innerText = patient.name;
-                document.getElementById('sp-points').innerText = patient.loyalty_points;
+            // Show Info
+            document.getElementById('selected-patient-info').classList.remove('hidden');
+            document.getElementById('sp-name').innerText = patient.name;
+            document.getElementById('sp-points').innerText = patient.loyalty_points;
 
-                // Auto-fill phone/email if available
-                if (patient.phone) document.getElementById('customer-phone').value = patient.phone;
-                if (patient.email) document.getElementById('customer-email').value = patient.email;
-                }
+            // Auto-fill phone/email if available
+            if (patient.phone) document.getElementById('customer-phone').value = patient.phone;
+            if (patient.email) document.getElementById('customer-email').value = patient.email;
+        }
 
-                function detachPatient() {
-                selectedPatient = null;
-                document.getElementById('selected-patient-info').classList.add('hidden');
-                document.getElementById('customer-phone').value = '';
-                document.getElementById('customer-email').value = '';
-                document.getElementById('redeem-check').checked = false;
-                toggleRedemption();
-                }
+        function detachPatient() {
+            selectedPatient = null;
+            document.getElementById('selected-patient-info').classList.add('hidden');
+            document.getElementById('customer-phone').value = '';
+            document.getElementById('customer-email').value = '';
+            document.getElementById('redeem-check').checked = false;
+            toggleRedemption();
+        }
 
-                function toggleRedemption() {
-                const isChecked = document.getElementById('redeem-check').checked;
-                const inputDiv = document.getElementById('redeem-input-div');
-                if (isChecked) {
+        function toggleRedemption() {
+            const isChecked = document.getElementById('redeem-check').checked;
+            const inputDiv = document.getElementById('redeem-input-div');
+            if (isChecked) {
                 inputDiv.classList.remove('hidden');
                 // Default to max points
                 document.getElementById('redeem-amount').value = selectedPatient.loyalty_points;
                 calculateRedemption();
-                } else {
+            } else {
                 inputDiv.classList.add('hidden');
                 calculateRedemption(); // Reset
-                }
-                }
+            }
+        }
 
-                function calculateRedemption() {
-                if (!document.getElementById('redeem-check').checked) {
+        function calculateRedemption() {
+            if (!document.getElementById('redeem-check').checked) {
                 document.getElementById('redeem-value').innerText = '0.00';
                 // Reset to subtotal
                 document.getElementById('cart-total').innerText = 'GHS ' + total.toFixed(2);
                 return;
-                }
+            }
 
-                let points = parseInt(document.getElementById('redeem-amount').value) || 0;
-                if (points > selectedPatient.loyalty_points) {
+            let points = parseInt(document.getElementById('redeem-amount').value) || 0;
+            if (points > selectedPatient.loyalty_points) {
                 points = selectedPatient.loyalty_points;
                 document.getElementById('redeem-amount').value = points;
-                }
+            }
 
-                const discountValue = points * loyaltyPointValue;
-                let netPayable = total - discountValue;
-                if (netPayable < 0) netPayable=0;
-                    document.getElementById('redeem-value').innerText=discountValue.toFixed(2); // Visual Update: Show
-                    Net Payable document.getElementById('cart-total').innerText='GHS ' + netPayable.toFixed(2); } async
-                    function openQuickRegister() { const name=prompt("Enter Patient Name:"); if (!name) return; const
-                    phone=prompt("Enter Patient Phone:"); if (!phone) return; try { const res=await fetch('{{ route('patients.api.store') }}', {
+            const discountValue = points * loyaltyPointValue;
+            let netPayable = total - discountValue;
+            if (netPayable < 0) netPayable = 0;
+            document.getElementById('redeem-value').innerText = discountValue.toFixed(2);
+            // Visual Update: Show Net Payable 
+            document.getElementById('cart-total').innerText = 'GHS ' + netPayable.toFixed(2);
+        }
+
+        async function openQuickRegister() {
+            const name = prompt("Enter Patient Name:");
+            if (!name) return;
+
+            const phone = prompt("Enter Patient Phone:");
+            if (!phone) return;
+
+            try {
+                const res = await fetch('{{ route('patients.api.store') }}', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
                     body: JSON.stringify({ name, phone })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
+                });
+
+                const data = await res.json();
+                if (data.success) {
                     selectPatient(data.patient);
-                    } else {
+                } else {
                     alert('Error creating patient');
-                    }
-                    } catch (e) {
-                    alert('Error: ' + e.message);
-                    }
-                    }
-
-                    // Checkout Logic
-                    let hasCashier = {{ (Auth::user()->branch && Auth::user()->branch->has_cashier) ? 'true' : 'false' }};
-
-                    async function checkout() {
-                    const method = document.getElementById('payment-method').value;
-                    // Get value safely (element might not exist)
-                    const tenderedEl = document.getElementById('amount-tendered');
-                    const tendered = tenderedEl ? (parseFloat(tenderedEl.value) || 0) : 0;
-
-                    const redeemPoints = document.getElementById('redeem-check').checked ?
-                    (document.getElementById('redeem-amount').value || 0) : 0;
-
-                    // Calculate Payble
-                    let payable = total;
-                    if (redeemPoints > 0) {
-                    payable -= (redeemPoints * loyaltyPointValue);
-                    }
-                // Validation: Only enforce full payment if NOT in cashier mode
-                if (!hasCashier && tendered < payable) {
-                    alert(`Amount tendered is less than payable amount (GHS ${payable.toFixed(2)})!`);
-                    return;
                 }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
 
-                // Confirm (optional, kept silent for speed)
-                // if (!confirm('Process transaction?')) return;
+        // Checkout Logic
+        let hasCashier = {{ (Auth::user()->branch && Auth::user()->branch->has_cashier) ? 'true' : 'false' }};
 
-                try {
-                    const response = await fetch('{{ route('pos.store') }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        body: JSON.stringify({
-                            cart: cart,
-                            total: total,
-                            payment_method: method,
-                            amount_tendered: tendered,
-                            email: document.getElementById('customer-email').value,
-                            phone: document.getElementById('customer-phone').value,
-                            patient_id: selectedPatient ? selectedPatient.id : null,
-                            redeem_points: redeemPoints
-                        })
-                    });
+        async function checkout() {
+            const method = document.getElementById('payment-method').value;
+            // Get value safely (element might not exist)
+            const tenderedEl = document.getElementById('amount-tendered');
+            const tendered = tenderedEl ? (parseFloat(tenderedEl.value) || 0) : 0;
+
+            const redeemPoints = document.getElementById('redeem-check').checked ?
+                (document.getElementById('redeem-amount').value || 0) : 0;
+
+            // Calculate Payble
+            let payable = total;
+            if (redeemPoints > 0) {
+                payable -= (redeemPoints * loyaltyPointValue);
+            }
+            // Validation: Only enforce full payment if NOT in cashier mode
+            if (!hasCashier && tendered < payable) {
+                alert(`Amount tendered is less than payable amount (GHS ${payable.toFixed(2)})!`);
+                return;
+            }
+
+            // Confirm (optional, kept silent for speed)
+            // if (!confirm('Process transaction?')) return;
+
+            try {
+                const response = await fetch('{{ route('pos.store') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        cart: cart,
+                        total: total,
+                        payment_method: method,
+                        amount_tendered: tendered,
+                        email: document.getElementById('customer-email').value,
+                        phone: document.getElementById('customer-phone').value,
+                        patient_id: selectedPatient ? selectedPatient.id : null,
+                        redeem_points: redeemPoints
+                    })
+                });
 
 
                 const data = await response.json();
@@ -809,8 +853,8 @@
                 if (data.success) {
                     // Clear Persistence
                     localStorage.removeItem('pos_cart');
-                // Redirect to receipt
-                window.location.href = '/pos/receipt/' + data.sale_id;
+                    // Redirect to receipt
+                    window.location.href = '/pos/receipt/' + data.sale_id;
                 } // End else
             } catch (error) {
                 console.error(error);

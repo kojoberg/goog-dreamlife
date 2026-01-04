@@ -14,7 +14,7 @@ class DrugInteractionController extends Controller
 
         try {
             // Run the command to ensure RxCUI resolution happens first
-            \Illuminate\Support\Facades\Artisan::call('drugs:sync');
+            \Illuminate\Support\Facades\Artisan::call('drugs:sync-interactions');
 
             return back()->with('success', "Sync completed successfully.");
         } catch (\Exception $e) {

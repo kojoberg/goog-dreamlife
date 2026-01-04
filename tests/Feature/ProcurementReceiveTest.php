@@ -17,7 +17,7 @@ class ProcurementReceiveTest extends TestCase
 
     public function test_can_receive_purchase_order()
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'admin']);
         $supplier = Supplier::create(['name' => 'Supplier A', 'email' => 's@a.com', 'phone' => '123']);
         $category = Category::create(['name' => 'Medicine']);
         $product = Product::create([
@@ -42,7 +42,9 @@ class ProcurementReceiveTest extends TestCase
             'unit_cost' => 5,
         ]);
 
-        $response = $this->actingAs($user)->post(route('procurement.orders.receive', $order));
+        $response = $this->actingAs($user)->post(route('procurement.orders.receive', $order), [
+            'received_by' => 'Test Receiver',
+        ]);
 
         $response->assertSessionHas('success');
         $this->assertDatabaseHas('inventory_batches', [

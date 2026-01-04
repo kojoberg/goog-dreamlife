@@ -29,7 +29,7 @@ class ComprehensiveWorkflowTest extends TestCase
             'starting_cash' => 100.00,
         ]);
 
-        $response->assertRedirect(route('cashier.index'));
+        $response->assertRedirect(route('pos.index')); // Cashiers now redirected to POS
         $this->assertDatabaseHas('shifts', [
             'user_id' => $cashier->id,
             'starting_cash' => 100.00,
