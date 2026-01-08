@@ -68,6 +68,8 @@ class SettingController extends Controller
             'notify_expiry_sms' => 'nullable|in:on,1,true',
             'license_key' => 'nullable|string',
             'font_family' => 'nullable|string|in:Segoe UI,Inter,Roboto,Open Sans,Lato',
+            'refund_policy_days' => 'nullable|integer|min:0', // New
+            'refund_policy_text' => 'nullable|string|max:500', // New
         ]);
 
         $settings = Setting::first();

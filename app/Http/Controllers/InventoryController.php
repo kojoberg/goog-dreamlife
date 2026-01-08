@@ -55,6 +55,10 @@ class InventoryController extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->hasPermission('receive_stock')) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
             'supplier_id' => 'nullable|exists:suppliers,id',

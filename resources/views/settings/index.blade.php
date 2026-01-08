@@ -211,6 +211,25 @@
                             </div>
                         </div>
 
+                        <!-- Refund Policy Settings -->
+                        <div class="mt-8 border-t pt-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Refund Policy</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Refund Limit (Days)</label>
+                                    <input type="number" name="refund_policy_days" value="{{ $settings->refund_policy_days ?? 7 }}"
+                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                    <p class="text-xs text-gray-500 mt-1">Number of days after purchase that refunds are allowed. Set to 0 to disable.</p>
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Policy Text (Receipt Footer)</label>
+                                    <textarea name="refund_policy_text" rows="3"
+                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                        placeholder="E.g., Goods sold in good condition cannot be returned.">{{ $settings->refund_policy_text }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Notifications -->
                         <div class="mt-8 border-t pt-6">
                             <h3 class="text-lg font-medium text-gray-900 mb-4">Notifications</h3>

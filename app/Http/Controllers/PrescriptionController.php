@@ -75,6 +75,10 @@ class PrescriptionController extends Controller
 
     public function dispense(Request $request, Prescription $prescription)
     {
+        if (!auth()->user()->hasPermission('dispense_medication')) {
+            return back()->with('error', 'Unauthorized. You do not have permission to dispense medication.');
+        }
+
         if ($prescription->status === 'dispensed') {
             return back()->with('error', 'Prescription already dispensed.');
         }
@@ -143,7 +147,8 @@ class PrescriptionController extends Controller
             }
             // --------------------------------
 
-            // 2. Create Sale Record
+            // 2. Create Sale Record with PENDING_PAYMENT status
+            // Pharmacist dispenses, creates invoice - Cashier collects payment
             $sale = \App\Models\Sale::create([
                 'user_id' => Auth::id(), // Pharmacist dispensing
                 'patient_id' => $prescription->patient_id,
@@ -153,25 +158,12 @@ class PrescriptionController extends Controller
                 'total_amount' => $totalAmount,
                 'points_redeemed' => $pointsRedeemed,
                 'tax_amount' => 0,
-                'payment_method' => $request->payment_method ?? 'cash',
+                'status' => 'pending_payment', // Cashier will complete payment
+                'payment_method' => null, // Set when cashier processes payment
             ]);
 
-            // --- LOYALTY POINTS EARNING (On Final Paid Amount) ---
-            if ($settings && $settings->loyalty_spend_per_point > 0 && $totalAmount > 0) {
-                $pointsEarned = floor($totalAmount / $settings->loyalty_spend_per_point);
-                if ($pointsEarned > 0) {
-                    $sale->update(['points_earned' => $pointsEarned]);
-
-                    // Re-fetch patient to ensure sync if we just acted on it
-                    $patient = \App\Models\Patient::find($prescription->patient_id);
-                    if ($patient) {
-                        $patient->increment('loyalty_points', $pointsEarned);
-                    }
-                }
-            }
-            // ----------------------------
-
-            // 3. Process Items & Inventory
+            // NOTE: Loyalty points earning happens when cashier completes payment
+            // This is handled in CashierController@update
             foreach ($itemsToProcess as $item) {
                 $product = $item['product'];
 
@@ -206,9 +198,8 @@ class PrescriptionController extends Controller
             DB::commit();
 
             // Redirect to Sale Receipt or back with success
-            // return redirect()->route('pos.receipt', $sale)->with('success', 'Dispensed & Sale Created.');
             return back()->with([
-                'success' => 'Prescription dispensed. Sale #' . $sale->id . ' created.',
+                'success' => 'Prescription dispensed. Invoice #' . $sale->id . ' created. Patient can proceed to Cashier for payment.',
                 'success_sale_id' => $sale->id
             ]);
 

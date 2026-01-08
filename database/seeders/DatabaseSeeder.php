@@ -38,6 +38,14 @@ class DatabaseSeeder extends Seeder
             'role' => 'pharmacist',
         ]);
 
+        // Lab Scientist User
+        User::create([
+            'name' => 'Lab Scientist',
+            'email' => 'lab@dreamlife.com',
+            'password' => Hash::make('password'),
+            'role' => 'lab_scientist',
+        ]);
+
         // Cashier User
         User::create([
             'name' => 'Jane Cashier',

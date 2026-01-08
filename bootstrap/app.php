@@ -14,10 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'shift.open' => \App\Http\Middleware\EnsureShiftIsOpen::class,
             'role' => \App\Http\Middleware\CheckRole::class,
+            'license.check' => \App\Http\Middleware\CheckLicenseStatus::class,
         ]);
 
         $middleware->web(append: [
             \App\Http\Middleware\EnsureAppSetup::class,
+            \App\Http\Middleware\CheckLicenseStatus::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

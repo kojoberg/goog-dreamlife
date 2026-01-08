@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Branch;
+use App\Models\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
@@ -15,9 +16,16 @@ class UserController extends Controller
      */
     public function index()
     {
-        // Only Admins should access this. Middleware handles basic auth, 
-        // but we might want policy check here later.
-        $users = User::with('branch')->latest()->get();
+        $user = auth()->user();
+        $query = User::with('branch');
+
+        // Super admins see all users
+        if (!$user->isSuperAdmin()) {
+            // Regular admins see only their branch's users
+            $query->where('branch_id', $user->branch_id);
+        }
+
+        $users = $query->latest()->get();
         return view('user_management.index', compact('users'));
     }
 
@@ -60,7 +68,8 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $branches = Branch::all();
-        return view('user_management.edit', compact('user', 'branches'));
+        $permissions = Permission::all();
+        return view('user_management.edit', compact('user', 'branches', 'permissions'));
     }
 
     /**
@@ -90,6 +99,11 @@ class UserController extends Controller
         }
 
         $user->update($inputs);
+
+        // Sync Permissions
+        if ($request->has('permissions_submitted')) {
+            $user->permissions()->sync($request->permissions ?? []);
+        }
 
         return redirect()->route('users.index')->with('success', 'User updated successfully.');
     }

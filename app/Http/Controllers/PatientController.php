@@ -10,9 +10,18 @@ class PatientController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $patients = Patient::withCount('prescriptions')->latest()->paginate(10);
+        $query = Patient::withCount('prescriptions')->latest();
+
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        $patients = $query->paginate(10);
         return view('patients.index', compact('patients'));
     }
 
@@ -57,7 +66,7 @@ class PatientController extends Controller
      */
     public function show(Patient $patient)
     {
-        $patient->load(['prescriptions.items.product', 'sales.items.product']);
+        $patient->load(['prescriptions.items.product', 'sales.items.product', 'documents']);
         return view('patients.show', compact('patient'));
     }
 
@@ -143,5 +152,37 @@ class PatientController extends Controller
             ->paginate(20);
 
         return view('patients.loyalty', compact('patient', 'loyaltyTransactions'));
+    }
+
+    /**
+     * Enable Patient Portal Access
+     */
+    public function enablePortal(Patient $patient)
+    {
+        if ($patient->user_id) {
+            return back()->with('error', 'Portal access is already enabled for this patient.');
+        }
+
+        if (empty($patient->email)) {
+            return back()->with('error', 'Patient requires an email address to enable portal access.');
+        }
+
+        // Check if email already used by another user
+        if (\App\Models\User::where('email', $patient->email)->exists()) {
+            return back()->with('error', 'This email address is already associated with another user account.');
+        }
+
+        $password = \Illuminate\Support\Str::random(10);
+
+        $user = \App\Models\User::create([
+            'name' => $patient->name,
+            'email' => $patient->email,
+            'password' => \Illuminate\Support\Facades\Hash::make($password),
+            'role' => 'patient',
+        ]);
+
+        $patient->update(['user_id' => $user->id]);
+
+        return back()->with('success', "Portal access enabled successfully! Temporary Password: {$password} (Please copy this now)");
     }
 }

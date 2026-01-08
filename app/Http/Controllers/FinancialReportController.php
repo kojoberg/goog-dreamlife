@@ -8,6 +8,16 @@ use Illuminate\Http\Request;
 
 class FinancialReportController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            if (!auth()->user()->hasPermission('view_financial_reports')) {
+                abort(403, 'Unauthorized action.');
+            }
+            return $next($request);
+        });
+    }
+
     public function index()
     {
         return view('admin.financials.index');

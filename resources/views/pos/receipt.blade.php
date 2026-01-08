@@ -57,8 +57,8 @@
     <div class="text-center">
         @if($settings->logo_path)
             <?php 
-                                                                $logoPath = storage_path('app/public/' . $settings->logo_path); 
-                                                            ?>
+                                                                        $logoPath = storage_path('app/public/' . $settings->logo_path); 
+                                                                    ?>
             @if(file_exists($logoPath))
                 <img src="data:image/{{ pathinfo($logoPath, PATHINFO_EXTENSION) }};base64,{{ base64_encode(file_get_contents($logoPath)) }}"
                     alt="Logo" style="max-width: 100%; max-height: 120px; height: auto; width: auto; margin-bottom: 15px;">
@@ -156,11 +156,16 @@
         </tr>
 
         @if(!empty($sale->tax_breakdown) && is_array($sale->tax_breakdown))
-            @foreach($sale->tax_breakdown as $taxName => $taxValue)
-                @if($taxValue > 0)
+            @foreach($sale->tax_breakdown as $taxCode => $taxData)
+                @php
+                    // Handle both new format (array with 'amount') and old format (direct number)
+                    $taxAmount = is_array($taxData) ? ($taxData['amount'] ?? 0) : $taxData;
+                    $taxName = is_array($taxData) ? ($taxData['name'] ?? strtoupper($taxCode)) : strtoupper($taxCode);
+                @endphp
+                @if($taxAmount > 0)
                     <tr>
-                        <td style="padding-left: 10px; font-size: 12px; color: #000;">{{ strtoupper($taxName) }}</td>
-                        <td class="right" style="font-size: 12px; color: #000;">{{ number_format($taxValue, 2) }}</td>
+                        <td style="padding-left: 10px; font-size: 12px; color: #000;">{{ $taxName }}</td>
+                        <td class="right" style="font-size: 12px; color: #000;">{{ number_format($taxAmount, 2) }}</td>
                     </tr>
                 @endif
             @endforeach
@@ -217,6 +222,13 @@
     @endif
 
     <div class="footer-print" style="margin-top: 20px; text-align: center;">
+        @if(!empty($settings->refund_policy_text))
+            <p style="font-weight: bold; margin-bottom: 5px;">Refund Policy:</p>
+            <p style="margin-bottom: 10px;">{{ $settings->refund_policy_text }}</p>
+        @endif
+        @if(isset($settings->refund_policy_days) && $settings->refund_policy_days > 0)
+            <p style="font-size: 11px;">Returns accepted within {{ $settings->refund_policy_days }} days.</p>
+        @endif
         <p>Thank you for your patronage!</p>
         <p>Software powered by UviTech, Inc.</p>
     </div>

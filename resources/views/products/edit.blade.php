@@ -106,6 +106,15 @@
                                 system will schedule SMS reminders.</p>
                         </div>
 
+                        <div class="mb-4">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="tax_exempt" value="1" {{ $product->tax_exempt ? 'checked' : '' }} class="form-checkbox h-5 w-5 text-green-600">
+                                <span class="ml-2 text-gray-700 font-bold">Tax Exempt</span>
+                            </label>
+                            <p class="text-xs text-gray-500 mt-1 ml-7">If checked, this product will be excluded from
+                                tax calculation in POS.</p>
+                        </div>
+
                         <!-- Description -->
                         <div class="mb-4">
                             <label for="description"
@@ -159,7 +168,7 @@
         const descInput = document.getElementById('description');
         const originalName = nameInput.value;
         const originalDesc = descInput.value;
-        
+
         // Don't overwrite existing values immediately if just adding barcode
         // But the user might want to refresh details...
         // Let's ask via confirm if name is not empty
@@ -179,14 +188,14 @@
                 descInput.value = data.data.description;
             } else {
                 nameInput.value = originalName; // Revert
-                if(!originalName) nameInput.value = '';
+                if (!originalName) nameInput.value = '';
                 alert('Product not found in global database. You can still save this barcode.');
             }
         } catch (e) {
-             console.error(e);
-             nameInput.value = originalName;
-             if(!originalName) nameInput.value = '';
-             alert('Error fetching data.');
+            console.error(e);
+            nameInput.value = originalName;
+            if (!originalName) nameInput.value = '';
+            alert('Error fetching data.');
         } finally {
             nameInput.disabled = false;
         }

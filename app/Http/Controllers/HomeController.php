@@ -14,7 +14,19 @@ class HomeController extends Controller
     public function index()
     {
         $user = auth()->user();
+        $isSuperAdmin = $user->isSuperAdmin();
         $isAdmin = $user->isAdmin();
+
+        // Helper function to add branch scope to queries
+        $addBranchScope = function ($query) use ($user, $isSuperAdmin) {
+            if ($isSuperAdmin) {
+                return $query; // Super admin sees all
+            }
+            // Regular admin sees only their branch via user
+            return $query->whereHas('user', function ($q) use ($user) {
+                $q->where('branch_id', $user->branch_id);
+            });
+        };
 
         // 1. Key Metrics
         $todaySalesQuery = Sale::whereDate('created_at', Carbon::today());
@@ -24,6 +36,11 @@ class HomeController extends Controller
                     ->orWhereHas('shift', function ($subQ) use ($user) {
                         $subQ->where('user_id', $user->id);
                     });
+            });
+        } elseif (!$isSuperAdmin) {
+            // Regular admin - filter by branch
+            $todaySalesQuery->whereHas('user', function ($q) use ($user) {
+                $q->where('branch_id', $user->branch_id);
             });
         }
         $todaySales = $todaySalesQuery->sum('total_amount');
@@ -36,22 +53,24 @@ class HomeController extends Controller
             ->count();
 
         // Calculate low stock: products where current stock <= reorder level
-        // optimizing this query would be better for scale, but using the attribute is safer for logic consistency
         $lowStockCount = Product::all()->filter(function ($product) {
             return $product->stock <= $product->reorder_level;
         })->count();
 
         $totalPatients = \App\Models\Patient::count();
 
-        // 2. Chart Data (Last 7 Days)
-        // Generate last 7 days array
+        // 2. Chart Data (Dynamic Range)
+        $days = request('days', 7); // Default to 7 days
+        $startDate = Carbon::now()->subDays($days - 1)->startOfDay();
+
         $dates = collect();
-        foreach (range(6, 0) as $i) {
-            $dates->push(Carbon::now()->subDays($i)->format('Y-m-d'));
+        // Generate dates from start to today
+        for ($i = 0; $i < $days; $i++) {
+            $dates->push($startDate->copy()->addDays($i)->format('Y-m-d'));
         }
 
         $salesDataQuery = Sale::select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total_amount) as total'))
-            ->where('created_at', '>=', Carbon::now()->subDays(6)->startOfDay());
+            ->where('created_at', '>=', $startDate);
 
         if (!$isAdmin) {
             $salesDataQuery->where(function ($q) use ($user) {
@@ -59,6 +78,10 @@ class HomeController extends Controller
                     ->orWhereHas('shift', function ($subQ) use ($user) {
                         $subQ->where('user_id', $user->id);
                     });
+            });
+        } elseif (!$isSuperAdmin) {
+            $salesDataQuery->whereHas('user', function ($q) use ($user) {
+                $q->where('branch_id', $user->branch_id);
             });
         }
 
@@ -73,7 +96,7 @@ class HomeController extends Controller
 
         // Format dates for display (e.g., "Mon 27")
         $displayDates = $dates->map(function ($date) {
-            return Carbon::parse($date)->format('D d');
+            return Carbon::parse($date)->format('M d'); // Changed to Month Day for longer ranges
         });
 
         // 3. Recent Transactions
@@ -84,6 +107,10 @@ class HomeController extends Controller
                     ->orWhereHas('shift', function ($subQ) use ($user) {
                         $subQ->where('user_id', $user->id);
                     });
+            });
+        } elseif (!$isSuperAdmin) {
+            $recentSalesQuery->whereHas('user', function ($q) use ($user) {
+                $q->where('branch_id', $user->branch_id);
             });
         }
         $recentSales = $recentSalesQuery->take(5)->get();
@@ -100,3 +127,4 @@ class HomeController extends Controller
         ));
     }
 }
+

@@ -15,6 +15,7 @@ class Product extends Model
 
     protected $casts = [
         'is_chronic' => 'boolean',
+        'tax_exempt' => 'boolean',
     ];
 
     public function category()

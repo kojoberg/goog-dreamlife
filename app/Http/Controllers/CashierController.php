@@ -118,11 +118,22 @@ class CashierController extends Controller
                 'amount_tendered' => $amountTendered,
                 'change_amount' => $changeAmount,
                 'payment_method' => $request->payment_method,
-                // We might want to track WHO finalized it. 
-                // Currently user_id is the Creator (Pharmacist). 
-                // We might need a 'cashier_id' column or just rely on 'shift_id' (which links to Cashier).
                 'shift_id' => $shift->id, // Assign to Cashier's Shift
             ]);
+
+            // Award Loyalty Points (now that payment is received)
+            $settings = Setting::first();
+            if ($settings && $settings->loyalty_spend_per_point > 0 && $sale->total_amount > 0) {
+                $pointsEarned = floor($sale->total_amount / $settings->loyalty_spend_per_point);
+                if ($pointsEarned > 0) {
+                    $sale->update(['points_earned' => $pointsEarned]);
+
+                    $patient = $sale->patient;
+                    if ($patient) {
+                        $patient->increment('loyalty_points', $pointsEarned);
+                    }
+                }
+            }
 
             DB::commit();
 

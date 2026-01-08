@@ -100,6 +100,54 @@
                                     required placeholder="Enter name of staff receiving stock">
                             </div>
 
+                            <div class="mb-6">
+                                <h4 class="font-bold text-gray-700 mb-3">Item Expiry Dates</h4>
+                                <p class="text-sm text-gray-500 mb-4">Enter the expiry date from the product packaging for
+                                    each item:</p>
+                                <table class="min-w-full bg-gray-50 rounded">
+                                    <thead>
+                                        <tr class="bg-gray-100">
+                                            <th class="p-3 text-left text-sm font-semibold text-gray-700">Product</th>
+                                            <th class="p-3 text-center text-sm font-semibold text-gray-700">Qty</th>
+                                            <th class="p-3 text-left text-sm font-semibold text-gray-700">Batch Number</th>
+                                            <th class="p-3 text-left text-sm font-semibold text-gray-700">Expiry Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($order->items as $index => $item)
+                                            @if($item->quantity_received < $item->quantity_ordered)
+                                                <tr class="border-b border-gray-200">
+                                                    <td class="p-3 text-sm">{{ $item->product?->name ?? 'Unknown' }}</td>
+                                                    <td class="p-3 text-center text-sm font-medium">
+                                                        <div class="flex items-center justify-center">
+                                                            <span class="text-xs text-gray-500 mr-2">/
+                                                                {{ $item->quantity_ordered }}</span>
+                                                            <input type="number" name="items[{{ $item->id }}][quantity]"
+                                                                class="shadow appearance-none border rounded w-20 py-1 px-2 text-gray-700 text-sm leading-tight focus:outline-none focus:shadow-outline text-center"
+                                                                required min="1"
+                                                                max="{{ $item->quantity_ordered - $item->quantity_received }}"
+                                                                value="{{ $item->quantity_ordered - $item->quantity_received }}">
+                                                        </div>
+                                                    </td>
+                                                    <td class="p-3">
+                                                        <input type="hidden" name="items[{{ $item->id }}][item_id]"
+                                                            value="{{ $item->id }}">
+                                                        <input type="text" name="items[{{ $item->id }}][batch_number]"
+                                                            class="shadow appearance-none border rounded w-full py-1 px-2 text-gray-700 text-sm leading-tight focus:outline-none focus:shadow-outline"
+                                                            required placeholder="e.g. LOT-12345">
+                                                    </td>
+                                                    <td class="p-3">
+                                                        <input type="date" name="items[{{ $item->id }}][expiry_date]"
+                                                            class="shadow appearance-none border rounded w-full py-1 px-2 text-gray-700 text-sm leading-tight focus:outline-none focus:shadow-outline"
+                                                            required min="{{ now()->format('Y-m-d') }}">
+                                                    </td>
+                                                </tr>
+                                            @endif
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+
                             <button type="submit"
                                 class="bg-green-600 hover:bg-green-800 text-white font-bold py-3 px-6 rounded w-full text-center"
                                 onclick="return confirm('Confirm receipt of stock? This will update inventory levels.')">

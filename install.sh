@@ -150,6 +150,41 @@ rm -f /etc/nginx/sites-enabled/default
 nginx -t
 systemctl restart nginx
 
+echo -e "${GREEN}[8/8] Optional: SSL Configuration (Let's Encrypt)${NC}"
+read -p "Do you want to install a free SSL certificate now? (y/n): " INSTALL_SSL
+if [[ "$INSTALL_SSL" =~ ^[Yy]$ ]]; then
+    read -p "Enter your domain name (e.g., pms.dreamlife.com): " DOMAIN_NAME
+    read -p "Enter your email for renewal notices: " EMAIL_ADDR
+
+    if [ -n "$DOMAIN_NAME" ] && [ -n "$EMAIL_ADDR" ]; then
+        echo "Installing Certbot..."
+        apt install -y certbot python3-certbot-nginx
+
+        # Update Nginx config specifically for this domain before requesting cert
+        sed -i "s/server_name _;/server_name $DOMAIN_NAME;/" /etc/nginx/sites-available/dreamlife
+        systemctl reload nginx
+
+        echo "Requesting Certificate..."
+        certbot --nginx -d "$DOMAIN_NAME" --non-interactive --agree-tos --email "$EMAIL_ADDR" --redirect
+
+        # Ensure auto-renew timer is active
+        if systemctl list-to-timer | grep -q 'certbot.timer'; then
+            echo "Certbot auto-renewal timer is already active."
+        else
+            echo "Setting up auto-renewal..."
+            # Check if crontab already has renew command to avoid duplicates
+            (crontab -l 2>/dev/null; echo "0 12 * * * /usr/bin/certbot renew --quiet") | crontab -
+        fi
+        
+        echo -e "${GREEN}SSL Installed Successfully!${NC}"
+        APP_URL="https://$DOMAIN_NAME"
+        sed -i "s|APP_URL=http://.*|APP_URL=$APP_URL|" .env
+        php artisan config:clear
+    else
+        echo "Skipping SSL: Domain or Email missing."
+    fi
+fi
+
 # Start Scheduler
 (crontab -l 2>/dev/null; echo "* * * * * cd /var/www/dreamlife && php artisan schedule:run >> /dev/null 2>&1") | crontab -
 
@@ -157,5 +192,4 @@ echo -e "${BLUE}=================================================${NC}"
 echo -e "${GREEN}   INSTALLATION COMPLETE! 🚀                     ${NC}"
 echo -e "${BLUE}=================================================${NC}"
 echo -e "Access your app at: http://$(curl -s ifconfig.me)"
-echo -e "Admin Email: admin@uvitech.com"
-echo -e "Password: password"
+

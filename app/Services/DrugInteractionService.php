@@ -65,7 +65,7 @@ class DrugInteractionService
     /**
      * Sync interactions for all products.
      */
-    public function dispatchSyncJobs()
+    public function syncInteractions()
     {
         // For simplicity in this iteration, we run sync synchronously or dispatch a command.
         // Let's implement the logic to check interactions for a single product here, 

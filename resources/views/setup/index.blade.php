@@ -77,6 +77,21 @@
                     </div>
                 </div>
 
+                <!-- Multi-Branch Option -->
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <label for="is_multi_branch" class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="is_multi_branch" name="is_multi_branch" value="1"
+                            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 mr-3">
+                        <div>
+                            <span class="font-semibold text-gray-700">Multiple Branches?</span>
+                            <p class="text-sm text-gray-500 mt-1">
+                                Check this if you have or plan to have multiple pharmacy branches.
+                                This will create a <strong>Super Admin</strong> account that can manage all branches.
+                            </p>
+                        </div>
+                    </label>
+                </div>
+
                 <div class="flex items-center justify-end mt-4">
                     <x-primary-button class="ml-4">
                         {{ __('Complete Setup') }}

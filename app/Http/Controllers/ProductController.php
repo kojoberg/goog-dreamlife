@@ -48,7 +48,7 @@ class ProductController extends Controller
 
     public function create()
     {
-        if (!auth()->user()->isAdmin()) {
+        if (!auth()->user()->hasPermission('manage_products')) {
             abort(403, 'Unauthorized action.');
         }
         $categories = Category::all();
@@ -57,7 +57,7 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        if (!auth()->user()->isAdmin()) {
+        if (!auth()->user()->hasPermission('manage_products')) {
             abort(403, 'Unauthorized action.');
         }
         $validated = $request->validate([
@@ -105,7 +105,7 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
-        if (!auth()->user()->isAdmin()) {
+        if (!auth()->user()->hasPermission('manage_products')) {
             abort(403, 'Unauthorized action.');
         }
         $categories = Category::all();
@@ -114,7 +114,7 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product)
     {
-        if (!auth()->user()->isAdmin()) {
+        if (!auth()->user()->hasPermission('manage_products')) {
             abort(403, 'Unauthorized action.');
         }
         $validated = $request->validate([
@@ -161,7 +161,7 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
-        if (!auth()->user()->isAdmin()) {
+        if (!auth()->user()->hasPermission('manage_products')) {
             abort(403, 'Unauthorized action.');
         }
         $product->delete();
@@ -170,7 +170,7 @@ class ProductController extends Controller
 
     public function importForm()
     {
-        if (!auth()->user()->isAdmin()) {
+        if (!auth()->user()->hasPermission('manage_products')) {
             abort(403, 'Unauthorized action.');
         }
         return view('products.import');
@@ -215,7 +215,7 @@ class ProductController extends Controller
 
     public function processImport(Request $request)
     {
-        if (!auth()->user()->isAdmin()) {
+        if (!auth()->user()->hasPermission('manage_products')) {
             abort(403, 'Unauthorized action.');
         }
         $request->validate([

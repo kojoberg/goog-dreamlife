@@ -38,6 +38,23 @@
                     </x-form-select>
 
                     <div class="col-span-1 md:col-span-2 border-t pt-4 mt-2">
+                        <h3 class="text-sm font-bold text-slate-700 mb-4">Permissions</h3>
+                        <p class="text-xs text-gray-500 mb-2">Assign specific permissions to this user. (Admins have all
+                            permissions by default).</p>
+                        <input type="hidden" name="permissions_submitted" value="1">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            @foreach($permissions as $permission)
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" name="permissions[]" value="{{ $permission->id }}"
+                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                        {{ $user->permissions->contains($permission->id) ? 'checked' : '' }}>
+                                    <span class="ml-2 text-sm text-gray-600">{{ $permission->name }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="col-span-1 md:col-span-2 border-t pt-4 mt-2">
                         <h3 class="text-sm font-bold text-slate-700 mb-4">Change Password (Optional)</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <x-form-input name="password" label="New Password" type="password"

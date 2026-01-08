@@ -35,6 +35,10 @@ class RefundController extends Controller
      */
     public function store(Request $request, Sale $sale)
     {
+        if (!auth()->user()->hasPermission('process_refund')) {
+            return back()->with('error', 'Unauthorized. You do not have permission to process refunds.');
+        }
+
         $request->validate([
             'reason' => 'required|string|max:1000',
         ]);
@@ -45,6 +49,15 @@ class RefundController extends Controller
 
         if ($sale->refund) {
             return back()->with('error', 'A refund request already exists for this sale.');
+        }
+
+        // Check Refund Policy Days
+        $settings = \App\Models\Setting::first();
+        if ($settings && isset($settings->refund_policy_days) && $settings->refund_policy_days > 0) {
+            $limitDate = $sale->created_at->addDays($settings->refund_policy_days);
+            if (now()->gt($limitDate)) {
+                return back()->with('error', "Refund period expired. Policy allows refunds within {$settings->refund_policy_days} days.");
+            }
         }
 
         Refund::create([

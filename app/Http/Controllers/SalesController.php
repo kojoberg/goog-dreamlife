@@ -12,10 +12,24 @@ class SalesController extends Controller
      */
     public function index()
     {
+        $user = auth()->user();
         $query = Sale::with(['user', 'patient', 'shift.user']);
 
-        if (!auth()->user()->isAdmin()) {
-            $user = auth()->user();
+        // Super admins see all sales
+        if ($user->isSuperAdmin()) {
+            // No branch filter needed
+        } elseif ($user->isAdmin() || $user->hasPermission('view_all_sales')) {
+            // Regular admins or authorized staff see only their branch's sales
+            $query->whereHas('user', function ($q) use ($user) {
+                // If user has no branch (unlikely for staff), show all? Or none? Assumes branch_id exists.
+                // If branch_id is null, this might show nothing or all.
+                // Let's assume branch_id is set.
+                if ($user->branch_id) {
+                    $q->where('branch_id', $user->branch_id);
+                }
+            });
+        } else {
+            // Non-admins see only their own sales
             $query->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)
                     ->orWhereHas('shift', function ($subQ) use ($user) {

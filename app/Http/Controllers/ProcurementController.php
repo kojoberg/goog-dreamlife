@@ -28,6 +28,10 @@ class ProcurementController extends Controller
 
     public function store(Request $request)
     {
+        if (!auth()->user()->hasPermission('create_purchase_order')) {
+            return back()->with('error', 'Unauthorized. You do not have permission to create Purchase Orders.');
+        }
+
         $request->validate([
             'supplier_id' => 'required|exists:suppliers,id',
             'expected_date' => 'required|date',
@@ -72,37 +76,70 @@ class ProcurementController extends Controller
 
     public function receive(Request $request, PurchaseOrder $order)
     {
+        if (!auth()->user()->hasPermission('receive_stock')) {
+            return back()->with('error', 'Unauthorized. You do not have permission to receive stock.');
+        }
+
         // Receive Stock
         if ($order->status === 'received') {
             return back()->with('error', 'Order already received.');
         }
 
-        $request->validate(['received_by' => 'required|string|max:255']);
+        $request->validate([
+            'received_by' => 'required|string|max:255',
+            'items' => 'required|array',
+            'items.*.item_id' => 'required|exists:purchase_order_items,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.batch_number' => 'required|string|max:100',
+            'items.*.expiry_date' => 'required|date|after:today',
+        ]);
 
         DB::transaction(function () use ($order, $request) {
             foreach ($order->items as $item) {
-                if ($item->quantity_received < $item->quantity_ordered) {
-                    // Update Item
-                    $qty = $item->quantity_ordered; // Simple: Full receive
-                    $item->update(['quantity_received' => $qty]);
+                // Check if this item is in the request
+                if (isset($request->items[$item->id])) {
+                    $itemData = $request->items[$item->id];
+                    $receivedQty = (int) $itemData['quantity'];
 
-                    // Add to Inventory Batch
-                    InventoryBatch::create([
-                        'product_id' => $item->product_id,
-                        'supplier_id' => $order->supplier_id,
-                        'batch_number' => 'PO-' . $order->id . '-' . time(),
-                        'quantity' => $qty,
-                        'expiry_date' => now()->addYear(),
-                        'cost_price' => $item->unit_cost,
-                    ]);
+                    // Validate not receiving more than ordered (or remaining)
+                    $remaining = $item->quantity_ordered - $item->quantity_received;
+                    if ($receivedQty > $remaining) {
+                        $receivedQty = $remaining; // Cap at remaining
+                    }
 
-                    // Update Product Cost Price to latest received cost
-                    $item->product->update(['cost_price' => $item->unit_cost]);
+                    if ($receivedQty > 0) {
+                        $batchNumber = $itemData['batch_number'];
+                        $expiryDate = $itemData['expiry_date'];
+
+                        // Update Item (Increment received count)
+                        $item->increment('quantity_received', $receivedQty);
+
+                        // Add to Inventory Batch
+                        InventoryBatch::create([
+                            'product_id' => $item->product_id,
+                            'supplier_id' => $order->supplier_id,
+                            'batch_number' => $batchNumber,
+                            'quantity' => $receivedQty,
+                            'expiry_date' => $expiryDate,
+                            'cost_price' => $item->unit_cost,
+                        ]);
+
+                        // Update Product Cost Price
+                        $item->product->update(['cost_price' => $item->unit_cost]);
+                    }
                 }
             }
+
+            // Update Order Status
+            // Check if ALL items are fully received
+            $order->refresh();
+            $allReceived = $order->items->every(function ($item) {
+                return $item->quantity_received >= $item->quantity_ordered;
+            });
+
             $order->update([
-                'status' => 'received',
-                'received_by' => $request->received_by // Save staff name
+                'status' => $allReceived ? 'received' : 'partial',
+                'received_by' => $request->received_by
             ]);
         });
 

@@ -31,13 +31,17 @@ class SetupController extends Controller
             'location' => $request->branch_location,
         ]);
 
+        // Check if multi-branch setup (create super admin)
+        $isMultiBranch = $request->boolean('is_multi_branch');
+
         // Create Admin User
         $user = User::create([
             'name' => $request->admin_name,
             'email' => $request->admin_email,
             'password' => Hash::make($request->admin_password),
             'role' => 'admin',
-            'branch_id' => $branch->id,
+            'branch_id' => $isMultiBranch ? null : $branch->id, // Super admin has no branch
+            'is_super_admin' => $isMultiBranch,
         ]);
 
         // Login the user
@@ -46,3 +50,4 @@ class SetupController extends Controller
         return redirect()->route('dashboard');
     }
 }
+

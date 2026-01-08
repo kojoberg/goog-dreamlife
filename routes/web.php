@@ -18,6 +18,10 @@ Route::get('/dashboard', [\App\Http\Controllers\HomeController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
+Route::get('/global-search', [\App\Http\Controllers\GlobalSearchController::class, 'search'])
+    ->middleware(['auth'])
+    ->name('global.search');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -28,8 +32,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/mark-all', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.mark-all');
 
-    // --- Shared POS/Sales Resources (Admin, Pharmacist, Cashier) ---
-    Route::middleware(['role:admin,pharmacist,cashier'])->group(function () {
+    // --- Shared POS/Sales Resources (Admin, Pharmacist, Cashier, Lab Scientist) ---
+    Route::middleware(['role:admin,pharmacist,cashier,lab_scientist'])->group(function () {
         Route::resource('shifts', \App\Http\Controllers\ShiftController::class)->only(['create', 'store', 'update']);
         Route::get('/shifts/my-history', [\App\Http\Controllers\ShiftController::class, 'myShifts'])->name('shifts.my_index');
         Route::get('/shifts/{shift}/print', [\App\Http\Controllers\ShiftController::class, 'print'])->name('shifts.print');
@@ -54,8 +58,20 @@ Route::middleware('auth')->group(function () {
         ->middleware(['auth'])
         ->name('pos.receipt');
 
-    // --- Clinical & Inventory (Admin, Pharmacist) ---
-    Route::middleware(['role:admin,pharmacist'])->group(function () {
+    // --- HR Management ---
+    Route::middleware(['role:admin'])->prefix('admin/hr')->name('admin.hr.')->group(function () {
+        Route::get('dashboard', [\App\Http\Controllers\Admin\Hr\HrDashboardController::class, 'index'])->name('dashboard');
+        Route::resource('employees', \App\Http\Controllers\Admin\Hr\EmployeeController::class);
+        Route::resource('payroll', \App\Http\Controllers\Admin\Hr\PayrollController::class);
+        Route::resource('kpis', \App\Http\Controllers\Admin\Hr\KpiController::class);
+        Route::resource('appraisals', \App\Http\Controllers\Admin\Hr\AppraisalController::class);
+        Route::get('activity', [\App\Http\Controllers\Admin\Hr\StaffActivityController::class, 'index'])->name('activity.index');
+        Route::get('activity/{user}', [\App\Http\Controllers\Admin\Hr\StaffActivityController::class, 'show'])->name('activity.show');
+        Route::resource('communication', \App\Http\Controllers\Admin\Hr\CommunicationController::class);
+    });
+
+    // --- Clinical & Inventory (Admin, Pharmacist, Lab Scientist) ---
+    Route::middleware(['role:admin,pharmacist,lab_scientist'])->group(function () {
         Route::resource('suppliers', \App\Http\Controllers\SupplierController::class);
         Route::resource('categories', \App\Http\Controllers\CategoryController::class);
 
@@ -74,7 +90,10 @@ Route::middleware('auth')->group(function () {
 
         // Clinical
         Route::get('/patients/{patient}/loyalty', [\App\Http\Controllers\PatientController::class, 'loyaltyHistory'])->name('patients.loyalty');
+        Route::post('/patients/{patient}/portal-access', [\App\Http\Controllers\PatientController::class, 'enablePortal'])->name('patients.portal.enable');
         Route::resource('patients', \App\Http\Controllers\PatientController::class);
+        Route::post('/patients/{patient}/documents', [\App\Http\Controllers\PatientDocumentController::class, 'store'])->name('patients.documents.store');
+        Route::delete('/patient-documents/{document}', [\App\Http\Controllers\PatientDocumentController::class, 'destroy'])->name('patient-documents.destroy');
         Route::resource('prescriptions', \App\Http\Controllers\PrescriptionController::class);
         Route::post('/prescriptions/{prescription}/dispense', [\App\Http\Controllers\PrescriptionController::class, 'dispense'])->name('prescriptions.dispense');
         Route::post('/drug-interactions/sync', [\App\Http\Controllers\DrugInteractionController::class, 'sync'])->name('drug-interactions.sync');
@@ -151,7 +170,31 @@ Route::middleware('auth')->group(function () {
         // System Health
         Route::get('/system-health', [\App\Http\Controllers\SystemHealthController::class, 'index'])->name('admin.system-health');
         Route::post('/system-health/toggle-debug', [\App\Http\Controllers\SystemHealthController::class, 'toggleDebug'])->name('admin.system-health.toggle-debug');
+
+        // Safety Database
+        Route::get('/safety', [\App\Http\Controllers\SafetyDatabaseController::class, 'index'])->name('admin.safety.index');
+        Route::post('/safety/sync', [\App\Http\Controllers\SafetyDatabaseController::class, 'sync'])->name('admin.safety.sync');
+
+        // Tax Management
+        Route::prefix('tax')->name('admin.tax.')->group(function () {
+            Route::get('/rates', [\App\Http\Controllers\TaxRateController::class, 'index'])->name('rates.index');
+            Route::post('/rates', [\App\Http\Controllers\TaxRateController::class, 'store'])->name('rates.store');
+            Route::put('/rates/{taxRate}', [\App\Http\Controllers\TaxRateController::class, 'update'])->name('rates.update');
+            Route::post('/rates/{taxRate}/toggle', [\App\Http\Controllers\TaxRateController::class, 'toggle'])->name('rates.toggle');
+            Route::delete('/rates/{taxRate}', [\App\Http\Controllers\TaxRateController::class, 'destroy'])->name('rates.destroy');
+
+            Route::get('/reports', [\App\Http\Controllers\TaxReportController::class, 'index'])->name('reports.index');
+            Route::post('/remittance', [\App\Http\Controllers\TaxReportController::class, 'storeRemittance'])->name('remittance.store');
+            Route::put('/remittance/{remittance}', [\App\Http\Controllers\TaxReportController::class, 'updateRemittance'])->name('remittance.update');
+        });
     });
+});
+
+// --- Patient Portal ---
+Route::middleware(['auth', 'role:patient'])->prefix('portal')->name('portal.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\PatientPortalController::class, 'dashboard'])->name('dashboard');
+    Route::get('/history', [\App\Http\Controllers\PatientPortalController::class, 'history'])->name('history');
+    Route::get('/documents', [\App\Http\Controllers\PatientPortalController::class, 'documents'])->name('documents');
 });
 
 require __DIR__ . '/auth.php';

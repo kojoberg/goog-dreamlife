@@ -26,6 +26,10 @@ class PosController extends Controller
      */
     public function index()
     {
+        if (!auth()->user()->hasPermission('access_pos')) {
+            abort(403, 'Unauthorized. Access to POS is restricted.');
+        }
+
         // Fetch products with visible stock
         // Fetch products: EITHER (Goods with stock > 0) OR (Services)
         $products = Product::where(function ($query) {
@@ -75,6 +79,10 @@ class PosController extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->hasPermission('access_pos')) {
+            abort(403, 'Unauthorized. Access to POS is restricted.');
+        }
+
         $request->validate([
             'cart' => 'required|array',
             'cart.*.id' => 'required|exists:products,id',
@@ -100,6 +108,7 @@ class PosController extends Controller
             DB::beginTransaction();
 
             $subtotal = 0;
+            $taxableSubtotal = 0; // Track taxable items separately
             $itemsToCreate = [];
             $batchesToUpdate = [];
 
@@ -112,44 +121,44 @@ class PosController extends Controller
                 $branchId = Auth::user()->branch_id;
                 $price = $product->getPriceForBranch($branchId);
 
-                $subtotal += ($qtyNeeded * $price);
+                $itemTotal = $qtyNeeded * $price;
+                $subtotal += $itemTotal;
+
+                // Only add to taxable subtotal if product is not tax exempt
+                if (!$product->tax_exempt) {
+                    $taxableSubtotal += $itemTotal;
+                }
 
                 // Stock Check Logic (Preview)
                 // We'll do the actual deduction in the second pass or complex query
                 // For simplicity, let's keep the logic close to the loop
             }
 
-            // 2. Calculate Taxes (INCLUSIVE)
-            $grandTotal = $subtotal; // Product Price includes everything if tax enabled
+            // 2. Calculate Taxes using INCLUSIVE pricing (tax is already in product prices)
+            // Product prices include tax - we extract/back-calculate the tax component
+            $grandTotal = $subtotal; // Grand total stays same - prices already include tax
             $settings = Setting::first();
             $taxEnabled = $settings->enable_tax;
 
-            if ($taxEnabled) {
-                // Formula: Price = Cost + Levies + VAT
-                // Total = 1.06 * 1.15 * Base = 1.219 * Base
-                $baseAmount = $grandTotal / 1.219;
+            if ($taxEnabled && $taxableSubtotal > 0) {
+                // Use INCLUSIVE tax calculation - extract tax from prices
+                $taxData = \App\Models\TaxRate::calculateInclusiveBreakdown($taxableSubtotal);
+                $totalTax = $taxData['total_tax'];
+                $baseAmount = $taxData['base_amount'];
 
-                $levies = $baseAmount * 0.06;
-                $nhil = $baseAmount * 0.025;
-                $getfund = $baseAmount * 0.025;
-                $covid = $baseAmount * 0.01;
+                // Convert breakdown to simple format for storage
+                $taxBreakdown = [];
+                foreach ($taxData['breakdown'] as $code => $data) {
+                    $taxBreakdown[$code] = $data;
+                }
 
-                $vatBase = $baseAmount + $nhil + $getfund + $covid;
-                $vat = $vatBase * 0.15;
-
-                // Re-assign for DB storage
-                $subtotal = $baseAmount;
-                $totalTax = $grandTotal - $baseAmount;
-
-                $taxBreakdown = [
-                    'nhil' => round($nhil, 2),
-                    'getfund' => round($getfund, 2),
-                    'covid' => round($covid, 2),
-                    'vat' => round($vat, 2)
-                ];
+                // For storage purposes, subtotal represents the base (pre-tax) amount of taxable items
+                // Plus the full amount of exempt items
+                $exemptAmount = $subtotal - $taxableSubtotal;
+                $subtotal = $baseAmount + $exemptAmount;
+                // grandTotal stays the same - it's what customer pays (prices include tax)
             } else {
                 // No Tax
-                $subtotal = $grandTotal;
                 $totalTax = 0;
                 $taxBreakdown = null;
             }

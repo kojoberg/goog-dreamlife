@@ -23,6 +23,7 @@ class User extends Authenticatable
         'password',
         'role',
         'branch_id',
+        'is_super_admin',
     ];
 
     /**
@@ -45,18 +46,47 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_super_admin' => 'boolean',
         ];
     }
 
-    public function sales()
+    public function permissions()
     {
-        return $this->hasMany(Sale::class);
+        return $this->belongsToMany(Permission::class);
     }
 
-    public function isAdmin()
+    public function hasPermission($permissionSlug)
     {
-        return $this->role === 'admin';
+        // Admins and Super Admins have all permissions implicitly
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        return $this->permissions->contains('slug', $permissionSlug);
     }
+
+    public function givePermissionTo($permissionSlug)
+    {
+        $permission = Permission::where('slug', $permissionSlug)->firstOrFail();
+        $this->permissions()->syncWithoutDetaching([$permission->id]);
+    }
+
+    /**
+     * Check if user is a super admin (manages all branches).
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->is_super_admin === true;
+    }
+
+    /**
+     * Check if user has admin privileges (admin or super_admin).
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin' || $this->isSuperAdmin();
+    }
+
     public function isPharmacist()
     {
         return $this->role === 'pharmacist';
@@ -70,9 +100,24 @@ class User extends Authenticatable
         return $this->role === 'cashier';
     }
 
+    public function isLabScientist()
+    {
+        return $this->role === 'lab_scientist';
+    }
+
     public function branch()
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function patient()
+    {
+        return $this->hasOne(Patient::class);
+    }
+
+    public function employeeProfile()
+    {
+        return $this->hasOne(EmployeeProfile::class);
     }
 
     public function shifts()
@@ -84,4 +129,17 @@ class User extends Authenticatable
     {
         return $this->shifts()->whereNull('end_time')->exists();
     }
+
+    /**
+     * Get the branch ID to use for filtering queries.
+     * Returns null for super admins (sees all).
+     */
+    public function getBranchIdForScope(): ?int
+    {
+        if ($this->isSuperAdmin()) {
+            return null;
+        }
+        return $this->branch_id;
+    }
 }
+

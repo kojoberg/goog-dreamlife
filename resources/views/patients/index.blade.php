@@ -11,8 +11,19 @@
                 <div class="p-6 text-gray-900">
                     <div class="flex justify-between mb-4">
                         <h3 class="text-lg font-bold">Patient List</h3>
-                        <a href="{{ route('patients.create') }}"
-                            class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Add Patient</a>
+
+                        <div class="flex space-x-2">
+                            <form method="GET" action="{{ route('patients.index') }}" class="flex">
+                                <input type="text" name="search" value="{{ request('search') }}"
+                                    placeholder="Search name or phone..."
+                                    class="rounded-l-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                <button type="submit"
+                                    class="bg-gray-100 border border-l-0 border-gray-300 px-4 rounded-r-md hover:bg-gray-200">Search</button>
+                            </form>
+                            <a href="{{ route('patients.create') }}"
+                                class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Add
+                                Patient</a>
+                        </div>
                     </div>
 
 
