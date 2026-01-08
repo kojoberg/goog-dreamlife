@@ -331,7 +331,8 @@
                             </div>
                         </div>
 
-                        <!-- Branch Management -->
+                        <!-- Branch Management (Multi-Branch Mode Only) -->
+                        @if(is_multi_branch())
                         <div class="mt-8 border-t pt-6">
                             <h3 class="text-lg font-medium text-gray-900 mb-4">Multi-Branch Operations</h3>
                             <div class="bg-gray-50 p-4 rounded-lg flex justify-between items-center">
@@ -354,6 +355,20 @@
                                 </a>
                             </div>
                         </div>
+                        @else
+                        <div class="mt-8 border-t pt-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">User Management</h3>
+                            <div class="bg-gray-50 p-4 rounded-lg flex justify-between items-center">
+                                <div>
+                                    <h4 class="font-bold text-gray-800">Manage Users</h4>
+                                    <p class="text-sm text-gray-600">Add staff and assign roles.</p>
+                                </div>
+                                <a href="{{ route('users.index') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                                    Manage Users
+                                </a>
+                            </div>
+                        </div>
+                        @endif
 
                         <div class="mt-8 border-t pt-6">
                             <h3 class="text-lg font-medium text-gray-900 mb-4">Test Configuration</h3>

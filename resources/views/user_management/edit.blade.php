@@ -29,13 +29,17 @@
                         <option value="admin" {{ $user->role == 'admin' ? 'selected' : '' }}>Administrator</option>
                     </x-form-select>
 
-                    <x-form-select name="branch_id" label="Branch" required>
-                        @foreach($branches as $branch)
-                            <option value="{{ $branch->id }}" {{ $user->branch_id == $branch->id ? 'selected' : '' }}>
-                                {{ $branch->name }} {{ $branch->is_main ? '(Main HQ)' : '' }}
-                            </option>
-                        @endforeach
-                    </x-form-select>
+                    @if(is_multi_branch())
+                        <x-form-select name="branch_id" label="Branch" required>
+                            @foreach($branches as $branch)
+                                <option value="{{ $branch->id }}" {{ $user->branch_id == $branch->id ? 'selected' : '' }}>
+                                    {{ $branch->name }} {{ $branch->is_main ? '(Main HQ)' : '' }}
+                                </option>
+                            @endforeach
+                        </x-form-select>
+                    @else
+                        <input type="hidden" name="branch_id" value="{{ $user->branch_id ?? $branches->first()->id ?? 1 }}">
+                    @endif
 
                     <div class="col-span-1 md:col-span-2 border-t pt-4 mt-2">
                         <h3 class="text-sm font-bold text-slate-700 mb-4">Permissions</h3>

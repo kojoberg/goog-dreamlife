@@ -105,7 +105,30 @@ fi
 npm install
 npm run build
 
-echo -e "${GREEN}[6/7] Migrating Database...${NC}"
+echo -e "${GREEN}[6/8] Pharmacy Configuration...${NC}"
+echo ""
+echo -e "${BLUE}Select Pharmacy Type:${NC}"
+echo "  [1] Single Location (Standard)"
+echo "  [2] Multi-Branch (Enterprise)"
+echo ""
+read -p "Enter choice (1 or 2): " PHARMACY_CHOICE
+
+if [ "$PHARMACY_CHOICE" == "2" ]; then
+    echo "Configuring for Multi-Branch mode..."
+    sed -i "s/PHARMACY_MODE=single/PHARMACY_MODE=multi/" .env
+    # If line doesn't exist, add it
+    if ! grep -q "PHARMACY_MODE=" .env; then
+        echo "PHARMACY_MODE=multi" >> .env
+    fi
+else
+    echo "Configuring for Single Location mode..."
+    # Ensure line exists
+    if ! grep -q "PHARMACY_MODE=" .env; then
+        echo "PHARMACY_MODE=single" >> .env
+    fi
+fi
+
+echo -e "${GREEN}[7/8] Migrating Database...${NC}"
 php artisan migrate:fresh --force --seed
 php artisan config:cache
 php artisan route:cache

@@ -35,9 +35,11 @@
                                     <th
                                         class="py-2 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Role</th>
-                                    <th
-                                        class="py-2 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Assigned Branch</th>
+                                    @if(is_multi_branch())
+                                        <th
+                                            class="py-2 px-4 border-b text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                            Assigned Branch</th>
+                                    @endif
                                     <th
                                         class="py-2 px-4 border-b text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Actions</th>
@@ -55,13 +57,15 @@
                                                 {{ ucfirst($user->role) }}
                                             </span>
                                         </td>
-                                        <td class="py-2 px-4 border-b text-sm text-gray-600">
-                                            @if($user->branch)
-                                                <span class="font-bold text-indigo-600">{{ $user->branch->name }}</span>
-                                            @else
-                                                <span class="text-gray-400 italic">No Branch</span>
-                                            @endif
-                                        </td>
+                                        @if(is_multi_branch())
+                                            <td class="py-2 px-4 border-b text-sm text-gray-600">
+                                                @if($user->branch)
+                                                    <span class="font-bold text-indigo-600">{{ $user->branch->name }}</span>
+                                                @else
+                                                    <span class="text-gray-400 italic">No Branch</span>
+                                                @endif
+                                            </td>
+                                        @endif
                                         <td class="py-2 px-4 border-b text-right text-sm">
                                             <a href="{{ route('users.edit', $user) }}"
                                                 class="text-indigo-600 hover:text-indigo-900 font-bold mr-3">Edit</a>

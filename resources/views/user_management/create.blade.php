@@ -28,15 +28,20 @@
                         <option value="admin">Administrator</option>
                     </x-form-select>
 
-                    <div>
-                        <x-form-select name="branch_id" label="Assign Branch" required>
-                            @foreach($branches as $branch)
-                                <option value="{{ $branch->id }}">{{ $branch->name }}
-                                    {{ $branch->is_main ? '(Main HQ)' : '' }}</option>
-                            @endforeach
-                        </x-form-select>
-                        <p class="text-xs text-slate-500 mt-1">User will primarily see data for this branch.</p>
-                    </div>
+                    @if(is_multi_branch())
+                        <div>
+                            <x-form-select name="branch_id" label="Assign Branch" required>
+                                @foreach($branches as $branch)
+                                    <option value="{{ $branch->id }}">{{ $branch->name }}
+                                        {{ $branch->is_main ? '(Main HQ)' : '' }}
+                                    </option>
+                                @endforeach
+                            </x-form-select>
+                            <p class="text-xs text-slate-500 mt-1">User will primarily see data for this branch.</p>
+                        </div>
+                    @else
+                        <input type="hidden" name="branch_id" value="{{ $branches->first()->id ?? 1 }}">
+                    @endif
 
                     <x-form-input name="password" label="Password" type="password" required
                         autocomplete="new-password" />
