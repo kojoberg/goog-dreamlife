@@ -81,6 +81,12 @@ class GlobalDrugInteractionSeeder extends Seeder
                 'severity' => 'severe',
                 'description' => 'Increased risk of myopathy/rhabdomyolysis. Suspend Simvastatin while taking Clarithromycin.',
             ],
+            [
+                'drug_a' => $createDrug('Morphine Sulfate 10mg', $catAnalgesic, 15, 8, 0),
+                'drug_b' => $createDrug('Pethidine HCL 100mg', $catAnalgesic, 20, 10, 0),
+                'severity' => 'severe',
+                'description' => 'Profound sedation, respiratory depression, coma, and death may result if used together. Avoid combination.',
+            ],
         ];
 
         foreach ($interactions as $data) {

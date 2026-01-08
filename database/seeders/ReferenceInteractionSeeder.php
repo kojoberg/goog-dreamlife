@@ -158,6 +158,7 @@ class ReferenceInteractionSeeder extends Seeder
             // --- HERBAL / VITAMINS ---
             ['drug_a_name' => 'Calcium', 'drug_b_name' => 'Ceftriaxone', 'severity' => 'severe', 'description' => 'Risk of precipitation in lungs/kidneys (IV use). Avoid mixing.'],
             ['drug_a_name' => 'Vitamin E', 'drug_b_name' => 'Warfarin', 'severity' => 'moderate', 'description' => 'High doses of Vitamin E may enhance anticoagulant effect.'],
+            ['drug_a_name' => 'Morphine', 'drug_b_name' => 'Pethidine', 'severity' => 'severe', 'description' => 'Profound sedation, respiratory depression, coma, and death may result if used together. Avoid combination.'],
         ];
 
         foreach ($interactions as $interaction) {
