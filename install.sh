@@ -20,8 +20,11 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-echo -e "${GREEN}[1/7] Updating System...${NC}"
-apt update && apt upgrade -y
+echo -e "${GREEN}[1/8] Updating System...${NC}"
+# Suppress interactive prompts for outdated daemons
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a
+apt update && apt upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 apt install -y software-properties-common curl git unzip
 
 echo -e "${GREEN}[2/7] Installing Dependencies (PHP, Nginx, MySQL, Node)...${NC}"
