@@ -263,18 +263,51 @@
             </div>
         </div>
 
-        <!-- System Health -->
+        <!-- Admin -->
         @if(Auth::user()->isAdmin())
-            <a href="{{ route('admin.system-health') }}" :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
-                class="{{ request()->routeIs('admin.system-health') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }} flex items-center gap-3 py-2.5 rounded-lg transition-all group mt-4 overflow-hidden">
-                <svg class="w-5 h-5 shrink-0 {{ request()->routeIs('admin.system-health') ? 'text-white' : 'text-slate-400 group-hover:text-white' }}"
-                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        <div x-data="{ open: {{ request()->is('admin*') || request()->is('crm*') || request()->is('backups*') || request()->is('audit*') || request()->is('users*') || request()->is('branches*') || request()->is('analytics*') ? 'true' : 'false' }} }"
+            class="group relative">
+            <button @click="if(sidebarCollapsed) { toggleSidebar(); open = true; } else { open = !open; }"
+                :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
+                class="w-full flex items-center justify-between py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors group">
+                <div class="flex items-center overflow-hidden" :class="sidebarCollapsed ? '' : 'gap-3'">
+                    <svg class="w-5 h-5 shrink-0 text-slate-400 group-hover:text-white" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span x-show="!sidebarCollapsed"
+                        class="font-medium whitespace-nowrap transition-opacity duration-200">Admin</span>
+                </div>
+                <svg x-show="!sidebarCollapsed" :class="{'rotate-90': open}"
+                    class="w-4 h-4 text-slate-500 transition-transform duration-200" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
-                <span x-show="!sidebarCollapsed"
-                    class="font-medium whitespace-nowrap transition-opacity duration-200">System Health</span>
-            </a>
+            </button>
+            <div x-show="open && !sidebarCollapsed" x-transition class="mt-1 pl-10 space-y-1 overflow-hidden">
+                <a href="{{ route('admin.index') }}"
+                    class="{{ request()->routeIs('admin.index') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Admin Console</a>
+                <a href="{{ route('admin.financials.index') }}"
+                    class="{{ request()->routeIs('admin.financials*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Financial Reports</a>
+                <a href="{{ route('admin.crm.index') }}"
+                    class="{{ request()->routeIs('admin.crm*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">CRM & Messaging</a>
+                <a href="{{ route('backups.index') }}"
+                    class="{{ request()->routeIs('backups*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Backup</a>
+                <a href="{{ route('audit-logs.index') }}"
+                    class="{{ request()->routeIs('audit-logs*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Audit Logs</a>
+                <a href="{{ route('users.index') }}"
+                    class="{{ request()->routeIs('users*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Users</a>
+                @if(is_multi_branch())
+                <a href="{{ route('branches.index') }}"
+                    class="{{ request()->routeIs('branches*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Branches</a>
+                @endif
+                <a href="{{ route('admin.system-health') }}"
+                    class="{{ request()->routeIs('admin.system-health') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">System Health</a>
+            </div>
+        </div>
         @endif
 
         <!-- Settings -->
