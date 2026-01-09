@@ -123,12 +123,12 @@ class HrmFlowTest extends TestCase
             ]);
 
         $appraisal = \App\Models\Appraisal::first();
-        $response->assertRedirect(route('admin.hr.appraisals.edit', $appraisal));
+        $response->assertRedirect(route('admin.hr.appraisals.index'));
 
-        // 3. Score Appraisal
+        // 3. Score Appraisal (1-5 Scale)
         $this->actingAs($this->admin)
             ->put(route('admin.hr.appraisals.update', $appraisal), [
-                'scores' => [$kpi->id => 85],
+                'scores' => [$kpi->id => 4], // Score of 4 (Very Good)
                 'comments' => [$kpi->id => 'Good job'],
                 'overall_comment' => 'Well done'
             ]);
@@ -138,12 +138,39 @@ class HrmFlowTest extends TestCase
         $this->assertDatabaseHas('appraisal_details', [
             'appraisal_id' => $appraisal->id,
             'kpi_id' => $kpi->id,
-            'score' => 85
+            'score' => 4
         ]);
 
         // Check total calculation
         $appraisal->refresh();
-        $this->assertEquals(85, $appraisal->total_score);
+        $this->assertEquals(4, $appraisal->total_score);
+
+        // EXTRA: Test Weighted Calculation
+        // Add another KPI with weight 2
+        $heavyKpi = Kpi::create(['name' => 'Core Delivery', 'weight' => 2]);
+
+        // Ensure first KPI has known weight (e.g. 1) BEFORE calc
+        $kpi->update(['weight' => 1]);
+
+        // Simulating manager update again with both KPIs
+        $this->actingAs($this->admin)
+            ->put(route('admin.hr.appraisals.update', $appraisal), [
+                'scores' => [
+                    $kpi->id => 5,
+                    $heavyKpi->id => 3
+                ],
+                'comments' => [],
+                'overall_comment' => 'Updated'
+            ]);
+
+        // Calculation: 
+        // KPI 1 (Weight 1) * 5 = 5
+        // KPI 2 (Weight 2) * 3 = 6
+        // Total = 11. Total Weight = 3.
+        // Result = 11 / 3 = 3.666... -> 3.67
+
+        $appraisal->refresh();
+        $this->assertEquals(3.67, round($appraisal->total_score, 2));
     }
 
     public function test_communication_flow()

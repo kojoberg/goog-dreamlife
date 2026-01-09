@@ -14,6 +14,7 @@ class Appraisal extends Model
     protected $casts = [
         'appraisal_date' => 'date',
         'total_score' => 'decimal:2',
+        'final_score' => 'decimal:2',
     ];
 
     public function user()
@@ -33,8 +34,27 @@ class Appraisal extends Model
 
     public function calculateTotalScore()
     {
-        $total = $this->details()->avg('score');
-        $this->update(['total_score' => $total]);
-        return $total;
+        $this->load('details.kpi');
+
+        $totalWeightedScore = 0;
+        $totalWeight = 0;
+
+        foreach ($this->details as $detail) {
+            $weight = $detail->kpi->weight ?? 1; // Default weight 1 if missing
+            $score = $detail->score ?? 0;
+
+            $totalWeightedScore += ($score * $weight);
+            $totalWeight += $weight;
+        }
+
+        if ($totalWeight > 0) {
+            $finalScore = $totalWeightedScore / $totalWeight;
+        } else {
+            $finalScore = 0;
+        }
+
+        $this->update(['final_score' => $finalScore, 'total_score' => $finalScore]);
+
+        return $finalScore;
     }
 }

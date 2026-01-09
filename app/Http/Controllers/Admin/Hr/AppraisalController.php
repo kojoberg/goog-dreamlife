@@ -72,10 +72,13 @@ class AppraisalController extends Controller
             'reviewer_id' => auth()->id(),
             'period_month' => $request->period_month,
             'appraisal_date' => $request->appraisal_date,
-            'total_score' => 0
+            'total_score' => 0,
+            'status' => 'pending_employee', // New Workflow Start
+            'final_score' => 0
         ]);
 
-        return redirect()->route('admin.hr.appraisals.edit', $appraisal);
+        return redirect()->route('admin.hr.appraisals.index')
+            ->with('success', 'Appraisal initiated! The employee has been notified to complete their self-assessment.');
     }
 
     /**
@@ -83,43 +86,79 @@ class AppraisalController extends Controller
      */
     public function edit(Appraisal $appraisal)
     {
-        // Get KPIs valid for this user's role/department ideally, but for now getting ALL or Role-matched
+        // Check authorization
+        if (auth()->id() !== $appraisal->user_id && auth()->id() !== $appraisal->reviewer_id && !auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        // Get KPIs based on role
         $userRole = $appraisal->user->role;
         $kpis = Kpi::where(function ($q) use ($userRole) {
             $q->whereNull('role')->orWhere('role', $userRole);
-        })->get();
+        })->get(); // We will group them in the view or here. Grouping here is easier.
+
+        $groupedKpis = $kpis->groupBy('category');
 
         $appraisal->load('details');
 
-        return view('admin.hr.appraisals.edit', compact('appraisal', 'kpis'));
+        return view('admin.hr.appraisals.edit', compact('appraisal', 'groupedKpis'));
     }
 
     public function update(Request $request, Appraisal $appraisal)
     {
         $request->validate([
             'scores' => 'required|array',
-            'scores.*' => 'required|numeric|min:0|max:100', // Assuming 0-100 scale
+            'scores.*' => 'required|numeric|min:1|max:5', // 1-5 Scale
             'comments' => 'nullable|array',
             'overall_comment' => 'nullable|string'
         ]);
 
-        DB::transaction(function () use ($request, $appraisal) {
+        // Helper to determine mode
+        $isManager = (auth()->id() === $appraisal->reviewer_id) || auth()->user()->isAdmin();
+        $isEmployee = (auth()->id() === $appraisal->user_id);
 
-            foreach ($request->scores as $kpiId => $score) {
-                AppraisalDetail::updateOrCreate(
-                    [
-                        'appraisal_id' => $appraisal->id,
-                        'kpi_id' => $kpiId
-                    ],
-                    [
-                        'score' => $score,
-                        'comments' => $request->comments[$kpiId] ?? null
-                    ]
-                );
+        DB::transaction(function () use ($request, $appraisal, $isManager, $isEmployee) {
+
+            // Employee Self-Assessment Mode
+            if ($isEmployee && ($appraisal->status === 'pending_employee' || $appraisal->status === 'draft')) {
+                foreach ($request->scores as $kpiId => $score) {
+                    AppraisalDetail::updateOrCreate(
+                        ['appraisal_id' => $appraisal->id, 'kpi_id' => $kpiId],
+                        ['self_score' => $score, 'self_comments' => $request->comments[$kpiId] ?? null]
+                    );
+                }
+                // Transition to Pending Manager if submitted
+                if ($request->has('submit_appraisal')) {
+                    $appraisal->update(['status' => 'pending_manager']);
+                }
             }
 
-            $appraisal->calculateTotalScore();
-            $appraisal->update(['comments' => $request->overall_comment]);
+            // Manager Review Mode
+            if ($isManager && $appraisal->status !== 'completed') {
+                foreach ($request->scores as $kpiId => $score) {
+                    AppraisalDetail::updateOrCreate(
+                        ['appraisal_id' => $appraisal->id, 'kpi_id' => $kpiId],
+                        [
+                            'score' => $score, // Manager Score
+                            'comments' => $request->comments[$kpiId] ?? null
+                        ]
+                    );
+                }
+
+                // Finalize
+                if ($request->has('finalize_appraisal')) {
+                    $appraisal->update([
+                        'status' => 'completed',
+                        'comments' => $request->overall_comment
+                    ]);
+                } else {
+                    // Just saving draft
+                    $appraisal->update(['comments' => $request->overall_comment]);
+                }
+
+                // Always calculate running score
+                $appraisal->calculateTotalScore();
+            }
         });
 
         return redirect()->route('admin.hr.appraisals.index')->with('success', 'Appraisal saved successfully.');

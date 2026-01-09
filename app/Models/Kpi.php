@@ -11,6 +11,22 @@ class Kpi extends Model
 
     protected $guarded = [];
 
+    protected $casts = [
+        'weight' => 'decimal:2',
+        'max_score' => 'integer',
+    ];
+
+    protected $attributes = [
+        'max_score' => 5, // Enforce default scale of 5
+    ];
+
+    public const CATEGORIES = [
+        'Core Function' => 'Core Function',
+        'Behavioral' => 'Behavioral',
+        'Leadership' => 'Leadership',
+        'Project' => 'Project-Based',
+    ];
+
     public function targets()
     {
         return $this->hasMany(StaffTarget::class);

@@ -178,6 +178,11 @@
                 </svg>
             </button>
             <div x-show="open && !sidebarCollapsed" x-transition class="mt-1 pl-10 space-y-1 overflow-hidden">
+                <!-- Start/End Shift - All staff -->
+                <a href="{{ route('shifts.create') }}"
+                    class="{{ request()->routeIs('shifts.create') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Start
+                    / End Shift</a>
+
                 <!-- My Shifts - All staff -->
                 <a href="{{ route('shifts.my_index') }}"
                     class="{{ request()->routeIs('shifts.my_index') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">My
