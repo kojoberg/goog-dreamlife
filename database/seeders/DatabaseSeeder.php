@@ -58,9 +58,10 @@ class DatabaseSeeder extends Seeder
         // Sample Data Removed for Clean Install
         // Users will create their own Suppliers, Categories, and Products.
 
-        // Always seed permissions - needed for user privilege management
+        // Always seed permissions and reference interactions - needed for user privileges and drug safety sync
         $this->call([
             \Database\Seeders\PermissionSeeder::class,
+            \Database\Seeders\ReferenceInteractionSeeder::class,
         ]);
 
         // Only seed drug interactions in development/testing
