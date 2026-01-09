@@ -208,6 +208,17 @@
                                         Enable Tax Calculation in POS
                                     </label>
                                 </div>
+                                @if(is_single_branch())
+                                <div class="flex items-center mt-4">
+                                    <input id="has_cashier" name="has_cashier" type="checkbox"
+                                        {{ $mainBranch->has_cashier ?? false ? 'checked' : '' }}
+                                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                    <label for="has_cashier" class="ml-2 block text-sm text-gray-900">
+                                        Use Cashier Workflow
+                                    </label>
+                                </div>
+                                <p class="text-xs text-gray-500 ml-6">When enabled, pharmacists create bills and customers pay at a separate cashier station.</p>
+                                @endif
                             </div>
                         </div>
 

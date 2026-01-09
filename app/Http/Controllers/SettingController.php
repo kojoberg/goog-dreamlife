@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Setting;
+use App\Models\Branch;
 use Illuminate\Http\Request;
 
 class SettingController extends Controller
@@ -33,7 +34,10 @@ class SettingController extends Controller
             $systemVersion = $gitVer;
         }
 
-        return view('settings.index', compact('settings', 'systemVersion'));
+        // Get main branch for cashier workflow toggle
+        $mainBranch = Branch::first();
+
+        return view('settings.index', compact('settings', 'systemVersion', 'mainBranch'));
     }
 
     /**
@@ -97,6 +101,14 @@ class SettingController extends Controller
         }
 
         $settings->update($validated);
+
+        // Update main branch cashier workflow setting (for single-branch mode)
+        if (is_single_branch() && $request->has('has_cashier')) {
+            $mainBranch = Branch::first();
+            if ($mainBranch) {
+                $mainBranch->update(['has_cashier' => $request->boolean('has_cashier')]);
+            }
+        }
 
         // Handle License Key Update
         if ($request->filled('license_key')) {
