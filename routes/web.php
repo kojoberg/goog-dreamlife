@@ -174,6 +174,9 @@ Route::middleware('auth')->group(function () {
         // Safety Database
         Route::get('/safety', [\App\Http\Controllers\SafetyDatabaseController::class, 'index'])->name('admin.safety.index');
         Route::post('/safety/sync', [\App\Http\Controllers\SafetyDatabaseController::class, 'sync'])->name('admin.safety.sync');
+        Route::get('/safety/{interaction}/edit', [\App\Http\Controllers\SafetyDatabaseController::class, 'edit'])->name('admin.safety.edit');
+        Route::put('/safety/{interaction}', [\App\Http\Controllers\SafetyDatabaseController::class, 'update'])->name('admin.safety.update');
+        Route::delete('/safety/{interaction}', [\App\Http\Controllers\SafetyDatabaseController::class, 'destroy'])->name('admin.safety.destroy');
 
         // Tax Management
         Route::prefix('tax')->name('admin.tax.')->group(function () {

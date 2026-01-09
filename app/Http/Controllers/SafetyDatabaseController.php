@@ -84,4 +84,37 @@ class SafetyDatabaseController extends Controller
 
         return back()->with('success', "Sync Complete! Linked {$syncedCount} new interaction pairs to your inventory.");
     }
+
+    /**
+     * Show the form for editing a drug interaction.
+     */
+    public function edit(DrugInteraction $interaction)
+    {
+        $products = Product::orderBy('name')->get();
+        return view('admin.safety.edit', compact('interaction', 'products'));
+    }
+
+    /**
+     * Update the specified drug interaction.
+     */
+    public function update(Request $request, DrugInteraction $interaction)
+    {
+        $validated = $request->validate([
+            'severity' => 'required|in:mild,moderate,severe',
+            'description' => 'required|string|max:1000',
+        ]);
+
+        $interaction->update($validated);
+
+        return redirect()->route('safety.index')->with('success', 'Interaction updated successfully.');
+    }
+
+    /**
+     * Remove the specified drug interaction.
+     */
+    public function destroy(DrugInteraction $interaction)
+    {
+        $interaction->delete();
+        return back()->with('success', 'Interaction deleted successfully.');
+    }
 }
