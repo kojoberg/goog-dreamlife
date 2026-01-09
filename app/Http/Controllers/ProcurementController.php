@@ -71,7 +71,15 @@ class ProcurementController extends Controller
     public function show(PurchaseOrder $order)
     {
         $order->load(['items.product', 'supplier']);
-        return view('procurement.orders.show', compact('order'));
+
+        // Get users for receiver selection (filter by branch in multi-mode)
+        $usersQuery = \App\Models\User::whereIn('role', ['pharmacist', 'admin']);
+        if (is_multi_branch() && $order->branch_id) {
+            $usersQuery->where('branch_id', $order->branch_id);
+        }
+        $users = $usersQuery->orderBy('name')->get();
+
+        return view('procurement.orders.show', compact('order', 'users'));
     }
 
     public function receive(Request $request, PurchaseOrder $order)

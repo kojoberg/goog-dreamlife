@@ -94,10 +94,16 @@
                             @csrf
 
                             <div class="mb-4">
-                                <label class="block text-gray-700 text-sm font-bold mb-2">Received By (Staff Name)</label>
-                                <input type="text" name="received_by"
+                                <label class="block text-gray-700 text-sm font-bold mb-2">Received By (Staff)</label>
+                                <select name="received_by"
                                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                    required placeholder="Enter name of staff receiving stock">
+                                    required>
+                                    <option value="">-- Select Staff Member --</option>
+                                    @foreach($users as $user)
+                                        <option value="{{ $user->name }}">{{ $user->name }} ({{ ucfirst($user->role) }})
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
 
                             <div class="mb-6">

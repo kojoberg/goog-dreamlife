@@ -137,6 +137,8 @@
                 <th>Product</th>
                 <th>Quantity</th>
                 <th>Unit Cost</th>
+                <th>Batch #</th>
+                <th>Expiry</th>
                 <th>Total</th>
             </tr>
         </thead>
@@ -146,11 +148,13 @@
                     <td>{{ $item->product->name }}</td>
                     <td>{{ $item->quantity_ordered }}</td>
                     <td>{{ number_format($item->unit_cost, 2) }}</td>
+                    <td>{{ $item->batch_number ?? '-' }}</td>
+                    <td>{{ $item->expiry_date ? \Carbon\Carbon::parse($item->expiry_date)->format('Y-m-d') : '-' }}</td>
                     <td>{{ number_format($item->quantity_ordered * $item->unit_cost, 2) }}</td>
                 </tr>
             @endforeach
             <tr>
-                <td colspan="3" class="total-row">Grand Total</td>
+                <td colspan="5" class="total-row">Grand Total</td>
                 <td style="font-weight: bold;">{{ number_format($order->total_amount, 2) }}</td>
             </tr>
         </tbody>
