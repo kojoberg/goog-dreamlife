@@ -6,7 +6,7 @@
         :class="sidebarCollapsed ? 'px-0 justify-center' : 'px-6'">
         <a href="{{ route('dashboard') }}" class="flex items-center gap-3 whitespace-nowrap">
             @if(isset($settings) && $settings->logo_path)
-                <img src="{{ Storage::disk('public')->url($settings->logo_path) }}" alt="Logo"
+                <img src="{{ asset('storage/' . $settings->logo_path) }}" alt="Logo"
                     class="h-8 w-auto object-contain">
                 <span x-show="!sidebarCollapsed"
                     class="font-bold text-lg tracking-wide truncate transition-opacity duration-300">
@@ -95,7 +95,7 @@
         </a>
 
         <!-- Inventory -->
-        <div x-data="{ open: {{ request()->is('products*') || request()->is('inventory*') ? 'true' : 'false' }} }"
+        <div x-data="{ open: {{ request()->is('products*') || request()->is('inventory*') || request()->is('categories*') || request()->is('suppliers*') || request()->is('procurement*') ? 'true' : 'false' }} }"
             class="group relative">
             <button @click="if(sidebarCollapsed) { toggleSidebar(); open = true; } else { open = !open; }"
                 :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
@@ -121,8 +121,27 @@
                 <a href="{{ route('inventory.index') }}"
                     class="{{ request()->routeIs('inventory*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Stock
                     Levels</a>
+                <a href="{{ route('categories.index') }}"
+                    class="{{ request()->routeIs('categories*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Categories</a>
+                <a href="{{ route('suppliers.index') }}"
+                    class="{{ request()->routeIs('suppliers*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Suppliers</a>
+                <a href="{{ route('procurement.orders.index') }}"
+                    class="{{ request()->routeIs('procurement*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Procurement
+                    Orders</a>
             </div>
         </div>
+
+        <!-- Sales & Transactions -->
+        <a href="{{ route('sales.index') }}" :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
+            class="{{ request()->routeIs('sales*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }} flex items-center gap-3 py-2.5 rounded-lg transition-all group overflow-hidden">
+            <svg class="w-5 h-5 shrink-0 {{ request()->routeIs('sales*') ? 'text-white' : 'text-slate-400 group-hover:text-white' }}"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span x-show="!sidebarCollapsed" class="font-medium whitespace-nowrap transition-opacity duration-200">Sales
+                History</span>
+        </a>
 
         <!-- HR Management -->
         <div x-data="{ open: {{ request()->is('admin/hr*') ? 'true' : 'false' }} }" class="group relative">
@@ -192,9 +211,23 @@
             </div>
         </div>
 
+        <!-- System Health -->
+        @if(Auth::user()->isAdmin())
+        <a href="{{ route('admin.system-health') }}" :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
+            class="{{ request()->routeIs('admin.system-health') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }} flex items-center gap-3 py-2.5 rounded-lg transition-all group mt-4 overflow-hidden">
+            <svg class="w-5 h-5 shrink-0 {{ request()->routeIs('admin.system-health') ? 'text-white' : 'text-slate-400 group-hover:text-white' }}"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span x-show="!sidebarCollapsed"
+                class="font-medium whitespace-nowrap transition-opacity duration-200">System Health</span>
+        </a>
+        @endif
+
         <!-- Settings -->
         <a href="{{ route('settings.index') }}" :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
-            class="{{ request()->routeIs('settings*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }} flex items-center gap-3 py-2.5 rounded-lg transition-all group mt-6 overflow-hidden">
+            class="{{ request()->routeIs('settings*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }} flex items-center gap-3 py-2.5 rounded-lg transition-all group mt-2 overflow-hidden">
             <svg class="w-5 h-5 shrink-0 {{ request()->routeIs('settings*') ? 'text-white' : 'text-slate-400 group-hover:text-white' }}"
                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
