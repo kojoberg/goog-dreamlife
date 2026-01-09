@@ -19,9 +19,11 @@ class UserController extends Controller
         $user = auth()->user();
         $query = User::with('branch');
 
-        // Super admins see all users
-        if (!$user->isSuperAdmin()) {
-            // Regular admins see only their branch's users
+        // All admins can see all users (for simplified management)
+        // In single-branch mode, there's only one branch anyway
+        // In multi-branch mode, admins typically manage all staff
+        if (!$user->isAdmin()) {
+            // Non-admins can only see their own branch's users
             $query->where('branch_id', $user->branch_id);
         }
 
