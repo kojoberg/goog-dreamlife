@@ -133,6 +133,7 @@ fi
 
 echo -e "${GREEN}[7/8] Migrating Database...${NC}"
 php artisan migrate:fresh --force --seed
+php artisan storage:link
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
