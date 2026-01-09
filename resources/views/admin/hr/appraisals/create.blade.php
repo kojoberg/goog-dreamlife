@@ -27,9 +27,26 @@
 
                     <div class="mb-4">
                         <x-input-label for="period_month" :value="__('Appraisal Period (Month)')" />
-                        <input type="month" name="period_month" id="period_month"
-                            class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                            required>
+                        <div class="flex gap-4">
+                            <div class="w-1/2">
+                                <select name="period_month_num" id="period_month_num" required
+                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <option value="">Select Month</option>
+                                    @foreach(range(1, 12) as $m)
+                                        <option value="{{ sprintf('%02d', $m) }}">{{ date('F', mktime(0, 0, 0, $m, 1)) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="w-1/2">
+                                <select name="period_year" id="period_year" required
+                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    @foreach(range(date('Y') - 1, date('Y') + 1) as $y)
+                                        <option value="{{ $y }}" {{ $y == date('Y') ? 'selected' : '' }}>{{ $y }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="mb-6">

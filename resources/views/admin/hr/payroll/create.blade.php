@@ -13,8 +13,26 @@
 
                     <div class="mb-6">
                         <label for="month" class="block text-sm font-medium text-gray-700">Select Month</label>
-                        <input type="month" name="month" id="month" required
-                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <div class="flex gap-4">
+                            <div class="w-1/2">
+                                <select name="month_num" id="month_num" required
+                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <option value="">Select Month</option>
+                                    @foreach(range(1, 12) as $m)
+                                        <option value="{{ sprintf('%02d', $m) }}">{{ date('F', mktime(0, 0, 0, $m, 1)) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="w-1/2">
+                                <select name="year" id="year" required
+                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    @foreach(range(date('Y') - 1, date('Y') + 1) as $y)
+                                        <option value="{{ $y }}" {{ $y == date('Y') ? 'selected' : '' }}>{{ $y }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
                         <p class="text-sm text-gray-500 mt-2">
                             This will calculate salaries for all active employees with a set Basic Salary. Duplicate
                             records for the same month will be skipped.

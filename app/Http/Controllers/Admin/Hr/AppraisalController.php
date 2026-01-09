@@ -47,6 +47,10 @@ class AppraisalController extends Controller
      */
     public function store(Request $request)
     {
+        if ($request->has('period_year') && $request->has('period_month_num')) {
+            $request->merge(['period_month' => $request->period_year . '-' . $request->period_month_num]);
+        }
+
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'period_month' => 'required|string', // YYYY-MM

@@ -35,6 +35,10 @@ class PayrollController extends Controller
 
     public function store(Request $request)
     {
+        if ($request->has('year') && $request->has('month_num')) {
+            $request->merge(['month' => $request->year . '-' . $request->month_num]);
+        }
+
         $request->validate([
             'month' => 'required|date_format:Y-m',
         ]);
