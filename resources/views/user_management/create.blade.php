@@ -25,6 +25,7 @@
                         <option value="cashier">Cashier</option>
                         <option value="pharmacist">Pharmacist</option>
                         <option value="doctor">Doctor</option>
+                        <option value="lab_scientist">Lab Scientist</option>
                         <option value="admin">Administrator</option>
                     </x-form-select>
 
