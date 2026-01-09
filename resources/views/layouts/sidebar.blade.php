@@ -6,8 +6,7 @@
         :class="sidebarCollapsed ? 'px-0 justify-center' : 'px-6'">
         <a href="{{ route('dashboard') }}" class="flex items-center gap-3 whitespace-nowrap">
             @if(isset($settings) && $settings->logo_path)
-                <img src="{{ asset('storage/' . $settings->logo_path) }}" alt="Logo"
-                    class="h-8 w-auto object-contain">
+                <img src="{{ asset('storage/' . $settings->logo_path) }}" alt="Logo" class="h-8 w-auto object-contain">
                 <span x-show="!sidebarCollapsed"
                     class="font-bold text-lg tracking-wide truncate transition-opacity duration-300">
                     {{ $settings->business_name ?? 'DREAM LIFE' }}
@@ -143,6 +142,59 @@
                 History</span>
         </a>
 
+        <!-- Operations -->
+        <div x-data="{ open: {{ request()->is('shifts*') || request()->is('admin/refunds*') || request()->is('refunds*') || request()->is('expenses*') || request()->is('cashier*') ? 'true' : 'false' }} }"
+            class="group relative">
+            <button @click="if(sidebarCollapsed) { toggleSidebar(); open = true; } else { open = !open; }"
+                :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
+                class="w-full flex items-center justify-between py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors group">
+                <div class="flex items-center overflow-hidden" :class="sidebarCollapsed ? '' : 'gap-3'">
+                    <svg class="w-5 h-5 shrink-0 text-slate-400 group-hover:text-white" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                    <span x-show="!sidebarCollapsed"
+                        class="font-medium whitespace-nowrap transition-opacity duration-200">Operations</span>
+                </div>
+                <svg x-show="!sidebarCollapsed" :class="{'rotate-90': open}"
+                    class="w-4 h-4 text-slate-500 transition-transform duration-200" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+            <div x-show="open && !sidebarCollapsed" x-transition class="mt-1 pl-10 space-y-1 overflow-hidden">
+                <!-- My Shifts - All staff -->
+                <a href="{{ route('shifts.my_index') }}"
+                    class="{{ request()->routeIs('shifts.my_index') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">My
+                    Shifts</a>
+
+                <!-- Cashier Queue - Cashiers only -->
+                @if(Auth::user()->role === 'cashier' || Auth::user()->isAdmin())
+                    <a href="{{ route('cashier.index') }}"
+                        class="{{ request()->routeIs('cashier*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Cashier
+                        Queue</a>
+                @endif
+
+                <!-- My Refunds - All staff -->
+                <a href="{{ route('refunds.my-history') }}"
+                    class="{{ request()->routeIs('refunds.my-history') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">My
+                    Refunds</a>
+
+                <!-- Admin Only Items -->
+                @if(Auth::user()->isAdmin())
+                    <a href="{{ route('admin.shifts.index') }}"
+                        class="{{ request()->routeIs('admin.shifts*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Shift
+                        Reports</a>
+                    <a href="{{ route('admin.refunds.index') }}"
+                        class="{{ request()->routeIs('admin.refunds*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Refund
+                        Approvals</a>
+                    <a href="{{ route('expenses.index') }}"
+                        class="{{ request()->routeIs('expenses*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Expenses</a>
+                @endif
+            </div>
+        </div>
+
         <!-- HR Management -->
         <div x-data="{ open: {{ request()->is('admin/hr*') ? 'true' : 'false' }} }" class="group relative">
             <button @click="if(sidebarCollapsed) { toggleSidebar(); open = true; } else { open = !open; }"
@@ -213,16 +265,16 @@
 
         <!-- System Health -->
         @if(Auth::user()->isAdmin())
-        <a href="{{ route('admin.system-health') }}" :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
-            class="{{ request()->routeIs('admin.system-health') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }} flex items-center gap-3 py-2.5 rounded-lg transition-all group mt-4 overflow-hidden">
-            <svg class="w-5 h-5 shrink-0 {{ request()->routeIs('admin.system-health') ? 'text-white' : 'text-slate-400 group-hover:text-white' }}"
-                fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            <span x-show="!sidebarCollapsed"
-                class="font-medium whitespace-nowrap transition-opacity duration-200">System Health</span>
-        </a>
+            <a href="{{ route('admin.system-health') }}" :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
+                class="{{ request()->routeIs('admin.system-health') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }} flex items-center gap-3 py-2.5 rounded-lg transition-all group mt-4 overflow-hidden">
+                <svg class="w-5 h-5 shrink-0 {{ request()->routeIs('admin.system-health') ? 'text-white' : 'text-slate-400 group-hover:text-white' }}"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <span x-show="!sidebarCollapsed"
+                    class="font-medium whitespace-nowrap transition-opacity duration-200">System Health</span>
+            </a>
         @endif
 
         <!-- Settings -->
