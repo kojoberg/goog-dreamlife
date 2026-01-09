@@ -125,11 +125,12 @@ class ProcurementController extends Controller
                         // Add to Inventory Batch
                         InventoryBatch::create([
                             'product_id' => $item->product_id,
-                            'supplier_id' => $order->supplier_id,
+                            'supplier_id' => $order->supplier_id, // Keep supplier link
                             'batch_number' => $batchNumber,
                             'quantity' => $receivedQty,
                             'expiry_date' => $expiryDate,
                             'cost_price' => $item->unit_cost,
+                            'branch_id' => $order->branch_id, // Fix: Assign to PO's branch, not logged-in user's branch
                         ]);
 
                         // Update Product Cost Price
