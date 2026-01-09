@@ -3,15 +3,7 @@
 @endphp
 
 @if($settings && $settings->logo_path)
-    @php
-        $path = storage_path('app/public/' . $settings->logo_path);
-        $mime = pathinfo($path, PATHINFO_EXTENSION);
-    @endphp
-    @if(file_exists($path))
-        <img src="data:image/{{ $mime }};base64,{{ base64_encode(file_get_contents($path)) }}" {{ $attributes->merge(['class' => '']) }} alt="App Logo">
-    @else
-        <img src="{{ asset('storage/' . $settings->logo_path) }}" {{ $attributes->merge(['class' => '']) }} alt="App Logo">
-    @endif
+    <img src="{{ asset('storage/' . $settings->logo_path) }}" {{ $attributes->merge(['class' => '']) }} alt="App Logo">
 @else
     <svg viewBox="0 0 316 316" xmlns="http://www.w3.org/2000/svg" {{ $attributes }}>
         <path
