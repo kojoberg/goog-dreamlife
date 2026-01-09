@@ -33,10 +33,15 @@ class Product extends Model
         return $this->hasMany(SaleItem::class);
     }
 
-    // Helper to get total stock
+    // Helper to get total stock (non-expired or no expiry date)
     public function getStockAttribute()
     {
-        return $this->batches()->where('expiry_date', '>=', now())->sum('quantity');
+        return $this->batches()
+            ->where(function ($query) {
+                $query->whereNull('expiry_date')
+                    ->orWhere('expiry_date', '>=', now());
+            })
+            ->sum('quantity');
     }
 
     // Branch pivot relationship
