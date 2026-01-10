@@ -103,7 +103,7 @@ class SettingController extends Controller
         $settings->update($validated);
 
         // Update main branch cashier workflow setting (for single-branch mode)
-        if (is_single_branch() && $request->has('has_cashier')) {
+        if (is_single_branch()) {
             $mainBranch = Branch::first();
             if ($mainBranch) {
                 $mainBranch->update(['has_cashier' => $request->boolean('has_cashier')]);

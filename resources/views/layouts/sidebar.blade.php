@@ -246,6 +246,8 @@
                         class="{{ request()->routeIs('admin.hr.appraisals*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Appraisals</a>
                     <a href="{{ route('admin.hr.kpis.index') }}"
                         class="{{ request()->routeIs('admin.hr.kpis*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">KPIs</a>
+                    <a href="{{ route('admin.hr.settings.index') }}"
+                        class="{{ request()->routeIs('admin.hr.settings*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Settings</a>
                 </div>
             </div>
         @endif

@@ -64,6 +64,13 @@ Route::middleware('auth')->group(function () {
         Route::resource('employees', \App\Http\Controllers\Admin\Hr\EmployeeController::class);
         Route::resource('payroll', \App\Http\Controllers\Admin\Hr\PayrollController::class);
         Route::resource('kpis', \App\Http\Controllers\Admin\Hr\KpiController::class);
+
+        // HR Settings
+        Route::get('settings', [\App\Http\Controllers\Admin\Hr\HrSettingsController::class, 'index'])->name('settings.index');
+        Route::post('settings', [\App\Http\Controllers\Admin\Hr\HrSettingsController::class, 'update'])->name('settings.update');
+        Route::post('settings/leave-types', [\App\Http\Controllers\Admin\Hr\HrSettingsController::class, 'storeLeaveType'])->name('settings.leave-types.store');
+        Route::post('settings/work-shifts', [\App\Http\Controllers\Admin\Hr\HrSettingsController::class, 'storeWorkShift'])->name('settings.work-shifts.store');
+
         Route::resource('appraisals', \App\Http\Controllers\Admin\Hr\AppraisalController::class);
         Route::get('activity', [\App\Http\Controllers\Admin\Hr\StaffActivityController::class, 'index'])->name('activity.index');
         Route::get('activity/{user}', [\App\Http\Controllers\Admin\Hr\StaffActivityController::class, 'show'])->name('activity.show');
