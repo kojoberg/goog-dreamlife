@@ -49,37 +49,39 @@
                 class="font-medium whitespace-nowrap transition-opacity duration-200">Dashboard</span>
         </a>
 
-        <!-- Clinical Section -->
-        <div x-data="{ open: {{ request()->is('patients*') || request()->is('setup/prescriptions*') || request()->is('safety*') ? 'true' : 'false' }} }"
-            class="group relative">
-            <button @click="if(sidebarCollapsed) { toggleSidebar(); open = true; } else { open = !open; }"
-                :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
-                class="w-full flex items-center justify-between py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors group">
-                <div class="flex items-center overflow-hidden" :class="sidebarCollapsed ? '' : 'gap-3'">
-                    <svg class="w-5 h-5 shrink-0 text-slate-400 group-hover:text-white" fill="none"
-                        stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+        <!-- Clinical Section (Not for Cashiers) -->
+        @if(!Auth::user()->isCashier())
+            <div x-data="{ open: {{ request()->is('patients*') || request()->is('setup/prescriptions*') || request()->is('safety*') ? 'true' : 'false' }} }"
+                class="group relative">
+                <button @click="if(sidebarCollapsed) { toggleSidebar(); open = true; } else { open = !open; }"
+                    :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
+                    class="w-full flex items-center justify-between py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors group">
+                    <div class="flex items-center overflow-hidden" :class="sidebarCollapsed ? '' : 'gap-3'">
+                        <svg class="w-5 h-5 shrink-0 text-slate-400 group-hover:text-white" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                        </svg>
+                        <span x-show="!sidebarCollapsed"
+                            class="font-medium whitespace-nowrap transition-opacity duration-200">Clinical</span>
+                    </div>
+                    <svg x-show="!sidebarCollapsed" :class="{'rotate-90': open}"
+                        class="w-4 h-4 text-slate-500 transition-transform duration-200" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
-                    <span x-show="!sidebarCollapsed"
-                        class="font-medium whitespace-nowrap transition-opacity duration-200">Clinical</span>
+                </button>
+                <div x-show="open && !sidebarCollapsed" x-transition class="mt-1 pl-10 space-y-1 overflow-hidden">
+                    <a href="{{ route('patients.index') }}"
+                        class="{{ request()->routeIs('patients*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Patients</a>
+                    <a href="{{ route('prescriptions.create') }}"
+                        class="{{ request()->routeIs('prescriptions*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Prescriptions</a>
+                    <a href="{{ route('admin.safety.index') }}"
+                        class="{{ request()->routeIs('admin.safety*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Safety
+                        Checks</a>
                 </div>
-                <svg x-show="!sidebarCollapsed" :class="{'rotate-90': open}"
-                    class="w-4 h-4 text-slate-500 transition-transform duration-200" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            </button>
-            <div x-show="open && !sidebarCollapsed" x-transition class="mt-1 pl-10 space-y-1 overflow-hidden">
-                <a href="{{ route('patients.index') }}"
-                    class="{{ request()->routeIs('patients*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Patients</a>
-                <a href="{{ route('prescriptions.create') }}"
-                    class="{{ request()->routeIs('prescriptions*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Prescriptions</a>
-                <a href="{{ route('admin.safety.index') }}"
-                    class="{{ request()->routeIs('admin.safety*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Safety
-                    Checks</a>
             </div>
-        </div>
+        @endif
 
         <!-- Lab Section (Lab Scientists only) -->
         @if(Auth::user()->role === 'lab_scientist')
@@ -95,54 +97,72 @@
             </a>
         @endif
 
-        <!-- POS / Sales -->
-        <a href="{{ route('pos.index') }}" :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
-            class="{{ request()->routeIs('pos.index') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }} flex items-center gap-3 py-2.5 rounded-lg transition-all group overflow-hidden">
-            <svg class="w-5 h-5 shrink-0 {{ request()->routeIs('pos.index') ? 'text-white' : 'text-slate-400 group-hover:text-white' }}"
-                fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span x-show="!sidebarCollapsed" class="font-medium whitespace-nowrap transition-opacity duration-200">Point
-                of Sale</span>
-        </a>
-
-        <!-- Inventory -->
-        <div x-data="{ open: {{ request()->is('products*') || request()->is('inventory*') || request()->is('categories*') || request()->is('suppliers*') || request()->is('procurement*') ? 'true' : 'false' }} }"
-            class="group relative">
-            <button @click="if(sidebarCollapsed) { toggleSidebar(); open = true; } else { open = !open; }"
-                :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
-                class="w-full flex items-center justify-between py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors group">
-                <div class="flex items-center overflow-hidden" :class="sidebarCollapsed ? '' : 'gap-3'">
-                    <svg class="w-5 h-5 shrink-0 text-slate-400 group-hover:text-white" fill="none"
-                        stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                    <span x-show="!sidebarCollapsed"
-                        class="font-medium whitespace-nowrap transition-opacity duration-200">Inventory</span>
-                </div>
-                <svg x-show="!sidebarCollapsed" :class="{'rotate-90': open}"
-                    class="w-4 h-4 text-slate-500 transition-transform duration-200" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        <!-- Cashier Queue (Main Item for Cashiers) -->
+        @if(Auth::user()->isCashier())
+            <a href="{{ route('cashier.index') }}" :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
+                class="{{ request()->routeIs('cashier*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }} flex items-center gap-3 py-2.5 rounded-lg transition-all group overflow-hidden">
+                <svg class="w-5 h-5 shrink-0 {{ request()->routeIs('cashier*') ? 'text-white' : 'text-slate-400 group-hover:text-white' }}"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
-            </button>
-            <div x-show="open && !sidebarCollapsed" x-transition class="mt-1 pl-10 space-y-1 overflow-hidden">
-                <a href="{{ route('products.index') }}"
-                    class="{{ request()->routeIs('products*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Products</a>
-                <a href="{{ route('inventory.index') }}"
-                    class="{{ request()->routeIs('inventory*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Stock
-                    Levels</a>
-                <a href="{{ route('categories.index') }}"
-                    class="{{ request()->routeIs('categories*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Categories</a>
-                <a href="{{ route('suppliers.index') }}"
-                    class="{{ request()->routeIs('suppliers*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Suppliers</a>
-                <a href="{{ route('procurement.orders.index') }}"
-                    class="{{ request()->routeIs('procurement*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Procurement
-                    Orders</a>
+                <span x-show="!sidebarCollapsed"
+                    class="font-medium whitespace-nowrap transition-opacity duration-200">Cashier Queue</span>
+            </a>
+        @endif
+
+        <!-- POS / Sales (Not for Cashiers) -->
+        @if(!Auth::user()->isCashier())
+            <a href="{{ route('pos.index') }}" :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
+                class="{{ request()->routeIs('pos.index') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }} flex items-center gap-3 py-2.5 rounded-lg transition-all group overflow-hidden">
+                <svg class="w-5 h-5 shrink-0 {{ request()->routeIs('pos.index') ? 'text-white' : 'text-slate-400 group-hover:text-white' }}"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span x-show="!sidebarCollapsed" class="font-medium whitespace-nowrap transition-opacity duration-200">Point
+                    of Sale</span>
+            </a>
+        @endif
+
+        <!-- Inventory (Not for Cashiers) -->
+        @if(!Auth::user()->isCashier())
+            <div x-data="{ open: {{ request()->is('products*') || request()->is('inventory*') || request()->is('categories*') || request()->is('suppliers*') || request()->is('procurement*') ? 'true' : 'false' }} }"
+                class="group relative">
+                <button @click="if(sidebarCollapsed) { toggleSidebar(); open = true; } else { open = !open; }"
+                    :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
+                    class="w-full flex items-center justify-between py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors group">
+                    <div class="flex items-center overflow-hidden" :class="sidebarCollapsed ? '' : 'gap-3'">
+                        <svg class="w-5 h-5 shrink-0 text-slate-400 group-hover:text-white" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        <span x-show="!sidebarCollapsed"
+                            class="font-medium whitespace-nowrap transition-opacity duration-200">Inventory</span>
+                    </div>
+                    <svg x-show="!sidebarCollapsed" :class="{'rotate-90': open}"
+                        class="w-4 h-4 text-slate-500 transition-transform duration-200" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+                <div x-show="open && !sidebarCollapsed" x-transition class="mt-1 pl-10 space-y-1 overflow-hidden">
+                    <a href="{{ route('products.index') }}"
+                        class="{{ request()->routeIs('products*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Products</a>
+                    <a href="{{ route('inventory.index') }}"
+                        class="{{ request()->routeIs('inventory*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Stock
+                        Levels</a>
+                    <a href="{{ route('categories.index') }}"
+                        class="{{ request()->routeIs('categories*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Categories</a>
+                    <a href="{{ route('suppliers.index') }}"
+                        class="{{ request()->routeIs('suppliers*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Suppliers</a>
+                    <a href="{{ route('procurement.orders.index') }}"
+                        class="{{ request()->routeIs('procurement*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Procurement
+                        Orders</a>
+                </div>
             </div>
-        </div>
+        @endif
 
         <!-- Sales & Transactions -->
         <a href="{{ route('sales.index') }}" :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
@@ -253,38 +273,41 @@
         @endif
 
         <!-- Reports -->
-        <div x-data="{ open: {{ request()->is('admin/financials*') || request()->is('admin/tax*') ? 'true' : 'false' }} }"
-            class="group relative">
-            <button @click="if(sidebarCollapsed) { toggleSidebar(); open = true; } else { open = !open; }"
-                :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
-                class="w-full flex items-center justify-between py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors group">
-                <div class="flex items-center overflow-hidden" :class="sidebarCollapsed ? '' : 'gap-3'">
-                    <svg class="w-5 h-5 shrink-0 text-slate-400 group-hover:text-white" fill="none"
-                        stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        <!-- Reports -->
+        @if(!Auth::user()->isPharmacist() && !Auth::user()->isCashier())
+            <div x-data="{ open: {{ request()->is('admin/financials*') || request()->is('admin/tax*') ? 'true' : 'false' }} }"
+                class="group relative">
+                <button @click="if(sidebarCollapsed) { toggleSidebar(); open = true; } else { open = !open; }"
+                    :class="sidebarCollapsed ? 'justify-center px-0' : 'px-3'"
+                    class="w-full flex items-center justify-between py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors group">
+                    <div class="flex items-center overflow-hidden" :class="sidebarCollapsed ? '' : 'gap-3'">
+                        <svg class="w-5 h-5 shrink-0 text-slate-400 group-hover:text-white" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span x-show="!sidebarCollapsed"
+                            class="font-medium whitespace-nowrap transition-opacity duration-200">Reports</span>
+                    </div>
+                    <svg x-show="!sidebarCollapsed" :class="{'rotate-90': open}"
+                        class="w-4 h-4 text-slate-500 transition-transform duration-200" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
-                    <span x-show="!sidebarCollapsed"
-                        class="font-medium whitespace-nowrap transition-opacity duration-200">Reports</span>
+                </button>
+                <div x-show="open && !sidebarCollapsed" x-transition class="mt-1 pl-10 space-y-1 overflow-hidden">
+                    <a href="{{ route('admin.financials.sales') }}"
+                        class="{{ request()->routeIs('admin.financials.sales') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Sales
+                        Report</a>
+                    <a href="{{ route('admin.tax.reports.index') }}"
+                        class="{{ request()->routeIs('admin.tax.reports.index') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Tax
+                        Report</a>
+                    <a href="{{ route('admin.tax.rates.index') }}"
+                        class="{{ request()->routeIs('admin.tax.rates.index') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Tax
+                        Settings</a>
                 </div>
-                <svg x-show="!sidebarCollapsed" :class="{'rotate-90': open}"
-                    class="w-4 h-4 text-slate-500 transition-transform duration-200" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-            </button>
-            <div x-show="open && !sidebarCollapsed" x-transition class="mt-1 pl-10 space-y-1 overflow-hidden">
-                <a href="{{ route('admin.financials.sales') }}"
-                    class="{{ request()->routeIs('admin.financials.sales') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Sales
-                    Report</a>
-                <a href="{{ route('admin.tax.reports.index') }}"
-                    class="{{ request()->routeIs('admin.tax.reports.index') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Tax
-                    Report</a>
-                <a href="{{ route('admin.tax.rates.index') }}"
-                    class="{{ request()->routeIs('admin.tax.rates.index') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Tax
-                    Settings</a>
             </div>
-        </div>
+        @endif
 
         <!-- Admin -->
         @if(Auth::user()->isAdmin())

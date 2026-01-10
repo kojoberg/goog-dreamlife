@@ -18,15 +18,17 @@ class NotificationController extends Controller
     public function markAsRead($id)
     {
         $notification = Auth::user()->notifications()->where('id', $id)->first();
+
         if ($notification) {
             $notification->markAsRead();
 
-            // Redirect to the intended action URL if present in data
-            if (isset($notification->data['action_url'])) {
-                return redirect($notification->data['action_url']);
-            }
+            return response()->json([
+                'status' => 'success',
+                'url' => $notification->data['action_url'] ?? $notification->data['url'] ?? null
+            ]);
         }
-        return back();
+
+        return response()->json(['status' => 'error', 'message' => 'Notification not found'], 404);
     }
 
     // Mark all as read

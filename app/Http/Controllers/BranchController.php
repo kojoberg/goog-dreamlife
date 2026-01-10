@@ -22,6 +22,10 @@ class BranchController extends Controller
      */
     public function create()
     {
+        if (!is_multi_branch()) {
+            abort(403, 'Branch creation is disabled in single-location mode.');
+        }
+
         return view('branches.create');
     }
 
@@ -30,6 +34,10 @@ class BranchController extends Controller
      */
     public function store(Request $request)
     {
+        if (!is_multi_branch()) {
+            abort(403, 'Branch creation is disabled in single-location mode.');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'location' => 'nullable|string|max:255',

@@ -12,10 +12,12 @@
 
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="text-lg font-medium text-gray-900">All Branches</h3>
-                        <a href="{{ route('branches.create') }}"
-                            class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                            Add New Branch
-                        </a>
+                        @if(is_multi_branch())
+                            <a href="{{ route('branches.create') }}"
+                                class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                                Add New Branch
+                            </a>
+                        @endif
                     </div>
 
 
