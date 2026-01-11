@@ -152,6 +152,11 @@ class PrescriptionController extends Controller
             $user = Auth::user();
             $hasCashierWorkflow = $user->branch && $user->branch->has_cashier;
 
+            // Get the current user's open shift (if any)
+            $currentShift = \App\Models\Shift::where('user_id', Auth::id())
+                ->whereNull('end_time')
+                ->first();
+
             $sale = \App\Models\Sale::create([
                 'user_id' => Auth::id(), // Pharmacist dispensing
                 'patient_id' => $prescription->patient_id,
@@ -163,6 +168,7 @@ class PrescriptionController extends Controller
                 'tax_amount' => 0,
                 'status' => $hasCashierWorkflow ? 'pending_payment' : 'completed',
                 'payment_method' => $hasCashierWorkflow ? null : 'cash', // Default to cash if no cashier
+                'shift_id' => $currentShift?->id, // Link to current shift for reporting
             ]);
 
             // If no cashier workflow, award loyalty points immediately
