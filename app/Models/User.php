@@ -62,7 +62,7 @@ class User extends Authenticatable
             return true;
         }
 
-        // Pharmacists have specific permissions by default
+        // Pharmacists have specific permissions by default (core workflow only)
         if ($this->isPharmacist()) {
             $pharmacistPermissions = [
                 'access_pos',
@@ -70,7 +70,7 @@ class User extends Authenticatable
                 'prescribe_medication',
                 'register_patient',
                 'receive_stock',
-                'manage_products',
+                // Note: 'manage_products' removed - now controlled via permission management
             ];
             if (in_array($permissionSlug, $pharmacistPermissions)) {
                 return true;
