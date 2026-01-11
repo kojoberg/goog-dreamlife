@@ -76,9 +76,11 @@
                         class="{{ request()->routeIs('patients*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Patients</a>
                     <a href="{{ route('prescriptions.create') }}"
                         class="{{ request()->routeIs('prescriptions*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Prescriptions</a>
-                    <a href="{{ route('admin.safety.index') }}"
-                        class="{{ request()->routeIs('admin.safety*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Safety
-                        Checks</a>
+                    @if(Auth::user()->role !== 'lab_scientist')
+                        <a href="{{ route('admin.safety.index') }}"
+                            class="{{ request()->routeIs('admin.safety*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Safety
+                            Checks</a>
+                    @endif
                 </div>
             </div>
         @endif

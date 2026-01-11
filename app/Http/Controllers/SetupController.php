@@ -25,10 +25,11 @@ class SetupController extends Controller
             'branch_location' => 'required|string|max:255',
         ]);
 
-        // Create Branch first
+        // Create Branch first (this is the main/only branch)
         $branch = Branch::create([
             'name' => $request->branch_name,
             'location' => $request->branch_location,
+            'is_main' => true, // First branch created during setup is the main branch
         ]);
 
         // Check if multi-branch setup (create super admin)

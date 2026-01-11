@@ -147,8 +147,11 @@ class PrescriptionController extends Controller
             }
             // --------------------------------
 
-            // 2. Create Sale Record with PENDING_PAYMENT status
-            // Pharmacist dispenses, creates invoice - Cashier collects payment
+            // 2. Create Sale Record - check if cashier workflow is enabled
+            // If cashier workflow is disabled, complete the sale directly
+            $user = Auth::user();
+            $hasCashierWorkflow = $user->branch && $user->branch->has_cashier;
+
             $sale = \App\Models\Sale::create([
                 'user_id' => Auth::id(), // Pharmacist dispensing
                 'patient_id' => $prescription->patient_id,
@@ -158,11 +161,22 @@ class PrescriptionController extends Controller
                 'total_amount' => $totalAmount,
                 'points_redeemed' => $pointsRedeemed,
                 'tax_amount' => 0,
-                'status' => 'pending_payment', // Cashier will complete payment
-                'payment_method' => null, // Set when cashier processes payment
+                'status' => $hasCashierWorkflow ? 'pending_payment' : 'completed',
+                'payment_method' => $hasCashierWorkflow ? null : 'cash', // Default to cash if no cashier
             ]);
 
-            // NOTE: Loyalty points earning happens when cashier completes payment
+            // If no cashier workflow, award loyalty points immediately
+            if (!$hasCashierWorkflow && $settings && $settings->loyalty_points_per_sale > 0) {
+                $patient = \App\Models\Patient::find($prescription->patient_id);
+                if ($patient) {
+                    $pointsEarned = floor($totalAmount / 100) * $settings->loyalty_points_per_sale;
+                    if ($pointsEarned > 0) {
+                        $patient->increment('loyalty_points', $pointsEarned);
+                    }
+                }
+            }
+
+            // NOTE: Loyalty points earning happens when cashier completes payment (if cashier workflow enabled)
             // This is handled in CashierController@update
             foreach ($itemsToProcess as $item) {
                 $product = $item['product'];
@@ -197,11 +211,18 @@ class PrescriptionController extends Controller
             $prescription->update(['status' => 'dispensed']);
             DB::commit();
 
-            // Redirect to Sale Receipt or back with success
-            return back()->with([
-                'success' => 'Prescription dispensed. Invoice #' . $sale->id . ' created. Patient can proceed to Cashier for payment.',
-                'success_sale_id' => $sale->id
-            ]);
+            // Redirect message depends on cashier workflow
+            if ($hasCashierWorkflow) {
+                return back()->with([
+                    'success' => 'Prescription dispensed. Invoice #' . $sale->id . ' created. Patient can proceed to Cashier for payment.',
+                    'success_sale_id' => $sale->id
+                ]);
+            } else {
+                return back()->with([
+                    'success' => 'Prescription dispensed and sale completed. Receipt #' . $sale->id,
+                    'success_sale_id' => $sale->id
+                ]);
+            }
 
         } catch (\Exception $e) {
             DB::rollBack();

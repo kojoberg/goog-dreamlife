@@ -114,8 +114,15 @@ Route::middleware('auth')->group(function () {
         Route::get('procurement/orders/{order}/print', [\App\Http\Controllers\ProcurementController::class, 'print'])->name('procurement.orders.print');
         Route::get('procurement/orders/{order}', [\App\Http\Controllers\ProcurementController::class, 'show'])->name('procurement.orders.show');
         Route::post('procurement/orders/{order}/receive', [\App\Http\Controllers\ProcurementController::class, 'receive'])->name('procurement.orders.receive');
-        Route::get('procurement/orders/{order}', [\App\Http\Controllers\ProcurementController::class, 'show'])->name('procurement.orders.show');
-        Route::post('procurement/orders/{order}/receive', [\App\Http\Controllers\ProcurementController::class, 'receive'])->name('procurement.orders.receive');
+    });
+
+    // --- Safety Database (Admin & Pharmacist Only) ---
+    Route::middleware(['role:admin,pharmacist'])->group(function () {
+        Route::get('/admin/safety', [\App\Http\Controllers\SafetyDatabaseController::class, 'index'])->name('admin.safety.index');
+        Route::post('/admin/safety/sync', [\App\Http\Controllers\SafetyDatabaseController::class, 'sync'])->name('admin.safety.sync');
+        Route::get('/admin/safety/{interaction}/edit', [\App\Http\Controllers\SafetyDatabaseController::class, 'edit'])->name('admin.safety.edit');
+        Route::put('/admin/safety/{interaction}', [\App\Http\Controllers\SafetyDatabaseController::class, 'update'])->name('admin.safety.update');
+        Route::delete('/admin/safety/{interaction}', [\App\Http\Controllers\SafetyDatabaseController::class, 'destroy'])->name('admin.safety.destroy');
     });
 
     // --- Refunds (Split Access) ---
@@ -177,13 +184,6 @@ Route::middleware('auth')->group(function () {
         // System Health
         Route::get('/system-health', [\App\Http\Controllers\SystemHealthController::class, 'index'])->name('admin.system-health');
         Route::post('/system-health/toggle-debug', [\App\Http\Controllers\SystemHealthController::class, 'toggleDebug'])->name('admin.system-health.toggle-debug');
-
-        // Safety Database
-        Route::get('/safety', [\App\Http\Controllers\SafetyDatabaseController::class, 'index'])->name('admin.safety.index');
-        Route::post('/safety/sync', [\App\Http\Controllers\SafetyDatabaseController::class, 'sync'])->name('admin.safety.sync');
-        Route::get('/safety/{interaction}/edit', [\App\Http\Controllers\SafetyDatabaseController::class, 'edit'])->name('admin.safety.edit');
-        Route::put('/safety/{interaction}', [\App\Http\Controllers\SafetyDatabaseController::class, 'update'])->name('admin.safety.update');
-        Route::delete('/safety/{interaction}', [\App\Http\Controllers\SafetyDatabaseController::class, 'destroy'])->name('admin.safety.destroy');
 
         // Tax Management
         Route::prefix('tax')->name('admin.tax.')->group(function () {

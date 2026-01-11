@@ -24,8 +24,9 @@ class ProductController extends Controller
             // If 'stock' is calculated via relation, we need a refined query.
             // Assuming Product hasMany InventoryBatch. 
             // Simplest fix for MVP: Fetch all, filter, then paginate manually (LengthAwarePaginator).
+            // Exclude services from low stock calculation
 
-            $allProducts = $query->get()->filter(function ($p) {
+            $allProducts = $query->where('product_type', '!=', 'service')->get()->filter(function ($p) {
                 return $p->stock <= $p->reorder_level;
             });
 

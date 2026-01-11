@@ -62,6 +62,21 @@ class User extends Authenticatable
             return true;
         }
 
+        // Pharmacists have specific permissions by default
+        if ($this->isPharmacist()) {
+            $pharmacistPermissions = [
+                'access_pos',
+                'dispense_medication',
+                'prescribe_medication',
+                'register_patient',
+                'receive_stock',
+                'manage_products',
+            ];
+            if (in_array($permissionSlug, $pharmacistPermissions)) {
+                return true;
+            }
+        }
+
         return $this->permissions->contains('slug', $permissionSlug);
     }
 

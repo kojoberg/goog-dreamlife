@@ -29,7 +29,7 @@ class ComprehensiveWorkflowTest extends TestCase
             'starting_cash' => 100.00,
         ]);
 
-        $response->assertRedirect(route('pos.index')); // Cashiers now redirected to POS
+        $response->assertRedirect(route('cashier.index')); // Cashiers now redirected to Cashier Queue
         $this->assertDatabaseHas('shifts', [
             'user_id' => $cashier->id,
             'starting_cash' => 100.00,
@@ -124,11 +124,12 @@ class ComprehensiveWorkflowTest extends TestCase
         $response->assertOk();
         $this->assertStringContainsString('This is a test notification', $response->content());
 
-        // 3. Mark as Read
+        // 3. Mark as Read (returns JSON, not redirect)
         $notification = $user->unreadNotifications->first();
         $response = $this->actingAs($user)->get(route('notifications.read', $notification->id));
 
-        $response->assertRedirect(route('dashboard')); // Action URL
+        $response->assertOk(); // Returns JSON
+        $response->assertJson(['status' => 'success']);
         $this->assertCount(0, $user->fresh()->unreadNotifications);
     }
 }

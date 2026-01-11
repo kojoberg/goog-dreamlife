@@ -210,12 +210,11 @@ class PosController extends Controller
             $amountTendered = $hasCashier ? 0 : ($request->amount_tendered ?? $netPayable);
             $changeAmount = $amountTendered - $netPayable;
 
-            // 2. Earning (Based on Net Paybale Amount)
-            if ($request->patient_id && $settings->loyalty_spend_per_point > 0 && $netPayable > 0) {
+            // 2. Earning (Based on Net Payable Amount) - Only award if sale is completed directly
+            // If pending_payment, points are awarded when cashier processes the payment
+            if (!$hasCashier && $request->patient_id && $settings->loyalty_spend_per_point > 0 && $netPayable > 0) {
                 $pointsEarned = floor($netPayable / $settings->loyalty_spend_per_point);
                 if ($pointsEarned > 0) {
-                    // We update the patient points typically AFTER success, but decrement was already done.
-                    // Increment is fine here since transaction rollbacks cover it.
                     $patient = Patient::find($request->patient_id);
                     if ($patient) {
                         $patient->increment('loyalty_points', $pointsEarned);

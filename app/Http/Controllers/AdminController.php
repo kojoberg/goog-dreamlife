@@ -11,9 +11,9 @@ class AdminController extends Controller
         // Summary Stats
         $usersCount = \App\Models\User::count();
         $branchesCount = \App\Models\Branch::count();
-        // Calculate low stock using the getStockAttribute accessor logic
+        // Calculate low stock using the getStockAttribute accessor logic (exclude services)
         // We fetch all products and filter because 'stock' is not a database column but a computed sum of batches
-        $lowStockCount = \App\Models\Product::all()->filter(function ($product) {
+        $lowStockCount = \App\Models\Product::where('product_type', '!=', 'service')->get()->filter(function ($product) {
             return $product->stock < 5;
         })->count();
         $todaySales = \App\Models\Sale::whereDate('created_at', today())->sum('total_amount');

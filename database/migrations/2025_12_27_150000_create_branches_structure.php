@@ -20,16 +20,7 @@ return new class extends Migration {
             $table->timestamps();
         });
 
-        // 2. Insert Default 'Main Branch'
-        $mainBranchId = DB::table('branches')->insertGetId([
-            'name' => 'Main Branch',
-            'location' => 'HQ',
-            'is_main' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        // 3. Add branch_id to Tables and Update Existing Records
+        // 2. Add branch_id to Tables (nullable, no default branch created)
         $tables = [
             'users',
             'inventory_batches',
@@ -41,12 +32,9 @@ return new class extends Migration {
 
         foreach ($tables as $tableName) {
             Schema::table($tableName, function (Blueprint $table) use ($tableName) {
-                // Add column as nullable first to avoid constraint violation on creation if rows exist
+                // Add column as nullable to allow setup later
                 $table->foreignId('branch_id')->nullable()->after('id')->constrained('branches')->onDelete('set null');
             });
-
-            // Update existing records to link to Main Branch
-            DB::table($tableName)->update(['branch_id' => $mainBranchId]);
         }
     }
 

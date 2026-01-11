@@ -117,9 +117,10 @@ class FullSystemTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('users.create'));
         $response->assertStatus(200);
 
-        // Branches Create
+        // Branches Create - returns 403 in single-branch mode (default)
+        // In multi-branch mode this would return 200
         $response = $this->actingAs($this->admin)->get(route('branches.create'));
-        $response->assertStatus(200);
+        $response->assertStatus(403); // Blocked in single-branch mode
 
         // Expenses Create
         $response = $this->actingAs($this->admin)->get(route('expenses.create'));

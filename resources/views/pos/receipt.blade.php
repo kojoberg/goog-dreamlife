@@ -57,8 +57,8 @@
     <div class="text-center">
         @if($settings->logo_path)
             <?php 
-                                                                        $logoPath = storage_path('app/public/' . $settings->logo_path); 
-                                                                    ?>
+                                                                            $logoPath = storage_path('app/public/' . $settings->logo_path); 
+                                                                        ?>
             @if(file_exists($logoPath))
                 <img src="data:image/{{ pathinfo($logoPath, PATHINFO_EXTENSION) }};base64,{{ base64_encode(file_get_contents($logoPath)) }}"
                     alt="Logo" style="max-width: 100%; max-height: 120px; height: auto; width: auto; margin-bottom: 15px;">
@@ -98,12 +98,16 @@
                 <td>Prescribed/Served By:</td>
                 <td class="right">{{ $sale->user ? $sale->user->name : 'N/A' }}</td>
             </tr>
-            @if($sale->shift && $sale->shift->user)
-                <tr>
-                    <td>Cashier:</td>
-                    <td class="right">{{ $sale->shift->user->name }}</td>
-                </tr>
-            @endif
+            <tr>
+                <td>Processed By:</td>
+                <td class="right">
+                    @if($sale->shift && $sale->shift->user)
+                        {{ $sale->shift->user->name }}
+                    @else
+                        {{ $sale->user ? $sale->user->name : 'N/A' }}
+                    @endif
+                </td>
+            </tr>
             @if($sale->patient)
                 <tr>
                     <td>Customer:</td>

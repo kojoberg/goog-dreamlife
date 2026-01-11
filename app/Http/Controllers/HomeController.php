@@ -52,8 +52,8 @@ class HomeController extends Controller
             ->where('quantity', '>', 0)
             ->count();
 
-        // Calculate low stock: products where current stock <= reorder level
-        $lowStockCount = Product::all()->filter(function ($product) {
+        // Calculate low stock: products where current stock <= reorder level (exclude services)
+        $lowStockCount = Product::where('product_type', '!=', 'service')->get()->filter(function ($product) {
             return $product->stock <= $product->reorder_level;
         })->count();
 
