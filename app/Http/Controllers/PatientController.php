@@ -143,13 +143,64 @@ class PatientController extends Controller
      */
     public function loyaltyHistory(Patient $patient)
     {
-        $loyaltyTransactions = \App\Models\Sale::where('patient_id', $patient->id)
+        // Get sales with loyalty activity
+        $sales = \App\Models\Sale::where('patient_id', $patient->id)
             ->where(function ($q) {
                 $q->where('points_earned', '>', 0)
                     ->orWhere('points_redeemed', '>', 0);
             })
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->get()
+            ->map(function ($sale) {
+                return [
+                    'type' => 'sale',
+                    'id' => $sale->id,
+                    'date' => $sale->created_at,
+                    'points_earned' => $sale->points_earned ?? 0,
+                    'points_redeemed' => $sale->points_redeemed ?? 0,
+                    'amount' => $sale->total_amount,
+                    'is_reversal' => false,
+                ];
+            });
+
+        // Get approved refunds that affected loyalty points
+        $refunds = \App\Models\Refund::where('status', 'approved')
+            ->whereHas('sale', function ($q) use ($patient) {
+                $q->where('patient_id', $patient->id)
+                    ->where(function ($sq) {
+                        $sq->where('points_earned', '>', 0)
+                            ->orWhere('points_redeemed', '>', 0);
+                    });
+            })
+            ->with('sale')
+            ->get()
+            ->map(function ($refund) {
+                return [
+                    'type' => 'refund',
+                    'id' => $refund->sale_id,
+                    'refund_id' => $refund->id,
+                    'date' => $refund->updated_at, // When approved
+                    'points_earned' => -($refund->sale->points_earned ?? 0), // Reversed (negative)
+                    'points_redeemed' => $refund->sale->points_redeemed ?? 0, // Returned (positive for display)
+                    'amount' => $refund->refund_amount,
+                    'is_reversal' => true,
+                ];
+            });
+
+        // Combine and sort by date descending
+        $combined = $sales->concat($refunds)
+            ->sortByDesc('date')
+            ->values();
+
+        // Manual pagination
+        $page = request()->get('page', 1);
+        $perPage = 20;
+        $loyaltyTransactions = new \Illuminate\Pagination\LengthAwarePaginator(
+            $combined->forPage($page, $perPage),
+            $combined->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url()]
+        );
 
         return view('patients.loyalty', compact('patient', 'loyaltyTransactions'));
     }
