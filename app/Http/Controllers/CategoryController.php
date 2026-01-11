@@ -37,6 +37,38 @@ class CategoryController extends Controller
         return redirect()->route('categories.index')->with('success', 'Category created successfully.');
     }
 
+    public function bulkStore(Request $request)
+    {
+        $request->validate([
+            'names' => 'required|string',
+        ]);
+
+        $names = array_filter(array_map('trim', explode(',', $request->names)));
+        $created = 0;
+        $skipped = [];
+
+        foreach ($names as $name) {
+            if (empty($name))
+                continue;
+
+            // Check if category already exists
+            if (Category::where('name', $name)->exists()) {
+                $skipped[] = $name;
+                continue;
+            }
+
+            Category::create(['name' => $name]);
+            $created++;
+        }
+
+        $message = "Created $created categories.";
+        if (count($skipped) > 0) {
+            $message .= " Skipped existing: " . implode(', ', $skipped);
+        }
+
+        return redirect()->route('categories.index')->with('success', $message);
+    }
+
     public function edit(Category $category)
     {
         return view('categories.edit', compact('category'));

@@ -16,7 +16,35 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
 
-
+                    <!-- Bulk Add Categories -->
+                    <div x-data="{ open: false }" class="mb-6">
+                        <button @click="open = !open" type="button"
+                            class="flex items-center text-indigo-600 hover:text-indigo-800 font-medium text-sm mb-3">
+                            <svg class="w-4 h-4 mr-1" :class="{ 'rotate-90': open }" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5l7 7-7 7" />
+                            </svg>
+                            Bulk Add Categories
+                        </button>
+                        <div x-show="open" x-cloak class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                            <form action="{{ route('categories.bulk') }}" method="POST">
+                                @csrf
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Enter category names (comma-separated)
+                                </label>
+                                <textarea name="names" rows="2"
+                                    class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    placeholder="Tablets, Capsules, Syrups, Injections, Topicals"></textarea>
+                                <div class="mt-3 flex justify-end">
+                                    <button type="submit"
+                                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm">
+                                        Create Categories
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>

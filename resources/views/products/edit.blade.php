@@ -97,6 +97,70 @@
                                 required>
                         </div>
 
+                        <!-- Drug Information -->
+                        <div class="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h4 class="text-sm font-bold text-gray-700 mb-3 uppercase tracking-wide">Drug Information
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <!-- Dosage -->
+                                <div>
+                                    <label for="dosage"
+                                        class="block text-gray-700 text-sm font-bold mb-2">Dosage</label>
+                                    <input type="text" name="dosage" id="dosage" value="{{ $product->dosage }}"
+                                        placeholder="e.g. 500mg"
+                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                </div>
+
+                                <!-- Drug Form -->
+                                <div>
+                                    <label for="drug_form"
+                                        class="block text-gray-700 text-sm font-bold mb-2">Form</label>
+                                    <select name="drug_form" id="drug_form"
+                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                        <option value="">Select Form...</option>
+                                        <option value="Tablet" {{ $product->drug_form == 'Tablet' ? 'selected' : '' }}>
+                                            Tablet</option>
+                                        <option value="Capsule" {{ $product->drug_form == 'Capsule' ? 'selected' : '' }}>
+                                            Capsule</option>
+                                        <option value="Syrup" {{ $product->drug_form == 'Syrup' ? 'selected' : '' }}>Syrup
+                                        </option>
+                                        <option value="Injection" {{ $product->drug_form == 'Injection' ? 'selected' : '' }}>Injection</option>
+                                        <option value="Cream" {{ $product->drug_form == 'Cream' ? 'selected' : '' }}>Cream
+                                        </option>
+                                        <option value="Gel" {{ $product->drug_form == 'Gel' ? 'selected' : '' }}>Gel
+                                        </option>
+                                        <option value="Drops" {{ $product->drug_form == 'Drops' ? 'selected' : '' }}>Drops
+                                        </option>
+                                        <option value="Inhaler" {{ $product->drug_form == 'Inhaler' ? 'selected' : '' }}>
+                                            Inhaler</option>
+                                        <option value="Other" {{ $product->drug_form == 'Other' ? 'selected' : '' }}>Other
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <!-- Drug Route -->
+                                <div>
+                                    <label for="drug_route"
+                                        class="block text-gray-700 text-sm font-bold mb-2">Route</label>
+                                    <select name="drug_route" id="drug_route"
+                                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                        <option value="">Select Route...</option>
+                                        <option value="Oral" {{ $product->drug_route == 'Oral' ? 'selected' : '' }}>Oral
+                                        </option>
+                                        <option value="Topical" {{ $product->drug_route == 'Topical' ? 'selected' : '' }}>
+                                            Topical</option>
+                                        <option value="Intravenous" {{ $product->drug_route == 'Intravenous' ? 'selected' : '' }}>Intravenous</option>
+                                        <option value="Intramuscular" {{ $product->drug_route == 'Intramuscular' ? 'selected' : '' }}>Intramuscular</option>
+                                        <option value="Subcutaneous" {{ $product->drug_route == 'Subcutaneous' ? 'selected' : '' }}>Subcutaneous</option>
+                                        <option value="Inhalation" {{ $product->drug_route == 'Inhalation' ? 'selected' : '' }}>Inhalation</option>
+                                        <option value="Rectal" {{ $product->drug_route == 'Rectal' ? 'selected' : '' }}>
+                                            Rectal</option>
+                                        <option value="Ophthalmic" {{ $product->drug_route == 'Ophthalmic' ? 'selected' : '' }}>Ophthalmic</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="mb-4">
                             <label class="flex items-center">
                                 <input type="checkbox" name="is_chronic" value="1" {{ $product->is_chronic ? 'checked' : '' }} class="form-checkbox h-5 w-5 text-blue-600">

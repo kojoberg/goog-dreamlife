@@ -36,16 +36,25 @@
                             <label class="block text-gray-700 text-sm font-bold mb-2">
                                 Upload CSV File
                             </label>
-                            <div
-                                class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-indigo-400 transition">
+                            <div id="drop-zone"
+                                class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-indigo-400 transition cursor-pointer">
                                 <div class="space-y-1 text-center">
-                                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none"
-                                        viewBox="0 0 48 48" aria-hidden="true">
+                                    <svg id="upload-icon" class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor"
+                                        fill="none" viewBox="0 0 48 48" aria-hidden="true">
                                         <path
                                             d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                     </svg>
-                                    <div class="flex text-sm text-gray-600">
+                                    <div id="file-info" class="hidden">
+                                        <svg class="mx-auto h-12 w-12 text-green-500" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <p id="file-name" class="text-sm font-medium text-green-600 mt-2"></p>
+                                        <p class="text-xs text-gray-500">Click to change file</p>
+                                    </div>
+                                    <div id="upload-prompt" class="flex text-sm text-gray-600">
                                         <label for="file-upload"
                                             class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
                                             <span>Upload a file</span>
@@ -63,6 +72,25 @@
                                 <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
                             @enderror
                         </div>
+
+                        <script>
+                            document.getElementById('file-upload').addEventListener('change', function (e) {
+                                const file = e.target.files[0];
+                                if (file) {
+                                    document.getElementById('upload-icon').classList.add('hidden');
+                                    document.getElementById('upload-prompt').classList.add('hidden');
+                                    document.getElementById('file-info').classList.remove('hidden');
+                                    document.getElementById('file-name').textContent = file.name;
+                                    document.getElementById('drop-zone').classList.remove('border-gray-300');
+                                    document.getElementById('drop-zone').classList.add('border-green-400', 'bg-green-50');
+                                }
+                            });
+
+                            // Click anywhere in drop zone to trigger file input
+                            document.getElementById('drop-zone').addEventListener('click', function () {
+                                document.getElementById('file-upload').click();
+                            });
+                        </script>
 
                         <div class="flex items-center justify-end">
                             <a href="{{ route('products.index') }}"

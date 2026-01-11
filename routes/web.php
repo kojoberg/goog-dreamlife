@@ -81,6 +81,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware(['role:admin,pharmacist,lab_scientist'])->group(function () {
         Route::resource('suppliers', \App\Http\Controllers\SupplierController::class);
         Route::resource('categories', \App\Http\Controllers\CategoryController::class);
+        Route::post('categories/bulk', [\App\Http\Controllers\CategoryController::class, 'bulkStore'])->name('categories.bulk');
 
         // Product Management
         // Products & Inventory

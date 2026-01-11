@@ -187,26 +187,18 @@ class ProductController extends Controller
             "Expires" => "0"
         ];
 
-        $columns = ['name', 'category_id', 'product_type', 'unit_price', 'cost_price', 'reorder_level', 'description', 'drug_route', 'drug_form', 'dosage', 'is_chronic'];
+        // Essential fields + drug info
+        $columns = ['name', 'category', 'type', 'unit_price', 'cost_price', 'reorder_level', 'drug_form', 'dosage', 'drug_route'];
 
         $callback = function () use ($columns) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
 
-            // Example row
-            fputcsv($file, [
-                'Paracetamol 500mg',
-                '1',
-                'goods',
-                '10.00',
-                '5.00',
-                '20',
-                'Pain reliever',
-                'Oral',
-                'Tablet',
-                '500mg',
-                '0'
-            ]);
+            // Example rows
+            fputcsv($file, ['Paracetamol 500mg', 'Tablets', 'goods', '10.00', '5.00', '20', 'Tablet', '500mg', 'Oral']);
+            fputcsv($file, ['Amoxicillin 250mg', 'Antibiotics', 'goods', '15.00', '8.00', '15', 'Capsule', '250mg', 'Oral']);
+            fputcsv($file, ['Diclofenac Gel', 'Topicals', 'goods', '25.00', '12.00', '10', 'Gel', '1%', 'Topical']);
+            fputcsv($file, ['Consultation Fee', 'Services', 'service', '50.00', '0', '0', '', '', '']);
 
             fclose($file);
         };
@@ -237,24 +229,28 @@ class ProductController extends Controller
         $errors = [];
 
         while (($row = fgetcsv($handle)) !== false) {
-            // Mapping: ['name', 'category_id', 'product_type', 'unit_price', 'cost_price', 'reorder_level', 'description', 'drug_route', 'drug_form', 'dosage', 'is_chronic']
-            // Ensure row has enough columns
+            // Mapping: ['name', 'category', 'type', 'unit_price', 'cost_price', 'reorder_level', 'drug_form', 'dosage', 'drug_route']
             if (count($row) < 4)
                 continue; // Minimum required
 
             try {
+                // Look up category by name (create if not exists)
+                $categoryId = null;
+                if (!empty($row[1])) {
+                    $category = Category::firstOrCreate(['name' => trim($row[1])]);
+                    $categoryId = $category->id;
+                }
+
                 Product::create([
                     'name' => $row[0],
-                    'category_id' => $row[1] ?: null, // Assumes valid ID provided. Ideally we'd look up by name logic if advanced.
-                    'product_type' => in_array($row[2], ['goods', 'service']) ? $row[2] : 'goods',
-                    'unit_price' => (float) $row[3],
-                    'cost_price' => isset($row[4]) ? (float) $row[4] : 0,
-                    'reorder_level' => isset($row[5]) ? (int) $row[5] : 10,
-                    'description' => $row[6] ?? null,
-                    'drug_route' => $row[7] ?? null,
-                    'drug_form' => $row[8] ?? null,
-                    'dosage' => $row[9] ?? null,
-                    'is_chronic' => isset($row[10]) ? (bool) $row[10] : false,
+                    'category_id' => $categoryId,
+                    'product_type' => in_array(strtolower(trim($row[2] ?? '')), ['goods', 'service']) ? strtolower(trim($row[2])) : 'goods',
+                    'unit_price' => (float) ($row[3] ?? 0),
+                    'cost_price' => (float) ($row[4] ?? 0),
+                    'reorder_level' => (int) ($row[5] ?? 10),
+                    'drug_form' => !empty($row[6]) ? trim($row[6]) : null,
+                    'dosage' => !empty($row[7]) ? trim($row[7]) : null,
+                    'drug_route' => !empty($row[8]) ? trim($row[8]) : null,
                 ]);
                 $count++;
             } catch (\Exception $e) {
