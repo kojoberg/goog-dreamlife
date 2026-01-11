@@ -59,12 +59,34 @@ class CheckExpiry extends Command
 
         // Email Alert
         if ($settings->notify_expiry_email && $settings->email) {
+            $emailMessage = "Expiry Alert ({$days} Days):\n\n" . $msgBody;
             try {
-                Mail::raw("Expiry Alert ({$days} Days):\n\n" . $msgBody, function ($msg) use ($settings) {
+                Mail::raw($emailMessage, function ($msg) use ($settings) {
                     $msg->to($settings->email)->subject('Inventory Expiry Alert');
                 });
+                // Log successful email
+                \App\Models\CommunicationLog::create([
+                    'type' => 'email',
+                    'recipient' => $settings->email,
+                    'message' => substr($emailMessage, 0, 500),
+                    'status' => 'sent',
+                    'context' => 'expiry_alert',
+                    'user_id' => null, // System command
+                    'branch_id' => null,
+                ]);
                 $this->info("Email sent.");
             } catch (\Exception $e) {
+                // Log failed email
+                \App\Models\CommunicationLog::create([
+                    'type' => 'email',
+                    'recipient' => $settings->email,
+                    'message' => substr($emailMessage, 0, 500),
+                    'status' => 'failed',
+                    'response' => $e->getMessage(),
+                    'context' => 'expiry_alert',
+                    'user_id' => null,
+                    'branch_id' => null,
+                ]);
                 $this->error("Email failed: " . $e->getMessage());
             }
         }
@@ -75,7 +97,7 @@ class CheckExpiry extends Command
                 // Truncate for SMS if too long
                 $smsBody = "Expiry Alert! " . $expiringBatches->count() . " items exp soon. Check Dashboard.";
                 $sms = new SmsService();
-                $sms->sendQuickSms($settings->phone, $smsBody);
+                $sms->sendQuickSms($settings->phone, $smsBody, 'expiry_alert');
                 $this->info("SMS sent.");
             } catch (\Exception $e) {
                 $this->error("SMS failed: " . $e->getMessage());

@@ -40,7 +40,7 @@ class SendCampaignMessage implements ShouldQueue
 
         try {
             if ($campaign->type === 'sms') {
-                $response = $smsService->sendQuickSms($this->recipient->contact, $messageBody);
+                $response = $smsService->sendQuickSms($this->recipient->contact, $messageBody, 'campaign');
                 $this->recipient->update(['status' => 'sent', 'sent_at' => now()]);
 
             } elseif ($campaign->type === 'email') {
@@ -49,10 +49,36 @@ class SendCampaignMessage implements ShouldQueue
                         ->subject($campaign->title);
                 });
 
+                // Log email to communication log
+                \App\Models\CommunicationLog::create([
+                    'type' => 'email',
+                    'recipient' => $this->recipient->contact,
+                    'message' => substr($messageBody, 0, 500), // Truncate for storage
+                    'status' => 'sent',
+                    'context' => 'campaign',
+                    'user_id' => $campaign->user_id,
+                    'branch_id' => null,
+                ]);
+
                 $this->recipient->update(['status' => 'sent', 'sent_at' => now()]);
             }
         } catch (\Exception $e) {
             Log::error("Campaign Send Failed: " . $e->getMessage());
+
+            // Log failed email if applicable
+            if ($campaign->type === 'email') {
+                \App\Models\CommunicationLog::create([
+                    'type' => 'email',
+                    'recipient' => $this->recipient->contact,
+                    'message' => substr($messageBody, 0, 500),
+                    'status' => 'failed',
+                    'response' => $e->getMessage(),
+                    'context' => 'campaign',
+                    'user_id' => $campaign->user_id,
+                    'branch_id' => null,
+                ]);
+            }
+
             $this->recipient->update([
                 'status' => 'failed',
                 'error' => $e->getMessage()

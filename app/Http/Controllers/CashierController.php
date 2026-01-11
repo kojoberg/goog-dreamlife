@@ -158,7 +158,28 @@ class CashierController extends Controller
         if ($patient && $patient->email) {
             try {
                 \Illuminate\Support\Facades\Mail::to($patient->email)->send(new \App\Mail\SaleReceipt($sale));
+                // Log successful email
+                \App\Models\CommunicationLog::create([
+                    'type' => 'email',
+                    'recipient' => $patient->email,
+                    'message' => 'Sale Receipt #' . str_pad($sale->id, 6, '0', STR_PAD_LEFT),
+                    'status' => 'sent',
+                    'context' => 'cashier_receipt',
+                    'user_id' => auth()->id(),
+                    'branch_id' => auth()->user()?->branch_id,
+                ]);
             } catch (\Exception $e) {
+                // Log failed email
+                \App\Models\CommunicationLog::create([
+                    'type' => 'email',
+                    'recipient' => $patient->email,
+                    'message' => 'Sale Receipt #' . str_pad($sale->id, 6, '0', STR_PAD_LEFT),
+                    'status' => 'failed',
+                    'response' => $e->getMessage(),
+                    'context' => 'cashier_receipt',
+                    'user_id' => auth()->id(),
+                    'branch_id' => auth()->user()?->branch_id,
+                ]);
             }
         }
 
@@ -167,7 +188,7 @@ class CashierController extends Controller
             try {
                 $smsService = new \App\Services\SmsService();
                 $message = "Thank you for shopping at Dream Life! Amount: GHS " . number_format($sale->total_amount, 2) . ". Receipt #" . str_pad($sale->id, 6, '0', STR_PAD_LEFT);
-                $smsService->sendQuickSms($patient->phone, $message);
+                $smsService->sendQuickSms($patient->phone, $message, 'cashier_receipt');
             } catch (\Exception $e) {
             }
         }

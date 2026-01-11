@@ -283,8 +283,29 @@ class PosController extends Controller
             if ($status === 'completed' && $request->has('email') && $request->email) {
                 try {
                     \Illuminate\Support\Facades\Mail::to($request->email)->send(new \App\Mail\SaleReceipt($sale));
+                    // Log email to communication log
+                    \App\Models\CommunicationLog::create([
+                        'type' => 'email',
+                        'recipient' => $request->email,
+                        'message' => 'Sale Receipt #' . str_pad($sale->id, 6, '0', STR_PAD_LEFT),
+                        'status' => 'sent',
+                        'context' => 'pos_receipt',
+                        'user_id' => auth()->id(),
+                        'branch_id' => auth()->user()?->branch_id,
+                    ]);
                 } catch (\Exception $e) {
                     \Illuminate\Support\Facades\Log::error("Failed to send email receipt: " . $e->getMessage());
+                    // Log failed email
+                    \App\Models\CommunicationLog::create([
+                        'type' => 'email',
+                        'recipient' => $request->email,
+                        'message' => 'Sale Receipt #' . str_pad($sale->id, 6, '0', STR_PAD_LEFT),
+                        'status' => 'failed',
+                        'response' => $e->getMessage(),
+                        'context' => 'pos_receipt',
+                        'user_id' => auth()->id(),
+                        'branch_id' => auth()->user()?->branch_id,
+                    ]);
                 }
             }
 
@@ -300,7 +321,7 @@ class PosController extends Controller
                         $balance = $sale->patient->loyalty_points; // Contains updated balance
                         $message .= "\nPts Earned: $earned. Total Pts: $balance";
                     }
-                    $smsService->sendQuickSms($request->phone, $message);
+                    $smsService->sendQuickSms($request->phone, $message, 'pos_receipt');
                 } catch (\Exception $e) {
                     \Illuminate\Support\Facades\Log::error("Failed to send SMS receipt: " . $e->getMessage());
                 }
