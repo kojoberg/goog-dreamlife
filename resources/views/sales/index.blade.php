@@ -30,6 +30,9 @@
                                         Total</th>
                                     <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Status</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Method</th>
                                     <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -58,8 +61,31 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                                             GHS {{ number_format($sale->total_amount, 2) }}
                                         </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            @if($sale->refund && $sale->refund->status === 'approved')
+                                                <span
+                                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                    Refunded
+                                                </span>
+                                            @elseif($sale->status === 'completed')
+                                                <span
+                                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                    Paid
+                                                </span>
+                                            @elseif($sale->status === 'pending_payment')
+                                                <span
+                                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                    Pending
+                                                </span>
+                                            @else
+                                                <span
+                                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                                    {{ ucfirst(str_replace('_', ' ', $sale->status ?? 'unknown')) }}
+                                                </span>
+                                            @endif
+                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">
-                                            {{ str_replace('_', ' ', $sale->payment_method) }}
+                                            {{ $sale->payment_method ? str_replace('_', ' ', $sale->payment_method) : '-' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <a href="{{ route('sales.show', $sale) }}"
@@ -77,7 +103,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                                        <td colspan="8" class="px-6 py-4 text-center text-gray-500">
                                             No sales found.
                                         </td>
                                     </tr>
