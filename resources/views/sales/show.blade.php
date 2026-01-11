@@ -75,7 +75,7 @@
                         </div>
                     </div>
 
-                    <h3 class="font-bold text-lg mb-4">Items Scold</h3>
+                    <h3 class="font-bold text-lg mb-4">Items Sold</h3>
                     <table class="min-w-full divide-y divide-gray-200 mb-6">
                         <thead class="bg-gray-50">
                             <tr>
