@@ -58,18 +58,6 @@ class UpgradeToMultiBranch extends Command
             return Command::FAILURE;
         }
 
-        // 2. Update database settings if available
-        try {
-            $settings = \App\Models\Setting::first();
-            if ($settings) {
-                $settings->pharmacy_mode = 'multi';
-                $settings->save();
-                $this->info('✅ Updated Settings: pharmacy_mode=multi');
-            }
-        } catch (\Exception $e) {
-            $this->warn('⚠️  Could not update database settings: ' . $e->getMessage());
-        }
-
         // 3. Super Admin Setup
         $this->newLine();
         $this->info('👑 Super Admin Setup');

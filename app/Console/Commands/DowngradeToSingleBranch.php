@@ -76,19 +76,7 @@ class DowngradeToSingleBranch extends Command
             return Command::FAILURE;
         }
 
-        // 2. Update database settings if available
-        try {
-            $settings = \App\Models\Setting::first();
-            if ($settings) {
-                $settings->pharmacy_mode = 'single';
-                $settings->save();
-                $this->info('✅ Updated Settings: pharmacy_mode=single');
-            }
-        } catch (\Exception $e) {
-            $this->warn('⚠️  Could not update database settings: ' . $e->getMessage());
-        }
-
-        // 3. Clear config cache
+        // 2. Clear config cache
         $this->call('config:clear');
         $this->info('✅ Config cache cleared');
 
