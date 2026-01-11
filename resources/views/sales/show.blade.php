@@ -14,6 +14,26 @@
                             <p class="text-sm text-gray-500">Date: {{ $sale->created_at->format('F j, Y g:i A') }}</p>
                             <p class="text-sm text-gray-500">Cashier: {{ $sale->user->name ?? 'N/A' }}</p>
                             <p class="text-sm text-gray-500">Customer: {{ $sale->patient->name ?? 'Walk-in' }}</p>
+                            <p class="text-sm text-gray-500 mt-2">
+                                Payment Status: 
+                                @if($sale->refund && $sale->refund->status === 'approved')
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                        Refunded
+                                    </span>
+                                @elseif($sale->status === 'completed')
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Paid
+                                    </span>
+                                @elseif($sale->status === 'pending_payment')
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                        Pending Payment
+                                    </span>
+                                @else
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                        {{ ucfirst(str_replace('_', ' ', $sale->status ?? 'unknown')) }}
+                                    </span>
+                                @endif
+                            </p>
                         </div>
                         <div>
                             @if($sale->status === 'completed')
