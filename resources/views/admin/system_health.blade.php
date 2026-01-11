@@ -45,7 +45,13 @@
                                     'error' => '✖',
                                     default => '?'
                                 };
-                                $title = ucwords(str_replace('_', ' ', $key));
+                                // Custom title mappings for better display
+                                $titleMappings = [
+                                    'uello_sms' => 'UelloSend SMS',
+                                    'rxnav' => 'RxNav API',
+                                    'google_drive' => 'Google Drive Backup',
+                                ];
+                                $title = $titleMappings[$key] ?? ucwords(str_replace('_', ' ', $key));
                             @endphp
 
                             <div class="border-l-4 p-4 rounded {{ $color }}">
