@@ -47,7 +47,14 @@ class InventoryController extends Controller
     {
         $products = Product::orderBy('name')->get();
         $suppliers = Supplier::orderBy('name')->get();
-        return view('inventory.create', compact('products', 'suppliers'));
+
+        // Super admins can select target branch
+        $branches = null;
+        if (auth()->user()->isSuperAdmin() && is_multi_branch()) {
+            $branches = \App\Models\Branch::all();
+        }
+
+        return view('inventory.create', compact('products', 'suppliers', 'branches'));
     }
 
     /**
@@ -66,7 +73,13 @@ class InventoryController extends Controller
             'quantity' => 'required|integer|min:1',
             'cost_price' => 'nullable|numeric|min:0',
             'expiry_date' => 'nullable|date|after:today',
+            'branch_id' => 'nullable|exists:branches,id',
         ]);
+
+        // Super admin can specify branch, others use their own
+        if (!auth()->user()->isSuperAdmin() || !isset($validated['branch_id'])) {
+            $validated['branch_id'] = auth()->user()->branch_id;
+        }
 
         InventoryBatch::create($validated);
 

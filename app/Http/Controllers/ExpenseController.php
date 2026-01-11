@@ -35,7 +35,13 @@ class ExpenseController extends Controller
 
     public function create()
     {
-        return view('expenses.create');
+        // Super admins can select target branch
+        $branches = null;
+        if (auth()->user()->isSuperAdmin() && is_multi_branch()) {
+            $branches = \App\Models\Branch::all();
+        }
+
+        return view('expenses.create', compact('branches'));
     }
 
     public function store(Request $request)
@@ -46,9 +52,15 @@ class ExpenseController extends Controller
             'category' => 'required|string',
             'date' => 'required|date',
             'description' => 'nullable|string',
+            'branch_id' => 'nullable|exists:branches,id',
         ]);
 
         $validated['user_id'] = Auth::id();
+
+        // Super admin can specify branch, others use their own
+        if (!auth()->user()->isSuperAdmin() || !isset($validated['branch_id'])) {
+            $validated['branch_id'] = auth()->user()->branch_id;
+        }
 
         Expense::create($validated);
 

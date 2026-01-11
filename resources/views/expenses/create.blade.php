@@ -35,6 +35,24 @@
                     <option value="Other">Other</option>
                 </x-form-select>
 
+                @if(isset($branches) && $branches)
+                    <!-- Branch Selector (Super Admin Only) -->
+                    <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                        <label for="branch_id" class="block text-indigo-700 text-sm font-semibold mb-2">
+                            Assign to Branch
+                        </label>
+                        <select name="branch_id" id="branch_id"
+                            class="w-full border border-indigo-300 rounded-lg py-2.5 px-3 focus:ring-2 focus:ring-indigo-500">
+                            @foreach($branches as $branch)
+                                <option value="{{ $branch->id }}" {{ $branch->is_main ? 'selected' : '' }}>
+                                    {{ $branch->name }} {{ $branch->is_main ? '(Main)' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-indigo-600 mt-1">As Super Admin, you can assign expenses to any branch.</p>
+                    </div>
+                @endif
+
                 <x-form-textarea name="description" label="Description / Notes" rows="3" />
 
                 <div class="flex justify-end pt-2">

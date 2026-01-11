@@ -55,6 +55,28 @@
                             </select>
                         </div>
 
+                        @if(isset($branches) && $branches)
+                            <!-- Branch Selector (Super Admin Only) -->
+                            <div class="mb-4 bg-indigo-50 p-3 rounded border border-indigo-200">
+                                <label for="branch_id" class="block text-indigo-700 text-sm font-bold mb-2">
+                                    <svg class="inline w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                    </svg>
+                                    Assign to Branch
+                                </label>
+                                <select name="branch_id" id="branch_id"
+                                    class="shadow appearance-none border border-indigo-300 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    @foreach($branches as $branch)
+                                        <option value="{{ $branch->id }}" {{ $branch->is_main ? 'selected' : '' }}>
+                                            {{ $branch->name }} {{ $branch->is_main ? '(Main)' : '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <p class="text-xs text-indigo-600 mt-1">As Super Admin, you can receive stock to any branch.
+                                </p>
+                            </div>
+                        @endif
 
 
                         <div class="mb-4">

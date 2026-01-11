@@ -17,10 +17,12 @@ trait HasBranchScope
             if (Auth::check()) {
                 $user = Auth::user();
 
-                // If user belongs to a branch, restrict query
-                // Super Admins (role_id 1) might want to see all? 
-                // For now, let's strictly enforce branch if set, unless explicitly ignored.
+                // Super admins can see all branches
+                if ($user->isSuperAdmin()) {
+                    return; // No scope restriction for super admins
+                }
 
+                // Regular users see only their branch data
                 if ($user->branch_id) {
                     $builder->where(function ($query) use ($user) {
                         $query->where('branch_id', $user->branch_id)
@@ -30,9 +32,10 @@ trait HasBranchScope
             }
         });
 
-        // Auto-assign branch_id on create
+        // Auto-assign branch_id on create (only if not already set)
         static::creating(function ($model) {
-            if (Auth::check() && !$model->branch_id) {
+            if (Auth::check() && empty($model->branch_id)) {
+                // Only auto-assign if branch_id is not explicitly provided
                 $model->branch_id = Auth::user()->branch_id;
             }
         });
