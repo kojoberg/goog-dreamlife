@@ -412,17 +412,28 @@
                     <div id="update-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
                         <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
                             <div class="mt-3 text-center">
-                                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100">
-                                    <svg class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <div id="modal-icon" class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100">
+                                    <svg class="h-6 w-6 text-indigo-600 animate-spin" id="modal-spinner" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <svg class="h-6 w-6 text-indigo-600 hidden" id="modal-refresh-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    <svg class="h-6 w-6 text-green-600 hidden" id="modal-success-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <svg class="h-6 w-6 text-red-600 hidden" id="modal-error-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                     </svg>
                                 </div>
                                 <h3 class="text-lg leading-6 font-medium text-gray-900 mt-2" id="modal-title">Checking for Updates...</h3>
-                                <div class="mt-2 px-7 py-3">
+                                <div class="mt-2 px-4 py-3">
                                     <p class="text-sm text-gray-500" id="modal-content">
                                         Please wait while we check for the latest software version.
                                     </p>
-                                    <pre id="modal-commits" class="text-left text-xs bg-gray-100 p-2 mt-2 rounded hidden overflow-x-auto"></pre>
+                                    <p class="text-xs text-gray-400 mt-1 hidden" id="modal-branch">Branch: v4.0-multi</p>
+                                    <pre id="modal-commits" class="text-left text-xs bg-gray-100 p-2 mt-2 rounded hidden overflow-x-auto max-h-40"></pre>
                                 </div>
                                 <div class="items-center px-4 py-3">
                                     <button id="btn-close-modal" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300">
@@ -430,8 +441,9 @@
                                     </button>
                                     <form id="execute-update-form" action="{{ route('settings.system_update') }}" method="POST" class="hidden mt-2">
                                         @csrf
-                                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                            Update Now
+                                        <button type="submit" id="btn-update-now" class="px-4 py-2 bg-green-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                                            <span id="update-btn-text">🚀 Update Now</span>
+                                            <span id="update-btn-loading" class="hidden">Updating... Please wait</span>
                                         </button>
                                     </form>
                                 </div>
@@ -445,16 +457,40 @@
                             const modal = document.getElementById('update-modal');
                             const modalTitle = document.getElementById('modal-title');
                             const modalContent = document.getElementById('modal-content');
+                            const modalBranch = document.getElementById('modal-branch');
                             const modalCommits = document.getElementById('modal-commits');
                             const btnClose = document.getElementById('btn-close-modal');
                             const formUpdate = document.getElementById('execute-update-form');
+                            const btnUpdateNow = document.getElementById('btn-update-now');
+                            const updateBtnText = document.getElementById('update-btn-text');
+                            const updateBtnLoading = document.getElementById('update-btn-loading');
+                            
+                            // Icons
+                            const spinner = document.getElementById('modal-spinner');
+                            const refreshIcon = document.getElementById('modal-refresh-icon');
+                            const successIcon = document.getElementById('modal-success-icon');
+                            const errorIcon = document.getElementById('modal-error-icon');
+
+                            function showIcon(type) {
+                                spinner.classList.add('hidden');
+                                refreshIcon.classList.add('hidden');
+                                successIcon.classList.add('hidden');
+                                errorIcon.classList.add('hidden');
+                                
+                                if (type === 'loading') spinner.classList.remove('hidden');
+                                else if (type === 'refresh') refreshIcon.classList.remove('hidden');
+                                else if (type === 'success') successIcon.classList.remove('hidden');
+                                else if (type === 'error') errorIcon.classList.remove('hidden');
+                            }
 
                             // Open Modal & Check
                             checkBtn.addEventListener('click', function(e) {
                                 e.preventDefault();
                                 modal.classList.remove('hidden');
+                                showIcon('loading');
                                 modalTitle.textContent = "Checking for Updates...";
-                                modalContent.textContent = "Connecting to repository...";
+                                modalContent.textContent = "Connecting to GitHub repository...";
+                                modalBranch.classList.add('hidden');
                                 modalCommits.classList.add('hidden');
                                 formUpdate.classList.add('hidden');
                                 btnClose.textContent = "Cancel";
@@ -469,29 +505,57 @@
                                 .then(response => response.json())
                                 .then(data => {
                                     if (data.status === 'up_to_date') {
-                                        modalTitle.textContent = "System is Up to Date";
+                                        showIcon('success');
+                                        modalTitle.textContent = "✓ System is Up to Date";
                                         modalContent.textContent = data.message;
                                         btnClose.textContent = "Close";
+                                        if (data.branch) {
+                                            modalBranch.textContent = "Branch: " + data.branch;
+                                            modalBranch.classList.remove('hidden');
+                                        }
                                     } else if (data.status === 'update_available') {
-                                        modalTitle.textContent = "Update Available";
-                                        modalContent.textContent = "New versions are available used the following commits:";
+                                        showIcon('refresh');
+                                        modalTitle.textContent = "🆕 Update Available!";
+                                        modalContent.textContent = "New commits are ready to be installed:";
                                         modalCommits.textContent = data.commits;
                                         modalCommits.classList.remove('hidden');
                                         formUpdate.classList.remove('hidden');
-                                        btnClose.textContent = "Cancel";
+                                        btnClose.textContent = "Later";
+                                        if (data.branch) {
+                                            modalBranch.textContent = "Branch: " + data.branch;
+                                            modalBranch.classList.remove('hidden');
+                                        }
                                     } else {
                                         throw new Error(data.message || 'Unknown error');
                                     }
                                 })
                                 .catch(error => {
+                                    showIcon('error');
                                     modalTitle.textContent = "Error";
                                     modalContent.textContent = "Failed to check for updates: " + error.message;
                                     btnClose.textContent = "Close";
                                 });
                             });
 
+                            // Handle update form submission
+                            formUpdate.addEventListener('submit', function(e) {
+                                showIcon('loading');
+                                modalTitle.textContent = "Updating System...";
+                                modalContent.textContent = "Please wait. This may take a minute. Do not close this window.";
+                                updateBtnText.classList.add('hidden');
+                                updateBtnLoading.classList.remove('hidden');
+                                btnUpdateNow.disabled = true;
+                                btnClose.disabled = true;
+                                modalCommits.classList.add('hidden');
+                            });
+
                             btnClose.addEventListener('click', function() {
                                 modal.classList.add('hidden');
+                                // Reset button state
+                                updateBtnText.classList.remove('hidden');
+                                updateBtnLoading.classList.add('hidden');
+                                btnUpdateNow.disabled = false;
+                                btnClose.disabled = false;
                             });
                         });
                     </script>

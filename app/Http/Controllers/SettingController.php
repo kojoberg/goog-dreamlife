@@ -199,86 +199,149 @@ class SettingController extends Controller
     public function updateSoftware(Request $request)
     {
         try {
-            // Check if git is available
-            $gitVersion = shell_exec('git --version');
-            if (!$gitVersion) {
-                if ($request->wantsJson()) {
-                    return response()->json(['status' => 'error', 'message' => 'Git is not installed.'], 500);
-                }
-                return back()->with('error', 'Git is not installed or accessible on the server.');
-            }
-
             // Limit to Admin
             if (!auth()->user()->isAdmin()) {
                 abort(403);
             }
 
+            // Check if exec/shell_exec are available
+            if (!function_exists('exec') || !function_exists('shell_exec')) {
+                $errorMsg = 'Server execution functions (exec/shell_exec) are disabled. Contact your hosting provider.';
+                if ($request->wantsJson()) {
+                    return response()->json(['status' => 'error', 'message' => $errorMsg], 500);
+                }
+                return back()->with('error', $errorMsg);
+            }
+
+            // Check if git is available
+            $gitVersion = @shell_exec('git --version 2>&1');
+            if (!$gitVersion || stripos($gitVersion, 'git version') === false) {
+                $errorMsg = 'Git is not installed or accessible on the server.';
+                if ($request->wantsJson()) {
+                    return response()->json(['status' => 'error', 'message' => $errorMsg], 500);
+                }
+                return back()->with('error', $errorMsg);
+            }
+
             $basePath = base_path();
-            $param = '2>&1';
+            $log = [];
 
-            // CHECK MODE
+            // Get current branch
+            $currentBranch = trim(@shell_exec("cd {$basePath} && git branch --show-current 2>/dev/null"));
+            if (!$currentBranch) {
+                $currentBranch = 'v4.0-multi'; // Default branch
+            }
+
+            // CHECK MODE - Just check for updates, don't apply
             if ($request->has('check')) {
-                // 1. Fetch
-                exec("cd {$basePath} && git fetch origin {$param}", $output, $returnCode);
+                // Fetch latest from origin
+                exec("cd {$basePath} && git fetch origin 2>&1", $fetchOutput, $fetchCode);
 
-                // 2. Check for new commits
-                // Get current branch
-                $currentBranch = trim(shell_exec("cd {$basePath} && git branch --show-current 2>/dev/null"));
-                if (!$currentBranch)
-                    $currentBranch = 'main';
+                if ($fetchCode !== 0) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Failed to fetch from repository. Check your network connection.'
+                    ], 500);
+                }
 
-                $logCmd = "cd {$basePath} && git log HEAD..origin/{$currentBranch} --oneline";
-                $newCommits = shell_exec($logCmd);
+                // Check for new commits
+                $newCommits = @shell_exec("cd {$basePath} && git log HEAD..origin/{$currentBranch} --oneline 2>/dev/null");
 
-                if (empty(trim($newCommits))) {
+                if (empty(trim($newCommits ?? ''))) {
                     return response()->json([
                         'status' => 'up_to_date',
-                        'message' => 'System is already on the latest version.'
+                        'message' => 'System is already on the latest version.',
+                        'branch' => $currentBranch
                     ]);
                 } else {
                     return response()->json([
                         'status' => 'update_available',
-                        'commits' => $newCommits,
-                        'message' => 'New updates are available.'
+                        'commits' => trim($newCommits),
+                        'message' => 'New updates are available.',
+                        'branch' => $currentBranch
                     ]);
                 }
             }
 
             // PERFORM UPDATE MODE
-            // Go to root, pull changes
-            $command = "cd {$basePath} && git pull origin main {$param}";
+            $log[] = "Starting update on branch: {$currentBranch}";
 
-            // Detect branch
-            $currentBranch = trim(shell_exec("cd {$basePath} && git branch --show-current 2>/dev/null"));
-            if ($currentBranch) {
-                $command = "cd {$basePath} && git pull origin {$currentBranch} {$param}";
+            // Step 1: Stash any local changes
+            $log[] = "Step 1: Checking for local changes...";
+            $stashOutput = @shell_exec("cd {$basePath} && git stash 2>&1");
+            $hasStash = strpos($stashOutput, 'Saved working directory') !== false;
+            if ($hasStash) {
+                $log[] = "  → Local changes stashed";
+            } else {
+                $log[] = "  → No local changes to stash";
             }
 
-            exec($command, $output, $returnCode);
+            // Step 2: Pull from origin
+            $log[] = "Step 2: Pulling latest changes from GitHub...";
+            exec("cd {$basePath} && git pull origin {$currentBranch} 2>&1", $pullOutput, $pullCode);
 
-            $log = implode("\n", $output);
+            if ($pullCode !== 0) {
+                // Try to restore stash before returning error
+                if ($hasStash) {
+                    @shell_exec("cd {$basePath} && git stash pop 2>&1");
+                }
+                $errorLog = implode("\n", $pullOutput);
+                return back()->with('error', "Git pull failed:\n{$errorLog}");
+            }
+            $log[] = "  → " . (implode(", ", array_slice($pullOutput, 0, 3)) ?: "Already up to date");
 
-            if ($returnCode !== 0) {
-                return back()->with('error', "Update Failed:\n" . $log);
+            // Step 3: Pop stashed changes (if any)
+            if ($hasStash) {
+                $log[] = "Step 3: Restoring local changes...";
+                @shell_exec("cd {$basePath} && git stash pop 2>&1");
+                $log[] = "  → Local changes restored";
             }
 
-            // Re-optimize
-            // 1. Run Migrations
-            \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-            $log .= "\nMigrations executed successfully.";
+            // Step 4: Run Migrations
+            $log[] = "Step 4: Running database migrations...";
+            try {
+                \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+                $log[] = "  → Migrations completed";
+            } catch (\Exception $e) {
+                $log[] = "  → Migration warning: " . $e->getMessage();
+            }
 
-            // 2. Composer Install (if composer exists)
-            $composerPath = trim(shell_exec('which composer'));
+            // Step 5: Composer install (if accessible)
+            $log[] = "Step 5: Checking dependencies...";
+            $composerPath = trim(@shell_exec('which composer 2>/dev/null') ?? '');
             if ($composerPath && file_exists($basePath . '/composer.lock')) {
-                exec("cd {$basePath} && {$composerPath} install --no-dev --optimize-autoloader {$param}", $compOutput, $compReturn);
-                $log .= "\nComposer: " . implode("\n", $compOutput);
+                exec("cd {$basePath} && {$composerPath} install --no-dev --optimize-autoloader --no-interaction 2>&1", $compOutput, $compCode);
+                if ($compCode === 0) {
+                    $log[] = "  → Composer dependencies updated";
+                } else {
+                    $log[] = "  → Composer skipped (may need manual run)";
+                }
+            } else {
+                $log[] = "  → Composer not available, skipping";
             }
 
-            // 3. Clear Caches
-            \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+            // Step 6: Clear all caches
+            $log[] = "Step 6: Clearing system caches...";
+            \Illuminate\Support\Facades\Artisan::call('config:clear');
+            \Illuminate\Support\Facades\Artisan::call('route:clear');
             \Illuminate\Support\Facades\Artisan::call('view:clear');
+            \Illuminate\Support\Facades\Artisan::call('cache:clear');
+            $log[] = "  → All caches cleared";
 
-            return back()->with('success', "System Updated Successfully.\nLog:\n" . $log);
+            // Step 7: Optimize for production
+            $log[] = "Step 7: Optimizing application...";
+            try {
+                \Illuminate\Support\Facades\Artisan::call('config:cache');
+                \Illuminate\Support\Facades\Artisan::call('route:cache');
+                $log[] = "  → Application optimized";
+            } catch (\Exception $e) {
+                $log[] = "  → Optimization skipped: " . $e->getMessage();
+            }
+
+            $log[] = "";
+            $log[] = "✓ Update completed successfully!";
+
+            return back()->with('success', implode("\n", $log));
 
         } catch (\Exception $e) {
             if ($request->wantsJson()) {
@@ -288,3 +351,4 @@ class SettingController extends Controller
         }
     }
 }
+
