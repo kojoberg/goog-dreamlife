@@ -10,11 +10,25 @@ class ExpenseController extends Controller
 {
     public function index()
     {
-        $expenses = Expense::latest('date')->paginate(15);
+        $user = auth()->user();
+        $query = Expense::query();
 
-        // Simple reporting on the fly
-        $totalExpenses = Expense::sum('amount');
-        $monthlyExpenses = Expense::whereMonth('date', now()->month)->sum('amount');
+        // Branch scoping for regular admins in multi-branch mode
+        if (!$user->isSuperAdmin() && is_multi_branch()) {
+            $query->whereHas('user', fn($q) => $q->where('branch_id', $user->branch_id));
+        }
+
+        $expenses = $query->latest('date')->paginate(15);
+
+        // Reporting - also scoped
+        if (!$user->isSuperAdmin() && is_multi_branch()) {
+            $totalExpenses = Expense::whereHas('user', fn($q) => $q->where('branch_id', $user->branch_id))->sum('amount');
+            $monthlyExpenses = Expense::whereHas('user', fn($q) => $q->where('branch_id', $user->branch_id))
+                ->whereMonth('date', now()->month)->sum('amount');
+        } else {
+            $totalExpenses = Expense::sum('amount');
+            $monthlyExpenses = Expense::whereMonth('date', now()->month)->sum('amount');
+        }
 
         return view('expenses.index', compact('expenses', 'totalExpenses', 'monthlyExpenses'));
     }

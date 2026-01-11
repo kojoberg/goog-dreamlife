@@ -23,9 +23,15 @@ class RefundController extends Controller
      */
     public function index()
     {
-        $refunds = Refund::with(['sale.user', 'sale.items', 'requester'])
-            ->latest()
-            ->paginate(20);
+        $user = auth()->user();
+        $query = Refund::with(['sale.user', 'sale.items', 'requester'])->latest();
+
+        // Branch scoping for regular admins in multi-branch mode
+        if (!$user->isSuperAdmin() && is_multi_branch()) {
+            $query->whereHas('sale.user', fn($q) => $q->where('branch_id', $user->branch_id));
+        }
+
+        $refunds = $query->paginate(20);
 
         return view('admin.refunds.index', compact('refunds'));
     }

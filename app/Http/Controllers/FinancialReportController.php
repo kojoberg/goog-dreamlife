@@ -18,6 +18,18 @@ class FinancialReportController extends Controller
         });
     }
 
+    /**
+     * Apply branch filter to sales query for regular admins in multi-branch mode.
+     */
+    protected function applySalesBranchFilter($query)
+    {
+        $user = auth()->user();
+        if (!$user->isSuperAdmin() && is_multi_branch()) {
+            $query->whereHas('user', fn($q) => $q->where('branch_id', $user->branch_id));
+        }
+        return $query;
+    }
+
     public function index()
     {
         return view('admin.financials.index');
@@ -28,11 +40,13 @@ class FinancialReportController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth());
         $endDate = $request->input('end_date', now()->endOfMonth());
 
-        $sales = Sale::with(['user', 'items.product'])
+        $query = Sale::with(['user', 'items.product'])
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->latest()
-            ->get();
+            ->latest();
 
+        $this->applySalesBranchFilter($query);
+
+        $sales = $query->get();
         $totalSales = $sales->sum('total_amount');
 
         return view('admin.financials.sales', compact('sales', 'totalSales', 'startDate', 'endDate'));
@@ -59,9 +73,12 @@ class FinancialReportController extends Controller
         $startDate = $request->input('start_date', now()->startOfMonth());
         $endDate = $request->input('end_date', now()->endOfMonth());
 
-        $sales = Sale::with(['items.product'])
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->get();
+        $query = Sale::with(['items.product'])
+            ->whereBetween('created_at', [$startDate, $endDate]);
+
+        $this->applySalesBranchFilter($query);
+
+        $sales = $query->get();
 
         $revenue = $sales->sum('total_amount');
 
