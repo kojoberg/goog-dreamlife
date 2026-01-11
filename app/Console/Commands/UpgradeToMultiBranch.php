@@ -54,7 +54,7 @@ class UpgradeToMultiBranch extends Command
 
         // 2. Update database settings if available
         try {
-            $settings = \App\Models\Settings::first();
+            $settings = \App\Models\Setting::first();
             if ($settings) {
                 $settings->pharmacy_mode = 'multi';
                 $settings->save();
