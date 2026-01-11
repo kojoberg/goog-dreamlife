@@ -34,9 +34,9 @@ class CashierController extends Controller
      */
     public function history()
     {
-        // Sales processed by this cashier are linked to their shifts
+        // Sales processed by this cashier are linked to their cashier shifts
         $sales = Sale::where('status', 'completed')
-            ->whereHas('shift', function ($q) {
+            ->whereHas('cashierShift', function ($q) {
                 $q->where('user_id', Auth::id());
             })
             ->with(['patient', 'items'])
@@ -118,7 +118,7 @@ class CashierController extends Controller
                 'amount_tendered' => $amountTendered,
                 'change_amount' => $changeAmount,
                 'payment_method' => $request->payment_method,
-                'shift_id' => $shift->id, // Assign to Cashier's Shift
+                'cashier_shift_id' => $shift->id, // Assign to Cashier's Shift (keeps pharmacist's shift_id intact)
             ]);
 
             // Award Loyalty Points (now that payment is received)

@@ -23,6 +23,7 @@ class Sale extends Model
         'points_earned',
         'tax_breakdown',
         'shift_id',
+        'cashier_shift_id', // Track cashier's shift when they collect payment
         'status'
     ];
 
@@ -55,10 +56,22 @@ class Sale extends Model
         return $this->hasMany(SaleItem::class);
     }
 
+    /**
+     * The pharmacist's shift who generated the invoice/sale
+     */
     public function shift()
     {
         return $this->belongsTo(Shift::class);
     }
+
+    /**
+     * The cashier's shift who collected the payment
+     */
+    public function cashierShift()
+    {
+        return $this->belongsTo(Shift::class, 'cashier_shift_id');
+    }
+
     public function refund()
     {
         return $this->hasOne(Refund::class);
