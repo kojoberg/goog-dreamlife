@@ -166,16 +166,26 @@
                                     <p class="text-slate-500">Enables refill reminders and supply days tracking.</p>
                                 </div>
                             </div>
+                        </div>
+                    </div>
 
-                            <div class="flex items-start pt-6">
+                    <!-- Tax & Options (Visible for ALL product types) -->
+                    <div class="pt-6 border-t border-slate-100">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="flex items-start">
                                 <div class="flex items-center h-5">
                                     <input id="tax_exempt" name="tax_exempt" value="1" type="checkbox"
                                         class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
                                 </div>
                                 <div class="ml-3 text-sm">
                                     <label for="tax_exempt" class="font-medium text-slate-700">Tax Exempt</label>
-                                    <p class="text-slate-500">Exclude this product from tax calculation in POS.</p>
+                                    <p class="text-slate-500">Exclude this item from tax calculation in POS.</p>
                                 </div>
+                            </div>
+
+                            <!-- Reorder level for services (hidden, defaults to 0) -->
+                            <div x-show="productType === 'service'" style="display: none;">
+                                <input type="hidden" name="reorder_level" value="0">
                             </div>
                         </div>
                     </div>
