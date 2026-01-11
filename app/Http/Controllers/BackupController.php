@@ -11,6 +11,9 @@ class BackupController extends Controller
 {
     public function index()
     {
+        // Get settings for backup schedule
+        $settings = \App\Models\Setting::first();
+
         // List files in storage/app/backups
         $files = Storage::files('backups');
         $backups = [];
@@ -31,7 +34,51 @@ class BackupController extends Controller
             return $b['date'] <=> $a['date'];
         });
 
-        return view('db-backups.index', compact('backups'));
+        // Calculate next backup time
+        $nextBackup = $this->calculateNextBackup($settings);
+
+        return view('db-backups.index', compact('backups', 'settings', 'nextBackup'));
+    }
+
+    /**
+     * Calculate next scheduled backup time
+     */
+    protected function calculateNextBackup($settings): ?string
+    {
+        if (!$settings || $settings->backup_schedule === 'disabled') {
+            return null;
+        }
+
+        $backupTime = $settings->backup_time ?? '02:00';
+        $now = now();
+
+        switch ($settings->backup_schedule) {
+            case 'daily':
+                $next = $now->copy()->setTimeFromTimeString($backupTime);
+                if ($next <= $now) {
+                    $next->addDay();
+                }
+                return $next->format('D, M j \a\t g:i A');
+
+            case 'weekly':
+                $backupDay = $settings->backup_day ?? 0;
+                $next = $now->copy()->startOfWeek()->addDays($backupDay)->setTimeFromTimeString($backupTime);
+                if ($next <= $now) {
+                    $next->addWeek();
+                }
+                return $next->format('D, M j \a\t g:i A');
+
+            case 'monthly':
+                $backupDay = min($settings->backup_day ?? 1, $now->daysInMonth);
+                $next = $now->copy()->startOfMonth()->addDays($backupDay - 1)->setTimeFromTimeString($backupTime);
+                if ($next <= $now) {
+                    $next->addMonth();
+                }
+                return $next->format('D, M j \a\t g:i A');
+
+            default:
+                return null;
+        }
     }
 
     public function create()
@@ -129,6 +176,33 @@ class BackupController extends Controller
             return back()->with('success', 'Backup deleted.');
         }
         return back()->with('error', 'File not found.');
+    }
+
+    /**
+     * Update backup schedule settings
+     */
+    public function updateSchedule(Request $request)
+    {
+        $request->validate([
+            'backup_schedule' => 'required|in:disabled,daily,weekly,monthly',
+            'backup_time' => 'required|date_format:H:i',
+            'backup_day' => 'nullable|integer|min:0|max:31',
+            'backup_retention_days' => 'required|integer|min:1|max:365',
+        ]);
+
+        $settings = \App\Models\Setting::first();
+        if (!$settings) {
+            return back()->with('error', 'Settings not found.');
+        }
+
+        $settings->update([
+            'backup_schedule' => $request->backup_schedule,
+            'backup_time' => $request->backup_time,
+            'backup_day' => $request->backup_day,
+            'backup_retention_days' => $request->backup_retention_days,
+        ]);
+
+        return back()->with('success', 'Backup schedule updated successfully.');
     }
 
     // Restore is complex (requires dropping db tables etc). 

@@ -59,6 +59,11 @@
                                     <div>
                                         <h3 class="font-bold text-lg mb-1">{{ $title }}</h3>
                                         <p class="text-sm font-medium">{{ $check['message'] }}</p>
+                                        @if($key === 'uello_sms' && isset($check['balance_message']))
+                                            <p class="text-xs mt-1 font-semibold">
+                                                Balance: {{ $check['balance_message'] }}
+                                            </p>
+                                        @endif
                                     </div>
                                     <div class="text-2xl">{{ $icon }}</div>
                                 </div>

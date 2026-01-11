@@ -81,13 +81,30 @@ class ShiftController extends Controller
     // Admin: List all shifts
     public function index()
     {
-        $shifts = Shift::with('user')->latest()->paginate(20);
+        $user = auth()->user();
+        $query = Shift::with('user')->latest();
+
+        // Branch scoping: Non-super admins in multi-branch mode see only their branch
+        if (!$user->isSuperAdmin() && is_multi_branch()) {
+            $query->whereHas('user', fn($q) => $q->where('branch_id', $user->branch_id));
+        }
+
+        $shifts = $query->paginate(20);
         return view('admin.shifts.index', compact('shifts'));
     }
 
     // Admin: Show shift details
     public function show(Shift $shift)
     {
+        $user = auth()->user();
+
+        // Branch access check: Non-super admins can only view their branch's shifts
+        if (!$user->isSuperAdmin() && is_multi_branch()) {
+            if ($shift->user->branch_id !== $user->branch_id) {
+                abort(403, 'You can only view shifts from your branch.');
+            }
+        }
+
         // Load relationships: User, Sales (and their items for detail?)
         $shift->load(['user', 'sales.user', 'sales.customer']);
 

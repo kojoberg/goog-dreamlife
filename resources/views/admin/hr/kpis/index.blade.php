@@ -10,10 +10,12 @@
             <x-card>
                 <div class="flex justify-between items-center px-4 py-4 border-b">
                     <h3 class="text-lg font-medium text-gray-900">Performance Indicators</h3>
-                    <a href="{{ route('admin.hr.kpis.create') }}"
-                        class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700">
-                        Add New KPI
-                    </a>
+                    @if($canManage)
+                        <a href="{{ route('admin.hr.kpis.create') }}"
+                            class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700">
+                            Add New KPI
+                        </a>
+                    @endif
                 </div>
 
                 <div class="overflow-x-auto">
@@ -52,14 +54,18 @@
                                         {{ $kpi->role ? ucfirst($kpi->role) : 'All' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="{{ route('admin.hr.kpis.edit', $kpi) }}"
-                                            class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
-                                        <form action="{{ route('admin.hr.kpis.destroy', $kpi) }}" method="POST"
-                                            class="inline" onsubmit="return confirm('Delete this KPI?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
-                                        </form>
+                                        @if($canManage)
+                                            <a href="{{ route('admin.hr.kpis.edit', $kpi) }}"
+                                                class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
+                                            <form action="{{ route('admin.hr.kpis.destroy', $kpi) }}" method="POST"
+                                                class="inline" onsubmit="return confirm('Delete this KPI?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                                            </form>
+                                        @else
+                                            <span class="text-gray-400 text-xs">View Only</span>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach

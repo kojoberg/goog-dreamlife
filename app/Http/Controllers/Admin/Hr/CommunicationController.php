@@ -26,7 +26,15 @@ class CommunicationController extends Controller
 
     public function create()
     {
-        $users = User::all();
+        $user = auth()->user();
+        $usersQuery = User::query();
+
+        // Branch scoping: Non-super admins only see their branch's users
+        if (!$user->isSuperAdmin() && is_multi_branch()) {
+            $usersQuery->where('branch_id', $user->branch_id);
+        }
+
+        $users = $usersQuery->get();
         // Get unique roles
         $roles = User::distinct('role')->pluck('role');
 

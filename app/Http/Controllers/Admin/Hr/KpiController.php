@@ -8,10 +8,22 @@ use Illuminate\Http\Request;
 
 class KpiController extends Controller
 {
+    public function __construct()
+    {
+        // KPIs are global settings - in multi-branch mode, only super admins can manage them
+        $this->middleware(function ($request, $next) {
+            if (is_multi_branch() && !auth()->user()->isSuperAdmin()) {
+                abort(403, 'Only Super Admins can manage KPIs in multi-branch mode.');
+            }
+            return $next($request);
+        })->except(['index']); // Allow viewing for all admins
+    }
+
     public function index()
     {
         $kpis = Kpi::paginate(20);
-        return view('admin.hr.kpis.index', compact('kpis'));
+        $canManage = is_single_branch() || auth()->user()->isSuperAdmin();
+        return view('admin.hr.kpis.index', compact('kpis', 'canManage'));
     }
 
     public function create()
@@ -62,3 +74,4 @@ class KpiController extends Controller
         return back()->with('success', 'KPI deleted.');
     }
 }
+

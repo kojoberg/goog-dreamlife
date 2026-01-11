@@ -11,21 +11,33 @@ class AnalyticsController extends Controller
 {
     public function index()
     {
+        $user = auth()->user();
+        $branchId = null;
+
+        // Branch scoping for non-super admins in multi-branch mode
+        if (!$user->isSuperAdmin() && is_multi_branch()) {
+            $branchId = $user->branch_id;
+        }
+
         // --- ABC ANALYSIS (Based on Revenue contribution in last 90 days) ---
         $startDate = now()->subDays(90);
 
-        $productStats = SaleItem::select(
+        $productStatsQuery = SaleItem::select(
             'product_id',
             DB::raw('SUM(quantity) as total_qty'),
             DB::raw('SUM(subtotal) as total_revenue')
         )
-            ->whereHas('sale', function ($q) use ($startDate) {
+            ->whereHas('sale', function ($q) use ($startDate, $branchId) {
                 $q->where('created_at', '>=', $startDate);
+                if ($branchId) {
+                    $q->where('branch_id', $branchId);
+                }
             })
             ->groupBy('product_id')
             ->orderByDesc('total_revenue')
-            ->with('product')
-            ->get();
+            ->with('product');
+
+        $productStats = $productStatsQuery->get();
 
         $totalRevenue = $productStats->sum('total_revenue');
         $cumulative = 0;
@@ -53,20 +65,26 @@ class AnalyticsController extends Controller
         }
 
         // --- SALES FORECASTING (Simple Moving Average - 3 Months) ---
-        // We really need monthly aggregates.
-        // Let's get sales for the last 3 months grouped by month and product.
-
         $forecasts = [];
-        // Only run for active products to save performance
-        $products = Product::all();
+
+        // Get products (with branch filter if applicable)
+        $productsQuery = Product::query();
+        if ($branchId) {
+            $productsQuery->where('branch_id', $branchId);
+        }
+        $products = $productsQuery->get();
 
         foreach ($products as $product) {
             // Get stats for Month -1, -2, -3
-            $salesLast3Months = SaleItem::where('product_id', $product->id)
-                ->whereHas('sale', function ($q) {
+            $salesQuery = SaleItem::where('product_id', $product->id)
+                ->whereHas('sale', function ($q) use ($branchId) {
                     $q->where('created_at', '>=', now()->subMonths(3));
-                })
-                ->sum('quantity');
+                    if ($branchId) {
+                        $q->where('branch_id', $branchId);
+                    }
+                });
+
+            $salesLast3Months = $salesQuery->sum('quantity');
 
             // Simple Average
             $averageMonthly = $salesLast3Months / 3;
@@ -96,3 +114,4 @@ class AnalyticsController extends Controller
         return view('analytics.index', compact('abcData', 'forecasts'));
     }
 }
+

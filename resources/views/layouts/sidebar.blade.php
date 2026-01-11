@@ -359,6 +359,11 @@
                     <a href="{{ route('admin.system-health') }}"
                         class="{{ request()->routeIs('admin.system-health') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">System
                         Health</a>
+                    @if(is_single_branch() || Auth::user()->isSuperAdmin())
+                        <a href="{{ route('admin.communication-logs.index') }}"
+                            class="{{ request()->routeIs('admin.communication-logs*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Communication
+                            Logs</a>
+                    @endif
                 </div>
             </div>
         @endif

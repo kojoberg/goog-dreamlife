@@ -81,10 +81,26 @@ class SystemHealthController extends Controller
             $checks['rxnav'] = ['status' => 'warning', 'message' => 'Unreachable: ' . $e->getMessage()];
         }
 
-        // UelloSend Check (Config only)
+        // UelloSend Check (Config + Balance)
+        $smsService = new \App\Services\SmsService();
+        $smsBalance = null;
+        $smsBalanceMessage = null;
+
+        if ($settings && $settings->sms_api_key) {
+            $balanceResult = $smsService->getBalance();
+            if ($balanceResult['success']) {
+                $smsBalance = $balanceResult['balance'];
+                $smsBalanceMessage = $smsBalance !== null ? 'GHS ' . number_format($smsBalance, 2) : 'Unable to parse';
+            } else {
+                $smsBalanceMessage = $balanceResult['message'];
+            }
+        }
+
         $checks['uello_sms'] = [
             'status' => ($settings && $settings->sms_api_key) ? 'ok' : 'warning',
-            'message' => ($settings && $settings->sms_api_key) ? 'Configured' : 'Missing API Key'
+            'message' => ($settings && $settings->sms_api_key) ? 'Configured' : 'Missing API Key',
+            'balance' => $smsBalance,
+            'balance_message' => $smsBalanceMessage,
         ];
 
         // Google Drive Check (Config only)

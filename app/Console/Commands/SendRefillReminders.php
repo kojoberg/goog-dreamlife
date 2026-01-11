@@ -39,14 +39,15 @@ class SendRefillReminders extends Command
                 continue;
             }
 
-            // Send SMS
+            // Send SMS with context for communication logging
             $message = "Hello {$patient->name}, your refill for {$refill->product_name} is due soon. Please visit Dream Life Pharmacy to restock.";
-            $response = $smsService->sendQuickSms($patient->phone, $message);
+            $response = $smsService->sendQuickSms($patient->phone, $message, 'refill_reminder');
 
             if ($response['success']) {
                 $refill->update(['status' => 'sent', 'sent_at' => now()]);
                 $count++;
             } else {
+                $refill->update(['status' => 'failed', 'sent_at' => now()]);
                 $this->error("Failed to send to {$patient->name}: " . ($response['message'] ?? 'Unknown error'));
             }
         }

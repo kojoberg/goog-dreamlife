@@ -106,7 +106,7 @@ class SafetyDatabaseController extends Controller
 
         $interaction->update($validated);
 
-        return redirect()->route('safety.index')->with('success', 'Interaction updated successfully.');
+        return redirect()->route('admin.safety.index')->with('success', 'Interaction updated successfully.');
     }
 
     /**

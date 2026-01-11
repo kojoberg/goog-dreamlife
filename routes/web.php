@@ -167,6 +167,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/backups/create', [\App\Http\Controllers\BackupController::class, 'create'])->name('backups.create');
         Route::get('/backups/{filename}/download', [\App\Http\Controllers\BackupController::class, 'download'])->name('backups.download');
         Route::delete('/backups/{filename}', [\App\Http\Controllers\BackupController::class, 'delete'])->name('backups.delete');
+        Route::post('/backups/schedule', [\App\Http\Controllers\BackupController::class, 'updateSchedule'])->name('backups.schedule');
 
         // Shift Reports
         Route::get('/shifts/reports', [\App\Http\Controllers\ShiftController::class, 'index'])->name('admin.shifts.index');
@@ -182,6 +183,8 @@ Route::middleware('auth')->group(function () {
 
         // Audit Logs
         Route::get('/audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
+        // Communication Logs (SMS/Email history)
+        Route::get('/communication-logs', [\App\Http\Controllers\CommunicationLogController::class, 'index'])->name('admin.communication-logs.index');
         // System Health
         Route::get('/system-health', [\App\Http\Controllers\SystemHealthController::class, 'index'])->name('admin.system-health');
         Route::post('/system-health/toggle-debug', [\App\Http\Controllers\SystemHealthController::class, 'toggleDebug'])->name('admin.system-health.toggle-debug');
