@@ -55,6 +55,29 @@
                             </select>
                         </div>
 
+                        @if(isset($branches) && $branches)
+                            <!-- Branch Selector (Super Admin Only) -->
+                            <div class="col-span-1 md:col-span-2 bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                                <label for="branch_id" class="block text-indigo-700 text-sm font-semibold mb-2">
+                                    <svg class="inline w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                    </svg>
+                                    Assign to Branch
+                                </label>
+                                <select name="branch_id" id="branch_id"
+                                    class="w-full border border-indigo-300 rounded-lg py-2.5 px-3 focus:ring-2 focus:ring-indigo-500">
+                                    @foreach($branches as $branch)
+                                        <option value="{{ $branch->id }}" {{ $branch->is_main ? 'selected' : '' }}>
+                                            {{ $branch->name }} {{ $branch->is_main ? '(Main)' : '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <p class="text-xs text-indigo-600 mt-1">As Super Admin, you can add products to any branch.
+                                </p>
+                            </div>
+                        @endif
+
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">Category</label>
                             <div class="flex gap-2">

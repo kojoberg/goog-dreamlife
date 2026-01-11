@@ -53,7 +53,14 @@ class ProductController extends Controller
             abort(403, 'Unauthorized action.');
         }
         $categories = Category::all();
-        return view('products.create', compact('categories'));
+
+        // Super admins can select target branch
+        $branches = null;
+        if (auth()->user()->isSuperAdmin() && is_multi_branch()) {
+            $branches = \App\Models\Branch::all();
+        }
+
+        return view('products.create', compact('categories', 'branches'));
     }
 
     public function store(Request $request)
@@ -74,6 +81,7 @@ class ProductController extends Controller
             'drug_form' => 'nullable|string|max:255',  // New
             'dosage' => 'nullable|string|max:255',     // New
             'is_chronic' => 'sometimes|boolean',
+            'branch_id' => 'nullable|exists:branches,id',
         ]);
 
         // Handle 'is_chronic' checkbox explicitly if it's not present in the request
@@ -81,6 +89,12 @@ class ProductController extends Controller
             $validated['is_chronic'] = false;
         } else {
             $validated['is_chronic'] = true;
+        }
+
+        // Super admin can specify branch, others use their own
+        $branchId = auth()->user()->branch_id;
+        if (auth()->user()->isSuperAdmin() && isset($validated['branch_id'])) {
+            $branchId = $validated['branch_id'];
         }
 
         $product = Product::create([
@@ -96,6 +110,7 @@ class ProductController extends Controller
             'drug_form' => $validated['drug_form'] ?? null,
             'dosage' => $validated['dosage'] ?? null,
             'is_chronic' => $validated['is_chronic'],
+            'branch_id' => $branchId,
         ]);
 
         // Trigger interaction sync
