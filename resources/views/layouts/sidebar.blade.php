@@ -352,7 +352,7 @@
                         Logs</a>
                     <a href="{{ route('users.index') }}"
                         class="{{ request()->routeIs('users*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Users</a>
-                    @if(is_multi_branch())
+                    @if(is_multi_branch() && Auth::user()->isSuperAdmin())
                         <a href="{{ route('branches.index') }}"
                             class="{{ request()->routeIs('branches*') ? 'text-indigo-400' : 'text-slate-400 hover:text-white' }} block py-1.5 text-sm whitespace-nowrap">Branches</a>
                     @endif

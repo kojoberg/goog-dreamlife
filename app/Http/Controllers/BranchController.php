@@ -9,10 +9,21 @@ use Illuminate\Support\Facades\Auth;
 class BranchController extends Controller
 {
     /**
+     * Check if user can manage branches (super admin only in multi-branch mode).
+     */
+    protected function requireBranchManagement()
+    {
+        if (is_multi_branch() && !Auth::user()->isSuperAdmin()) {
+            abort(403, 'Only Super Admins can manage branches in multi-branch mode.');
+        }
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index()
     {
+        // All admins can view branches list
         $branches = Branch::withCount('users')->get();
         return view('branches.index', compact('branches'));
     }
@@ -26,6 +37,8 @@ class BranchController extends Controller
             abort(403, 'Branch creation is disabled in single-location mode.');
         }
 
+        $this->requireBranchManagement();
+
         return view('branches.create');
     }
 
@@ -38,19 +51,13 @@ class BranchController extends Controller
             abort(403, 'Branch creation is disabled in single-location mode.');
         }
 
+        $this->requireBranchManagement();
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'location' => 'nullable|string|max:255',
             'has_cashier' => 'boolean',
         ]);
-
-        if (!Auth::user()->isAdmin()) {
-            unset($validated['has_cashier']);
-        }
-
-        if (!Auth::user()->isAdmin()) {
-            unset($validated['has_cashier']);
-        }
 
         Branch::create($validated);
 
@@ -62,6 +69,12 @@ class BranchController extends Controller
      */
     public function edit(Branch $branch)
     {
+        // In multi-branch, only super admin can edit branches
+        // In single-branch, any admin can edit the only branch (settings)
+        if (is_multi_branch()) {
+            $this->requireBranchManagement();
+        }
+
         return view('branches.edit', compact('branch'));
     }
 
@@ -70,15 +83,17 @@ class BranchController extends Controller
      */
     public function update(Request $request, Branch $branch)
     {
+        // In multi-branch, only super admin can update branches
+        // In single-branch, any admin can update (for settings like has_cashier)
+        if (is_multi_branch() && !$branch->is_main) {
+            $this->requireBranchManagement();
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'location' => 'nullable|string|max:255',
             'has_cashier' => 'boolean',
         ]);
-
-        if (!Auth::user()->isAdmin()) {
-            unset($validated['has_cashier']);
-        }
 
         $branch->update($validated);
 
@@ -90,6 +105,8 @@ class BranchController extends Controller
      */
     public function destroy(Branch $branch)
     {
+        $this->requireBranchManagement();
+
         if ($branch->is_main) {
             return back()->with('error', 'Cannot delete the Main Branch.');
         }
