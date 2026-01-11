@@ -5,7 +5,7 @@
                 {{ __('Products') }}
             </h2>
             <div class="flex space-x-2">
-                @if(auth()->user()->isAdmin())
+                @if(auth()->user()->hasPermission('manage_products'))
                     <a href="{{ route('products.import') }}"
                         class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
                         Import Products
@@ -101,16 +101,18 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            @if(auth()->user()->isAdmin())
+                                            @if(auth()->user()->hasPermission('manage_products'))
                                                 <a href="{{ route('products.edit', $product) }}"
                                                     class="text-indigo-600 hover:text-indigo-900 mr-4">Edit</a>
-                                                <form action="{{ route('products.destroy', $product) }}" method="POST"
-                                                    class="inline-block" onsubmit="return confirm('Are you sure?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit"
-                                                        class="text-red-600 hover:text-red-900">Delete</button>
-                                                </form>
+                                                @if(auth()->user()->isAdmin())
+                                                    <form action="{{ route('products.destroy', $product) }}" method="POST"
+                                                        class="inline-block" onsubmit="return confirm('Are you sure?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit"
+                                                            class="text-red-600 hover:text-red-900">Delete</button>
+                                                    </form>
+                                                @endif
                                             @else
                                                 <span class="text-gray-400">View Only</span>
                                             @endif
