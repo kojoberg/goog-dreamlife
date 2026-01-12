@@ -172,12 +172,16 @@ class PrescriptionController extends Controller
             ]);
 
             // If no cashier workflow, award loyalty points immediately
-            if (!$hasCashierWorkflow && $settings && $settings->loyalty_points_per_sale > 0) {
+            // (Same logic as PosController)
+            $pointsEarned = 0;
+            if (!$hasCashierWorkflow && $settings && $settings->loyalty_spend_per_point > 0 && $totalAmount > 0) {
                 $patient = \App\Models\Patient::find($prescription->patient_id);
                 if ($patient) {
-                    $pointsEarned = floor($totalAmount / 100) * $settings->loyalty_points_per_sale;
+                    $pointsEarned = floor($totalAmount / $settings->loyalty_spend_per_point);
                     if ($pointsEarned > 0) {
                         $patient->increment('loyalty_points', $pointsEarned);
+                        // Update sale with points earned
+                        $sale->update(['points_earned' => $pointsEarned]);
                     }
                 }
             }
