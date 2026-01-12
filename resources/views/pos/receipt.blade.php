@@ -57,8 +57,8 @@
     <div class="text-center">
         @if($settings->logo_path)
             <?php 
-                                                                            $logoPath = storage_path('app/public/' . $settings->logo_path); 
-                                                                        ?>
+                                                                                $logoPath = storage_path('app/public/' . $settings->logo_path); 
+                                                                            ?>
             @if(file_exists($logoPath))
                 <img src="data:image/{{ pathinfo($logoPath, PATHINFO_EXTENSION) }};base64,{{ base64_encode(file_get_contents($logoPath)) }}"
                     alt="Logo" style="max-width: 100%; max-height: 120px; height: auto; width: auto; margin-bottom: 15px;">
@@ -101,7 +101,11 @@
             <tr>
                 <td>Processed By:</td>
                 <td class="right">
-                    @if($sale->shift && $sale->shift->user)
+                    @if($sale->cashierShift && $sale->cashierShift->user)
+                        {{-- Cashier workflow: show the cashier who collected payment --}}
+                        {{ $sale->cashierShift->user->name }}
+                    @elseif($sale->shift && $sale->shift->user)
+                        {{-- No cashier workflow: show the pharmacist who processed --}}
                         {{ $sale->shift->user->name }}
                     @else
                         {{ $sale->user ? $sale->user->name : 'N/A' }}

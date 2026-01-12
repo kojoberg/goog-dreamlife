@@ -12,7 +12,14 @@
                     <div class="flex justify-between items-center mb-6">
                         <div>
                             <p class="text-sm text-gray-500">Date: {{ $sale->created_at->format('F j, Y g:i A') }}</p>
-                            <p class="text-sm text-gray-500">Cashier: {{ $sale->user->name ?? 'N/A' }}</p>
+                            @if($sale->cashier_shift_id && $sale->cashierShift)
+                                {{-- Cashier workflow: show both --}}
+                                <p class="text-sm text-gray-500">Served By: {{ $sale->user->name ?? 'N/A' }}</p>
+                                <p class="text-sm text-gray-500">Cashier: {{ $sale->cashierShift->user->name ?? 'N/A' }}</p>
+                            @else
+                                {{-- No cashier workflow: show single person --}}
+                                <p class="text-sm text-gray-500">Cashier: {{ $sale->user->name ?? 'N/A' }}</p>
+                            @endif
                             <p class="text-sm text-gray-500">Customer: {{ $sale->patient->name ?? 'Walk-in' }}</p>
                             <p class="text-sm text-gray-500 mt-2">
                                 Payment Status: 

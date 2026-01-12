@@ -48,7 +48,7 @@ class SalesController extends Controller
      */
     public function show(Sale $sale)
     {
-        $sale->load(['items.product', 'user', 'patient', 'refund']);
+        $sale->load(['items.product', 'user', 'patient', 'refund', 'cashierShift.user']);
         return view('sales.show', compact('sale'));
     }
 }

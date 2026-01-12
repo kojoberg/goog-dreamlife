@@ -60,7 +60,12 @@
         <div>
             Date: {{ $sale->created_at->format('Y-m-d H:i') }}<br>
             Receipt #: {{ str_pad($sale->id, 6, '0', STR_PAD_LEFT) }}<br>
-            Cashier: {{ $sale->user->name }}
+            @if($sale->cashier_shift_id && $sale->cashierShift)
+                Served By: {{ $sale->user->name }}<br>
+                Cashier: {{ $sale->cashierShift->user->name }}
+            @else
+                Cashier: {{ $sale->user->name }}
+            @endif
         </div>
 
         <div class="divider"></div>

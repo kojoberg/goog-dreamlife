@@ -344,7 +344,7 @@ class PosController extends Controller
      */
     public function receipt(Sale $sale)
     {
-        $sale->load(['items.product', 'user', 'patient']);
+        $sale->load(['items.product', 'user', 'patient', 'shift.user', 'cashierShift.user']);
         $settings = Setting::first(); // Should exist from index() or seed
 
         // Fallback for settings if null (prevent crash)
