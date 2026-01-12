@@ -74,7 +74,14 @@ class ShiftController extends Controller
         }
 
         // Calculate expected from CASH SALES only (Drawer logic)
-        $cashSales = $shift->sales()->where('payment_method', 'cash')->sum('total_amount');
+        // Cashiers: use cashierSales (tracks by cashier_shift_id)
+        // Pharmacists: use sales (tracks by shift_id)
+        $isCashierRole = $shift->user->role === 'cashier';
+        if ($isCashierRole) {
+            $cashSales = $shift->cashierSales()->where('payment_method', 'cash')->sum('total_amount');
+        } else {
+            $cashSales = $shift->sales()->where('status', 'completed')->where('payment_method', 'cash')->sum('total_amount');
+        }
         $expected = $shift->starting_cash + $cashSales;
 
         $shift->update([
@@ -114,21 +121,37 @@ class ShiftController extends Controller
             }
         }
 
-        // Load relationships: User, Sales (and their items for detail?)
-        $shift->load(['user', 'sales.user', 'sales.customer']);
+        // Load relationships: User
+        $shift->load(['user']);
+
+        // Determine which sales to show based on shift user role
+        $isCashierShift = $shift->user->role === 'cashier';
+
+        // Load the appropriate sales relationship
+        if ($isCashierShift) {
+            // Cashier shift: show sales where they collected payment
+            $shift->load(['cashierSales.user', 'cashierSales.patient']);
+            $salesQuery = $shift->cashierSales();
+            $shiftSales = $shift->cashierSales;
+        } else {
+            // Pharmacist shift: show sales they created
+            $shift->load(['sales.user', 'sales.patient']);
+            $salesQuery = $shift->sales()->where('status', 'completed');
+            $shiftSales = $shift->sales->where('status', 'completed');
+        }
 
         // Calculate detailed breakdown
-        $cashSales = $shift->sales()->where('payment_method', 'cash')->sum('total_amount');
-        $cardSales = $shift->sales()->where('payment_method', 'card')->sum('total_amount');
-        $momoSales = $shift->sales()->where('payment_method', 'momo')->sum('total_amount'); // Mobile Money
-        $totalSales = $shift->sales()->sum('total_amount');
+        $cashSales = (clone $salesQuery)->where('payment_method', 'cash')->sum('total_amount');
+        $cardSales = (clone $salesQuery)->where('payment_method', 'card')->sum('total_amount');
+        $momoSales = (clone $salesQuery)->where('payment_method', 'momo')->sum('total_amount');
+        $totalSales = (clone $salesQuery)->sum('total_amount');
 
         $variance = 0;
         if ($shift->end_time) {
             $variance = $shift->actual_cash - $shift->expected_cash;
         }
 
-        return view('admin.shifts.show', compact('shift', 'cashSales', 'cardSales', 'momoSales', 'totalSales', 'variance'));
+        return view('admin.shifts.show', compact('shift', 'cashSales', 'cardSales', 'momoSales', 'totalSales', 'variance', 'shiftSales', 'isCashierShift'));
     }
 
 
@@ -139,9 +162,20 @@ class ShiftController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $shift->load(['user', 'sales']);
+        $shift->load(['user']);
 
-        return view('reports.shift_print', compact('shift'));
+        // Determine which sales to show based on shift user role
+        $isCashierShift = $shift->user->role === 'cashier';
+
+        if ($isCashierShift) {
+            $shift->load(['cashierSales']);
+            $shiftSales = $shift->cashierSales;
+        } else {
+            $shift->load(['sales']);
+            $shiftSales = $shift->sales->where('status', 'completed');
+        }
+
+        return view('reports.shift_print', compact('shift', 'shiftSales', 'isCashierShift'));
     }
 
     public function myShifts()

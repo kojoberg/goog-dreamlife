@@ -96,7 +96,7 @@
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    @forelse($shift->sales as $sale)
+                                    @forelse($shiftSales as $sale)
                                         <tr>
                                             <td class="px-4 py-2">{{ $sale->created_at->format('H:i:s') }}</td>
                                             <td class="px-4 py-2 font-mono text-xs">{{ $sale->reference }}</td>

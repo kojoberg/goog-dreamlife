@@ -74,11 +74,11 @@
         </div>
         <div class="metric">
             <span>Total Sales (Cash):</span>
-            <span>₵{{ number_format($shift->sales->where('payment_method', 'cash')->sum('total_amount'), 2) }}</span>
+            <span>₵{{ number_format($shiftSales->where('payment_method', 'cash')->sum('total_amount'), 2) }}</span>
         </div>
         <div class="metric">
             <span>Total Sales (Card):</span>
-            <span>₵{{ number_format($shift->sales->where('payment_method', 'card')->sum('total_amount'), 2) }}</span>
+            <span>₵{{ number_format($shiftSales->where('payment_method', 'card')->sum('total_amount'), 2) }}</span>
         </div>
         <div class="metric">
             <span>Ending Cash (Recorded):</span>
@@ -97,7 +97,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($shift->sales as $sale)
+            @foreach($shiftSales as $sale)
                 <tr>
                     <td>{{ $sale->created_at->format('H:i') }}</td>
                     <td>{{ $sale->reference_number }}</td>
@@ -109,7 +109,7 @@
     </table>
 
     <div class="total">
-        Grand Total: ₵{{ number_format($shift->sales->sum('total_amount'), 2) }}
+        Grand Total: ₵{{ number_format($shiftSales->sum('total_amount'), 2) }}
     </div>
 
 </body>
