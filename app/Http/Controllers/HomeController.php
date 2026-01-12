@@ -31,12 +31,23 @@ class HomeController extends Controller
         // 1. Key Metrics
         $todaySalesQuery = Sale::whereDate('created_at', Carbon::today());
         if (!$isAdmin) {
-            $todaySalesQuery->where(function ($q) use ($user) {
-                $q->where('user_id', $user->id)
-                    ->orWhereHas('shift', function ($subQ) use ($user) {
-                        $subQ->where('user_id', $user->id);
-                    });
-            });
+            // For non-admin users, show sales they created OR collected payment for
+            $isCashier = $user->role === 'cashier';
+
+            if ($isCashier) {
+                // Cashiers: show sales where they collected payment (cashier_shift_id)
+                $todaySalesQuery->whereHas('cashierShift', function ($subQ) use ($user) {
+                    $subQ->where('user_id', $user->id);
+                });
+            } else {
+                // Pharmacists/others: show sales they created (user_id or shift_id)
+                $todaySalesQuery->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                        ->orWhereHas('shift', function ($subQ) use ($user) {
+                            $subQ->where('user_id', $user->id);
+                        });
+                });
+            }
         } elseif (!$isSuperAdmin) {
             // Regular admin - filter by branch
             $todaySalesQuery->whereHas('user', function ($q) use ($user) {
@@ -73,12 +84,23 @@ class HomeController extends Controller
             ->where('created_at', '>=', $startDate);
 
         if (!$isAdmin) {
-            $salesDataQuery->where(function ($q) use ($user) {
-                $q->where('user_id', $user->id)
-                    ->orWhereHas('shift', function ($subQ) use ($user) {
-                        $subQ->where('user_id', $user->id);
-                    });
-            });
+            // For non-admin users, show sales they created OR collected payment for
+            $isCashier = $user->role === 'cashier';
+
+            if ($isCashier) {
+                // Cashiers: show sales where they collected payment
+                $salesDataQuery->whereHas('cashierShift', function ($subQ) use ($user) {
+                    $subQ->where('user_id', $user->id);
+                });
+            } else {
+                // Pharmacists/others: show sales they created
+                $salesDataQuery->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                        ->orWhereHas('shift', function ($subQ) use ($user) {
+                            $subQ->where('user_id', $user->id);
+                        });
+                });
+            }
         } elseif (!$isSuperAdmin) {
             $salesDataQuery->whereHas('user', function ($q) use ($user) {
                 $q->where('branch_id', $user->branch_id);
@@ -102,12 +124,23 @@ class HomeController extends Controller
         // 3. Recent Transactions
         $recentSalesQuery = Sale::with('user')->latest();
         if (!$isAdmin) {
-            $recentSalesQuery->where(function ($q) use ($user) {
-                $q->where('user_id', $user->id)
-                    ->orWhereHas('shift', function ($subQ) use ($user) {
-                        $subQ->where('user_id', $user->id);
-                    });
-            });
+            // For non-admin users, show sales they created OR collected payment for
+            $isCashier = $user->role === 'cashier';
+
+            if ($isCashier) {
+                // Cashiers: show sales where they collected payment
+                $recentSalesQuery->whereHas('cashierShift', function ($subQ) use ($user) {
+                    $subQ->where('user_id', $user->id);
+                });
+            } else {
+                // Pharmacists/others: show sales they created
+                $recentSalesQuery->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                        ->orWhereHas('shift', function ($subQ) use ($user) {
+                            $subQ->where('user_id', $user->id);
+                        });
+                });
+            }
         } elseif (!$isSuperAdmin) {
             $recentSalesQuery->whereHas('user', function ($q) use ($user) {
                 $q->where('branch_id', $user->branch_id);
