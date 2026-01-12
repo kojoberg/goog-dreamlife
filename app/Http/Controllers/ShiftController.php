@@ -17,14 +17,23 @@ class ShiftController extends Controller
 
         $salesTotal = 0;
         if ($openShift) {
-            // Calculate total sales for this shift
-            // Assuming we only care about CASH sales for the drawer check, 
-            // but for now, let's sum 'amount_tendered' or 'total' where payment is cash?
-            // "Expected Cash" usually implies Cash Sales only.
+            // Calculate total cash sales for this shift
+            // For cashiers: use cashierSales (tracks by cashier_shift_id)
+            // For pharmacists/others: use sales (tracks by shift_id)
+            $isCashier = Auth::user()->role === 'cashier';
 
-            $salesTotal = $openShift->sales()
-                ->where('payment_method', 'cash')
-                ->sum('total_amount');
+            if ($isCashier) {
+                // Cashier: sum sales where they collected payment
+                $salesTotal = $openShift->cashierSales()
+                    ->where('payment_method', 'cash')
+                    ->sum('total_amount');
+            } else {
+                // Pharmacist: sum sales they created (when no cashier workflow)
+                $salesTotal = $openShift->sales()
+                    ->where('status', 'completed')
+                    ->where('payment_method', 'cash')
+                    ->sum('total_amount');
+            }
         }
 
         return view('shifts.create', compact('openShift', 'salesTotal'));

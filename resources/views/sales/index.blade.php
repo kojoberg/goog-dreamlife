@@ -49,7 +49,11 @@
                                             {{ str_pad($sale->id, 6, '0', STR_PAD_LEFT) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            @if($sale->shift && $sale->shift->user)
+                                            @if($sale->cashierShift && $sale->cashierShift->user)
+                                                {{-- Cashier workflow: show the cashier who collected payment --}}
+                                                {{ $sale->cashierShift->user->name }}
+                                            @elseif($sale->shift && $sale->shift->user)
+                                                {{-- No cashier workflow: show the shift user --}}
                                                 {{ $sale->shift->user->name }}
                                             @else
                                                 {{ $sale->user->name ?? 'N/A' }}

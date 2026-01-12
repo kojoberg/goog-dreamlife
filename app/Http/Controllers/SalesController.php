@@ -13,7 +13,7 @@ class SalesController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $query = Sale::with(['user', 'patient', 'shift.user', 'refund']);
+        $query = Sale::with(['user', 'patient', 'shift.user', 'cashierShift.user', 'refund']);
 
         // Super admins see all sales
         if ($user->isSuperAdmin()) {
