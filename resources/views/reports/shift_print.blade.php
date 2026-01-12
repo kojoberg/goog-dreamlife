@@ -9,6 +9,8 @@
         body {
             font-family: sans-serif;
             padding: 20px;
+            max-width: 400px;
+            margin: 0 auto;
         }
 
         .header {
@@ -28,6 +30,34 @@
             margin-bottom: 5px;
         }
 
+        .metric.total {
+            font-weight: bold;
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            margin-top: 10px;
+        }
+
+        .metric.variance {
+            font-weight: bold;
+            padding: 5px;
+            margin-top: 5px;
+        }
+
+        .variance-positive {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .variance-negative {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .variance-zero {
+            background-color: #e8e8e8;
+            color: #333;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -41,10 +71,35 @@
             border-bottom: 1px solid #ddd;
         }
 
-        .total {
+        th {
+            background-color: #f5f5f5;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .grand-total {
             font-weight: bold;
             text-align: right;
             margin-top: 10px;
+            font-size: 1.1em;
+            padding: 10px;
+            background-color: #f5f5f5;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            background-color: #e0e0e0;
+        }
+
+        .no-sales {
+            text-align: center;
+            padding: 20px;
+            color: #666;
         }
 
         @media print {
@@ -61,56 +116,105 @@
 
     <div class="header">
         <h2>Shift Report</h2>
-        <p>{{ $shift->user->name }}</p>
+        <p><strong>{{ $shift->user->name }}</strong></p>
+        <p><span class="role-badge">{{ ucfirst($shift->user->role) }}</span></p>
         <p>{{ $shift->start_time->format('d M Y H:i') }} -
             {{ $shift->end_time ? $shift->end_time->format('H:i') : 'OPEN' }}
         </p>
     </div>
 
+    @php
+        $cashTotal = $shiftSales->where('payment_method', 'cash')->sum('total_amount') ?? 0;
+        $cardTotal = $shiftSales->where('payment_method', 'card')->sum('total_amount') ?? 0;
+        $momoTotal = $shiftSales->where('payment_method', 'momo')->sum('total_amount') ?? 0;
+        $grandTotal = $shiftSales->sum('total_amount') ?? 0;
+        $transactionCount = $shiftSales->count();
+        $expectedCash = ($shift->starting_cash ?? 0) + $cashTotal;
+        $variance = ($shift->actual_cash ?? 0) - $expectedCash;
+    @endphp
+
     <div class="summary">
+        <h4 style="margin: 0 0 10px 0;">Cash Summary</h4>
         <div class="metric">
             <span>Starting Cash:</span>
-            <span>₵{{ number_format($shift->starting_cash, 2) }}</span>
+            <span>₵{{ number_format($shift->starting_cash ?? 0, 2) }}</span>
         </div>
         <div class="metric">
-            <span>Total Sales (Cash):</span>
-            <span>₵{{ number_format($shiftSales->where('payment_method', 'cash')->sum('total_amount'), 2) }}</span>
+            <span>Cash Sales:</span>
+            <span>₵{{ number_format($cashTotal, 2) }}</span>
         </div>
         <div class="metric">
-            <span>Total Sales (Card):</span>
-            <span>₵{{ number_format($shiftSales->where('payment_method', 'card')->sum('total_amount'), 2) }}</span>
+            <span>Expected Cash:</span>
+            <span>₵{{ number_format($expectedCash, 2) }}</span>
+        </div>
+        @if($shift->end_time)
+            <div class="metric">
+                <span>Actual Cash (Counted):</span>
+                <span>₵{{ number_format($shift->actual_cash ?? 0, 2) }}</span>
+            </div>
+            <div
+                class="metric variance {{ $variance > 0 ? 'variance-positive' : ($variance < 0 ? 'variance-negative' : 'variance-zero') }}">
+                <span>Variance:</span>
+                <span>{{ $variance > 0 ? '+' : '' }}₵{{ number_format($variance, 2) }}</span>
+            </div>
+        @endif
+    </div>
+
+    <div class="summary">
+        <h4 style="margin: 0 0 10px 0;">Sales by Payment Method</h4>
+        <div class="metric">
+            <span>Cash:</span>
+            <span>₵{{ number_format($cashTotal, 2) }}</span>
         </div>
         <div class="metric">
-            <span>Ending Cash (Recorded):</span>
-            <span>₵{{ number_format($shift->actual_cash, 2) }}</span>
+            <span>Card:</span>
+            <span>₵{{ number_format($cardTotal, 2) }}</span>
+        </div>
+        <div class="metric">
+            <span>Mobile Money:</span>
+            <span>₵{{ number_format($momoTotal, 2) }}</span>
+        </div>
+        <div class="metric total">
+            <span>Total Sales:</span>
+            <span>₵{{ number_format($grandTotal, 2) }}</span>
+        </div>
+        <div class="metric" style="margin-top: 5px;">
+            <span>Transactions:</span>
+            <span>{{ $transactionCount }}</span>
         </div>
     </div>
 
-    <h3>Sales Log</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>Time</th>
-                <th>Ref</th>
-                <th>Method</th>
-                <th>Amount</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($shiftSales as $sale)
+    <h3>Sales Log ({{ $transactionCount }} transactions)</h3>
+    @if($transactionCount > 0)
+        <table>
+            <thead>
                 <tr>
-                    <td>{{ $sale->created_at->format('H:i') }}</td>
-                    <td>{{ $sale->reference_number }}</td>
-                    <td>{{ ucfirst($sale->payment_method) }}</td>
-                    <td>₵{{ number_format($sale->total_amount, 2) }}</td>
+                    <th>Time</th>
+                    <th>Receipt #</th>
+                    <th>Method</th>
+                    <th class="text-right">Amount</th>
                 </tr>
-            @endforeach
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach($shiftSales as $sale)
+                    <tr>
+                        <td>{{ $sale->created_at->format('H:i') }}</td>
+                        <td>{{ str_pad($sale->id, 6, '0', STR_PAD_LEFT) }}</td>
+                        <td>{{ ucfirst($sale->payment_method ?? 'N/A') }}</td>
+                        <td class="text-right">₵{{ number_format($sale->total_amount, 2) }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
 
-    <div class="total">
-        Grand Total: ₵{{ number_format($shiftSales->sum('total_amount'), 2) }}
-    </div>
+        <div class="grand-total">
+            Grand Total: ₵{{ number_format($grandTotal, 2) }}
+        </div>
+    @else
+        <div class="no-sales">
+            No transactions recorded for this shift.
+        </div>
+    @endif
 
 </body>
 
