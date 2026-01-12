@@ -79,6 +79,12 @@ class PrescriptionController extends Controller
             return back()->with('error', 'Unauthorized. You do not have permission to dispense medication.');
         }
 
+        // Enforce Shift Check - must have open shift to dispense
+        if (!Auth::user()->hasOpenShift()) {
+            return redirect()->route('shifts.create')
+                ->with('error', 'You must open a shift before dispensing prescriptions.');
+        }
+
         if ($prescription->status === 'dispensed') {
             return back()->with('error', 'Prescription already dispensed.');
         }
