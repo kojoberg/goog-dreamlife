@@ -143,7 +143,7 @@ class ShiftController extends Controller
         // Calculate detailed breakdown
         $cashSales = (clone $salesQuery)->where('payment_method', 'cash')->sum('total_amount');
         $cardSales = (clone $salesQuery)->where('payment_method', 'card')->sum('total_amount');
-        $momoSales = (clone $salesQuery)->where('payment_method', 'momo')->sum('total_amount');
+        $momoSales = (clone $salesQuery)->where('payment_method', 'mobile_money')->sum('total_amount');
         $totalSales = (clone $salesQuery)->sum('total_amount');
 
         $variance = 0;

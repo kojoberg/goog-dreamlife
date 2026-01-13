@@ -124,39 +124,71 @@
     </div>
 
     @php
+        $isCashierShift = $shift->user->role === 'cashier';
         $cashTotal = $shiftSales->where('payment_method', 'cash')->sum('total_amount') ?? 0;
         $cardTotal = $shiftSales->where('payment_method', 'card')->sum('total_amount') ?? 0;
-        $momoTotal = $shiftSales->where('payment_method', 'momo')->sum('total_amount') ?? 0;
+        $momoTotal = $shiftSales->where('payment_method', 'mobile_money')->sum('total_amount') ?? 0;
         $grandTotal = $shiftSales->sum('total_amount') ?? 0;
         $transactionCount = $shiftSales->count();
         $expectedCash = ($shift->starting_cash ?? 0) + $cashTotal;
         $variance = ($shift->actual_cash ?? 0) - $expectedCash;
+        
+        // For pharmacist shifts: check if any sales were processed directly (no cashier)
+        // If all sales have cashier_shift_id, pharmacist didn't handle cash
+        $directSalesCount = 0;
+        $cashierProcessedCount = 0;
+        if (!$isCashierShift) {
+            $directSalesCount = $shiftSales->whereNull('cashier_shift_id')->count();
+            $cashierProcessedCount = $shiftSales->whereNotNull('cashier_shift_id')->count();
+        }
+        
+        // Pharmacist handles cash if they have direct sales (no cashier workflow)
+        $pharmacistHandlesCash = !$isCashierShift && $directSalesCount > 0;
     @endphp
 
     <div class="summary">
-        <h4 style="margin: 0 0 10px 0;">Cash Summary</h4>
-        <div class="metric">
-            <span>Starting Cash:</span>
-            <span>₵{{ number_format($shift->starting_cash ?? 0, 2) }}</span>
-        </div>
-        <div class="metric">
-            <span>Cash Sales:</span>
-            <span>₵{{ number_format($cashTotal, 2) }}</span>
-        </div>
-        <div class="metric">
-            <span>Expected Cash:</span>
-            <span>₵{{ number_format($expectedCash, 2) }}</span>
-        </div>
-        @if($shift->end_time)
+        @if($isCashierShift || $pharmacistHandlesCash)
+            {{-- Cashier Shift OR Pharmacist with direct sales: Show full cash handling summary --}}
+            <h4 style="margin: 0 0 10px 0;">Cash Summary</h4>
             <div class="metric">
-                <span>Actual Cash (Counted):</span>
-                <span>₵{{ number_format($shift->actual_cash ?? 0, 2) }}</span>
+                <span>Starting Cash:</span>
+                <span>₵{{ number_format($shift->starting_cash ?? 0, 2) }}</span>
             </div>
-            <div
-                class="metric variance {{ $variance > 0 ? 'variance-positive' : ($variance < 0 ? 'variance-negative' : 'variance-zero') }}">
-                <span>Variance:</span>
-                <span>{{ $variance > 0 ? '+' : '' }}₵{{ number_format($variance, 2) }}</span>
+            <div class="metric">
+                <span>Cash Sales:</span>
+                <span>₵{{ number_format($cashTotal, 2) }}</span>
             </div>
+            <div class="metric">
+                <span>Expected Cash:</span>
+                <span>₵{{ number_format($expectedCash, 2) }}</span>
+            </div>
+            @if($shift->end_time)
+                <div class="metric">
+                    <span>Actual Cash (Counted):</span>
+                    <span>₵{{ number_format($shift->actual_cash ?? 0, 2) }}</span>
+                </div>
+                <div
+                    class="metric variance {{ $variance > 0 ? 'variance-positive' : ($variance < 0 ? 'variance-negative' : 'variance-zero') }}">
+                    <span>Variance:</span>
+                    <span>{{ $variance > 0 ? '+' : '' }}₵{{ number_format($variance, 2) }}</span>
+                </div>
+            @endif
+        @else
+            {{-- Pharmacist Shift with all cashier-processed sales: Show invoice summary --}}
+            <h4 style="margin: 0 0 10px 0;">Invoices Summary</h4>
+            <div class="metric">
+                <span>Invoices Generated:</span>
+                <span>{{ $transactionCount }}</span>
+            </div>
+            <div class="metric">
+                <span>Total Invoice Value:</span>
+                <span>₵{{ number_format($grandTotal, 2) }}</span>
+            </div>
+            @if($cashierProcessedCount > 0)
+                <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                    <em>{{ $cashierProcessedCount }} invoice(s) processed by cashier. Cash handling is managed in cashier shift reports.</em>
+                </p>
+            @endif
         @endif
     </div>
 

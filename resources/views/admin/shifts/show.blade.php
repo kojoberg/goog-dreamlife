@@ -15,8 +15,15 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <!-- Summary Card -->
+                @php
+                    // Check if this is a cashier shift or if pharmacist has direct sales
+                    $directSalesCount = !$isCashierShift ? $shiftSales->whereNull('cashier_shift_id')->count() : 0;
+                    $cashierProcessedCount = !$isCashierShift ? $shiftSales->whereNotNull('cashier_shift_id')->count() : 0;
+                    $pharmacistHandlesCash = !$isCashierShift && $directSalesCount > 0;
+                    $showCashVariance = $isCashierShift || $pharmacistHandlesCash;
+                @endphp
                 <x-card
-                    class="col-span-1 border-t-4 {{ abs($variance) > 0.01 ? 'border-red-500' : 'border-green-500' }}">
+                    class="col-span-1 border-t-4 {{ $showCashVariance && abs($variance) > 0.01 ? 'border-red-500' : 'border-green-500' }}">
                     <h3 class="font-bold text-lg mb-4">{{ $shift->user->name }}</h3>
                     <div class="text-sm text-gray-500 mb-4">{{ ucfirst($shift->user->role) }}</div>
 
@@ -31,26 +38,45 @@
                                 class="font-bold">{{ $shift->end_time ? $shift->end_time->format('M d, H:i') : 'Active' }}</span>
                         </div>
                         <hr>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Starting Cash:</span>
-                            <span>{{ number_format($shift->starting_cash, 2) }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Expected Cash:</span>
-                            <span>{{ number_format($shift->expected_cash, 2) }}</span>
-                        </div>
-                        <div class="flex justify-between text-lg font-bold">
-                            <span class="text-gray-800">Actual Cash:</span>
-                            <span>{{ number_format($shift->actual_cash, 2) }}</span>
-                        </div>
-                        @if($shift->end_time && abs($variance) > 0.01)
-                            <div class="bg-red-50 p-3 rounded text-red-800 font-bold text-center">
-                                Variance: {{ $variance > 0 ? '+' : '' }}{{ number_format($variance, 2) }}
+
+                        @if($showCashVariance)
+                            {{-- Show cash handling details for cashier or pharmacist with direct sales --}}
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Starting Cash:</span>
+                                <span>{{ number_format($shift->starting_cash, 2) }}</span>
                             </div>
-                        @elseif($shift->end_time)
-                            <div class="bg-green-50 p-3 rounded text-green-800 font-bold text-center">
-                                Perfectly Balanced
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Expected Cash:</span>
+                                <span>{{ number_format($shift->expected_cash, 2) }}</span>
                             </div>
+                            <div class="flex justify-between text-lg font-bold">
+                                <span class="text-gray-800">Actual Cash:</span>
+                                <span>{{ number_format($shift->actual_cash, 2) }}</span>
+                            </div>
+                            @if($shift->end_time && abs($variance) > 0.01)
+                                <div class="bg-red-50 p-3 rounded text-red-800 font-bold text-center">
+                                    Variance: {{ $variance > 0 ? '+' : '' }}{{ number_format($variance, 2) }}
+                                </div>
+                            @elseif($shift->end_time)
+                                <div class="bg-green-50 p-3 rounded text-green-800 font-bold text-center">
+                                    Perfectly Balanced
+                                </div>
+                            @endif
+                        @else
+                            {{-- Pharmacist with all cashier-processed sales --}}
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Invoices Generated:</span>
+                                <span class="font-bold">{{ $shiftSales->count() }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Total Invoice Value:</span>
+                                <span class="font-bold">{{ number_format($totalSales, 2) }}</span>
+                            </div>
+                            @if($cashierProcessedCount > 0)
+                                <div class="bg-blue-50 p-3 rounded text-blue-800 text-sm text-center">
+                                    {{ $cashierProcessedCount }} invoice(s) processed by cashier
+                                </div>
+                            @endif
                         @endif
 
                         @if($shift->notes)
