@@ -81,6 +81,7 @@ class ProductController extends Controller
             'drug_form' => 'nullable|string|max:255',  // New
             'dosage' => 'nullable|string|max:255',     // New
             'is_chronic' => 'sometimes|boolean',
+            'tax_exempt' => 'sometimes|boolean',
             'branch_id' => 'nullable|exists:branches,id',
         ]);
 
@@ -90,6 +91,9 @@ class ProductController extends Controller
         } else {
             $validated['is_chronic'] = true;
         }
+
+        // Handle 'tax_exempt' checkbox
+        $validated['tax_exempt'] = $request->has('tax_exempt');
 
         // Super admin can specify branch, others use their own
         $branchId = auth()->user()->branch_id;
@@ -110,6 +114,7 @@ class ProductController extends Controller
             'drug_form' => $validated['drug_form'] ?? null,
             'dosage' => $validated['dosage'] ?? null,
             'is_chronic' => $validated['is_chronic'],
+            'tax_exempt' => $validated['tax_exempt'],
             'branch_id' => $branchId,
         ]);
 
@@ -146,6 +151,7 @@ class ProductController extends Controller
             'drug_form' => 'nullable|string|max:255',  // New
             'dosage' => 'nullable|string|max:255',     // New
             'is_chronic' => 'sometimes|boolean',
+            'tax_exempt' => 'sometimes|boolean',
         ]);
 
         if (!$request->has('is_chronic')) {
@@ -153,6 +159,9 @@ class ProductController extends Controller
         } else {
             $validated['is_chronic'] = true;
         }
+
+        // Handle 'tax_exempt' checkbox
+        $validated['tax_exempt'] = $request->has('tax_exempt');
 
         $product->update([
             'name' => $validated['name'],
@@ -167,6 +176,7 @@ class ProductController extends Controller
             'drug_form' => $validated['drug_form'] ?? null,
             'dosage' => $validated['dosage'] ?? null,
             'is_chronic' => $validated['is_chronic'],
+            'tax_exempt' => $validated['tax_exempt'],
         ]);
 
         // Trigger interaction sync
