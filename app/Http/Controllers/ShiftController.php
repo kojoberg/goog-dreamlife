@@ -64,9 +64,11 @@ class ShiftController extends Controller
 
     public function update(Request $request, Shift $shift)
     {
-        $isCashier = Auth::user()->role === 'cashier';
+        // User handles cash if they are a cashier OR if the branch has no dedicated cashier
+        $userHandlesCash = Auth::user()->role === 'cashier'
+            || (Auth::user()->branch && !Auth::user()->branch->has_cashier);
 
-        if ($isCashier) {
+        if ($userHandlesCash) {
             $request->validate([
                 'actual_cash' => 'required|numeric|min:0',
                 'notes' => 'nullable|string'
@@ -86,7 +88,7 @@ class ShiftController extends Controller
 
         $shift->update([
             'end_time' => now(),
-            'actual_cash' => $isCashier ? $request->actual_cash : 0,
+            'actual_cash' => $userHandlesCash ? $request->actual_cash : 0,
             'expected_cash' => $expected,
             'notes' => $request->notes,
         ]);
