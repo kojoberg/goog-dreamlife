@@ -119,8 +119,12 @@ class ProcurementController extends Controller
                         $batchNumber = $itemData['batch_number'];
                         $expiryDate = $itemData['expiry_date'];
 
-                        // Update Item (Increment received count)
-                        $item->increment('quantity_received', $receivedQty);
+                        // Update Item (Increment received count + store batch/expiry)
+                        $item->update([
+                            'quantity_received' => $item->quantity_received + $receivedQty,
+                            'batch_number' => $batchNumber,
+                            'expiry_date' => $expiryDate,
+                        ]);
 
                         // Add to Inventory Batch
                         InventoryBatch::create([
