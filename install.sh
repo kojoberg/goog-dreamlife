@@ -27,15 +27,39 @@ export NEEDRESTART_MODE=a
 apt update && apt upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 apt install -y software-properties-common curl git unzip
 
+# Helper function to retry commands (useful for flaky external services like Launchpad)
+retry_command() {
+    local max_attempts=$1
+    local delay=$2
+    shift 2
+    local cmd="$@"
+    
+    for ((i=1; i<=max_attempts; i++)); do
+        echo "Attempt $i/$max_attempts: $cmd"
+        if eval "$cmd"; then
+            return 0
+        else
+            if [ $i -lt $max_attempts ]; then
+                echo -e "${RED}Command failed. Retrying in ${delay} seconds...${NC}"
+                sleep $delay
+            fi
+        fi
+    done
+    
+    echo -e "${RED}Command failed after $max_attempts attempts.${NC}"
+    return 1
+}
+
 echo -e "${GREEN}[2/7] Installing Dependencies (PHP, Nginx, MySQL, Node)...${NC}"
-add-apt-repository ppa:ondrej/php -y
+# Add PHP PPA with retry logic (Launchpad can be temporarily unavailable)
+retry_command 5 30 "add-apt-repository ppa:ondrej/php -y"
 apt update
 apt install -y nginx mysql-server composer zip unzip \
     php8.4-fpm php8.4-mysql php8.4-common php8.4-cli php8.4-xml php8.4-curl \
     php8.4-mbstring php8.4-zip php8.4-bcmath php8.4-gd php8.4-intl
 
-# Node.js 20
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+# Node.js 20 with retry logic
+retry_command 3 15 "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -"
 apt install -y nodejs
 
 echo -e "${GREEN}[3/7] Setting up Database...${NC}"
