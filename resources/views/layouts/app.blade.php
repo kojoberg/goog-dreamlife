@@ -6,7 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@isset($title){{ $title }} - @endisset{{ $settings->pharmacy_name ?? config('app.name', 'Dream Life PMS') }}</title>
+    @php
+        $appName = $settings->pharmacy_name ?? config('app.name', 'Dream Life PMS');
+        $pageTitle = isset($title) ? $title : (isset($header) ? strip_tags(trim($header)) : null);
+    @endphp
+    <title>{{ $pageTitle ? $pageTitle . ' - ' : '' }}{{ $appName }}</title>
 
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 
@@ -181,6 +185,20 @@
             </main>
         </div>
     </div>
+
+    <script>
+        // Update page title from header
+        document.addEventListener('DOMContentLoaded', function() {
+            const headerH2 = document.querySelector('main h2');
+            if (headerH2) {
+                const pageTitle = headerH2.textContent.trim();
+                const appName = '{{ $settings->pharmacy_name ?? config("app.name", "Dream Life PMS") }}';
+                if (pageTitle && pageTitle !== appName) {
+                    document.title = pageTitle + ' - ' + appName;
+                }
+            }
+        });
+    </script>
 </body>
 
 </html>
