@@ -10,7 +10,7 @@
         $appName = $settings->pharmacy_name ?? config('app.name', 'Dream Life PMS');
         $pageTitle = isset($title) ? $title : (isset($header) ? strip_tags(trim($header)) : null);
     @endphp
-    <title>{{ $pageTitle ? $pageTitle . ' - ' : '' }}{{ $appName }}</title>
+    <title>{{ $pageTitle ? $pageTitle : $appName }}</title>
 
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 
@@ -192,9 +192,8 @@
             const headerH2 = document.querySelector('main h2');
             if (headerH2) {
                 const pageTitle = headerH2.textContent.trim();
-                const appName = '{{ $settings->pharmacy_name ?? config("app.name", "Dream Life PMS") }}';
-                if (pageTitle && pageTitle !== appName) {
-                    document.title = pageTitle + ' - ' + appName;
+                if (pageTitle) {
+                    document.title = pageTitle;
                 }
             }
         });
