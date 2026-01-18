@@ -69,21 +69,30 @@
 
                     @if($prescription->status === 'pending')
                         <div class="mt-6 border-t pt-4" x-data="{
-                                        pointsRedeeming: 0,
-                                        pointValue: {{ $settings->loyalty_point_value ?? 0 }},
-                                        maxPoints: {{ $prescription->patient->loyalty_points ?? 0 }},
-                                        billTotal: {{ $estimatedTotal }},
-                                        get discountValue() { return (this.pointsRedeeming * this.pointValue); },
-                                        get finalPayable() { return Math.max(0, this.billTotal - this.discountValue); }
-                                    }">
+                                            pointsRedeeming: 0,
+                                            pointValue: {{ $settings->loyalty_point_value ?? 0 }},
+                                            maxPoints: {{ $prescription->patient->loyalty_points ?? 0 }},
+                                            billTotal: {{ $estimatedTotal }},
+                                            get discountValue() { return (this.pointsRedeeming * this.pointValue); },
+                                            get finalPayable() { return Math.max(0, this.billTotal - this.discountValue); }
+                                        }">
                             <h4 class="font-bold mb-3 text-lg">Dispense & Payment</h4>
 
                             <!-- Billing Summary -->
                             <div class="bg-gray-50 p-4 rounded mb-4 text-sm">
                                 <div class="flex justify-between mb-1">
                                     <span>Subtotal:</span>
-                                    <span class="font-bold">GHS {{ number_format($estimatedTotal, 2) }}</span>
+                                    <span class="font-bold">GHS {{ number_format($estimatedSubtotal, 2) }}</span>
                                 </div>
+                                @if($estimatedTax > 0)
+                                    @foreach($taxBreakdown as $taxCode => $taxData)
+                                        <div class="flex justify-between mb-1 text-gray-600">
+                                            <span>{{ $taxData['name'] ?? strtoupper($taxCode) }}
+                                                ({{ $taxData['percentage'] ?? 0 }}%):</span>
+                                            <span>GHS {{ number_format($taxData['amount'] ?? 0, 2) }}</span>
+                                        </div>
+                                    @endforeach
+                                @endif
                                 <div class="flex justify-between mb-1 text-green-700" x-show="discountValue > 0">
                                     <span>Loyalty Discount (<span x-text="pointsRedeeming"></span> pts):</span>
                                     <span class="font-bold">- GHS <span x-text="discountValue.toFixed(2)"></span></span>

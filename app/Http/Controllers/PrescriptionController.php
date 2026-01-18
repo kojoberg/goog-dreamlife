@@ -56,21 +56,48 @@ class PrescriptionController extends Controller
 
     public function show(Prescription $prescription)
     {
-        // Calculate estimated total for display
-        $estimatedTotal = 0;
+        // Calculate estimated total and tax for display
+        $estimatedSubtotal = 0;
+        $taxableSubtotal = 0;
         $medications = $prescription->medications ?? [];
+
         foreach ($medications as $med) {
             if (!empty($med['product_id']) && !empty($med['quantity'])) {
                 $product = \App\Models\Product::find($med['product_id']);
                 if ($product) {
-                    $estimatedTotal += $product->unit_price * $med['quantity'];
+                    $lineTotal = $product->unit_price * $med['quantity'];
+                    $estimatedSubtotal += $lineTotal;
+
+                    // Track taxable items
+                    if (!$product->tax_exempt) {
+                        $taxableSubtotal += $lineTotal;
+                    }
                 }
             }
         }
 
         $settings = \App\Models\Setting::first();
 
-        return view('prescriptions.show', compact('prescription', 'estimatedTotal', 'settings'));
+        // Calculate estimated tax using inclusive pricing
+        $estimatedTax = 0;
+        $taxBreakdown = [];
+        if ($settings && $settings->enable_tax && $taxableSubtotal > 0) {
+            $taxData = \App\Models\TaxRate::calculateInclusiveBreakdown($taxableSubtotal);
+            $estimatedTax = $taxData['total_tax'];
+            $taxBreakdown = $taxData['breakdown'] ?? [];
+        }
+
+        // Total is same as subtotal (inclusive pricing)
+        $estimatedTotal = $estimatedSubtotal;
+
+        return view('prescriptions.show', compact(
+            'prescription',
+            'estimatedTotal',
+            'estimatedSubtotal',
+            'estimatedTax',
+            'taxBreakdown',
+            'settings'
+        ));
     }
 
     public function dispense(Request $request, Prescription $prescription)
@@ -89,13 +116,24 @@ class PrescriptionController extends Controller
             return back()->with('error', 'Prescription already dispensed.');
         }
 
+        // Check if cashier workflow is enabled
+        $user = Auth::user();
+        $hasCashierWorkflow = $user->branch && $user->branch->has_cashier;
+
+        // Validate payment method only if no cashier workflow (pharmacist completes sale directly)
+        if (!$hasCashierWorkflow) {
+            $request->validate([
+                'payment_method' => 'required|in:cash,mobile_money,card',
+            ]);
+        }
+
         DB::beginTransaction();
         try {
             $medications = $prescription->medications; // Array from JSON cast
-            $totalAmount = 0;
+            $subtotal = 0;
+            $taxableSubtotal = 0;
             $itemsToProcess = [];
 
-            // 1. Calculate Total and Prepare Items
             // 1. Calculate Total and Prepare Items
             foreach ($medications as $med) {
                 if (!empty($med['product_id']) && !empty($med['quantity'])) {
@@ -106,7 +144,12 @@ class PrescriptionController extends Controller
                     $qtyNeeded = (int) $med['quantity'];
                     $price = $product->unit_price;
                     $lineTotal = $price * $qtyNeeded;
-                    $totalAmount += $lineTotal;
+                    $subtotal += $lineTotal;
+
+                    // Track taxable items (products not marked as tax exempt)
+                    if (!$product->tax_exempt) {
+                        $taxableSubtotal += $lineTotal;
+                    }
 
                     $itemsToProcess[] = [
                         'product' => $product,
@@ -120,11 +163,32 @@ class PrescriptionController extends Controller
                 }
             }
 
-            // --- LOYALTY REDEMPTION LOGIC ---
+            // 2. Calculate Taxes using INCLUSIVE pricing (like POS)
             $settings = \App\Models\Setting::first();
+            $grandTotal = $subtotal; // Prices already include tax
+            $totalTax = 0;
+            $taxBreakdown = null;
+
+            if ($settings && $settings->enable_tax && $taxableSubtotal > 0) {
+                $taxData = \App\Models\TaxRate::calculateInclusiveBreakdown($taxableSubtotal);
+                $totalTax = $taxData['total_tax'];
+                $baseAmount = $taxData['base_amount'];
+
+                // Store breakdown for receipt
+                $taxBreakdown = [];
+                foreach ($taxData['breakdown'] as $code => $data) {
+                    $taxBreakdown[$code] = $data;
+                }
+
+                // Adjust subtotal to show base amount
+                $exemptAmount = $subtotal - $taxableSubtotal;
+                $subtotal = $baseAmount + $exemptAmount;
+            }
+
+            // --- LOYALTY REDEMPTION LOGIC ---
             $pointsRedeemed = (int) $request->input('points_redeemed', 0);
             $discountAmount = 0;
-            $subtotal = $totalAmount;
+            $totalAmount = $grandTotal;
 
             if ($pointsRedeemed > 0 && $settings && $settings->loyalty_point_value > 0) {
                 $patient = \App\Models\Patient::find($prescription->patient_id);
@@ -138,10 +202,6 @@ class PrescriptionController extends Controller
                 // Cap discount at total amount (cannot pay negative)
                 if ($maxDiscount > $totalAmount) {
                     $discountAmount = $totalAmount;
-                    // Optional: Adjust points redeemed to match strict total? 
-                    // For simplicity, we accept the points user explicitly chose, even if value exceeds bill slightly (unlikely UX).
-                    // Better: Set discount to total, and maybe refund excess points? 
-                    // Let's just clamp discount.
                 } else {
                     $discountAmount = $maxDiscount;
                 }
@@ -153,15 +213,14 @@ class PrescriptionController extends Controller
             }
             // --------------------------------
 
-            // 2. Create Sale Record - check if cashier workflow is enabled
-            // If cashier workflow is disabled, complete the sale directly
-            $user = Auth::user();
-            $hasCashierWorkflow = $user->branch && $user->branch->has_cashier;
-
+            // 3. Create Sale Record
             // Get the current user's open shift (if any)
             $currentShift = \App\Models\Shift::where('user_id', Auth::id())
                 ->whereNull('end_time')
                 ->first();
+
+            // Determine payment method: from form if no cashier workflow, null if cashier will complete
+            $paymentMethod = $hasCashierWorkflow ? null : $request->input('payment_method', 'cash');
 
             $sale = \App\Models\Sale::create([
                 'user_id' => Auth::id(), // Pharmacist dispensing
@@ -171,9 +230,10 @@ class PrescriptionController extends Controller
                 'discount_amount' => $discountAmount,
                 'total_amount' => $totalAmount,
                 'points_redeemed' => $pointsRedeemed,
-                'tax_amount' => 0,
+                'tax_amount' => $totalTax,
+                'tax_breakdown' => $taxBreakdown,
                 'status' => $hasCashierWorkflow ? 'pending_payment' : 'completed',
-                'payment_method' => $hasCashierWorkflow ? null : 'cash', // Default to cash if no cashier
+                'payment_method' => $paymentMethod,
                 'shift_id' => $currentShift?->id, // Link to current shift for reporting
             ]);
 
