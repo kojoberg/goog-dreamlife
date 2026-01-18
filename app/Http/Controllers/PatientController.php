@@ -234,6 +234,47 @@ class PatientController extends Controller
 
         $patient->update(['user_id' => $user->id]);
 
-        return back()->with('success', "Portal access enabled successfully! Temporary Password: {$password} (Please copy this now)");
+        // Send email with login credentials
+        $emailSent = false;
+        $emailError = null;
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($patient->email)
+                ->send(new \App\Mail\PatientPortalAccess($patient, $password));
+            $emailSent = true;
+
+            // Log successful email to communication log
+            \App\Models\CommunicationLog::create([
+                'type' => 'email',
+                'recipient' => $patient->email,
+                'message' => 'Patient Portal Access Credentials',
+                'status' => 'sent',
+                'context' => 'patient_portal_access',
+                'user_id' => auth()->id(),
+                'branch_id' => auth()->user()?->branch_id,
+            ]);
+        } catch (\Exception $e) {
+            $emailError = $e->getMessage();
+            \Illuminate\Support\Facades\Log::error("Failed to send portal access email: " . $e->getMessage());
+
+            // Log failed email to communication log
+            \App\Models\CommunicationLog::create([
+                'type' => 'email',
+                'recipient' => $patient->email,
+                'message' => 'Patient Portal Access Credentials',
+                'status' => 'failed',
+                'response' => $e->getMessage(),
+                'context' => 'patient_portal_access',
+                'user_id' => auth()->id(),
+                'branch_id' => auth()->user()?->branch_id,
+            ]);
+        }
+
+        if ($emailSent) {
+            return back()->with('success', "Portal access enabled! Login credentials have been sent to {$patient->email}.");
+        } else {
+            // If email fails, still show password so user can manually provide it
+            return back()->with('warning', "Portal access enabled but email failed to send. Temporary Password: {$password} (Please copy this and provide to patient manually)");
+        }
     }
 }
