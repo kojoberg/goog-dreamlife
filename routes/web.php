@@ -207,7 +207,11 @@ Route::middleware('auth')->group(function () {
 // --- Patient Portal ---
 Route::middleware(['auth', 'role:patient'])->prefix('portal')->name('portal.')->group(function () {
     Route::get('/', [\App\Http\Controllers\PatientPortalController::class, 'dashboard'])->name('dashboard');
+    Route::get('/transactions', [\App\Http\Controllers\PatientPortalController::class, 'transactions'])->name('transactions');
+    Route::get('/loyalty', [\App\Http\Controllers\PatientPortalController::class, 'loyalty'])->name('loyalty');
     Route::get('/history', [\App\Http\Controllers\PatientPortalController::class, 'history'])->name('history');
+    Route::get('/upload', [\App\Http\Controllers\PatientPortalController::class, 'upload'])->name('upload');
+    Route::post('/upload', [\App\Http\Controllers\PatientPortalController::class, 'storeUpload'])->name('upload.store');
     Route::get('/documents', [\App\Http\Controllers\PatientPortalController::class, 'documents'])->name('documents');
 });
 

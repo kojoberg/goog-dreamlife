@@ -6,7 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Dream Life') }} - Patient Portal</title>
+    @php
+        $settings = \App\Models\Setting::first();
+        $pharmacyName = $settings->business_name ?? config('app.name', 'Pharmacy');
+    @endphp
+
+    <title>{{ $pharmacyName }} - Patient Portal</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -25,8 +30,18 @@
                     <div class="flex">
                         <!-- Logo -->
                         <div class="shrink-0 flex items-center">
-                            <a href="{{ route('portal.dashboard') }}" class="text-white font-bold text-lg">
-                                Dream Life Portal
+                            <a href="{{ route('portal.dashboard') }}"
+                                class="flex items-center text-white font-bold text-lg">
+                                @if($settings && $settings->logo_path)
+                                    @php
+                                        $logoPath = storage_path('app/public/' . $settings->logo_path);
+                                    @endphp
+                                    @if(file_exists($logoPath))
+                                        <img src="{{ asset('storage/' . $settings->logo_path) }}" alt="Logo"
+                                            class="h-10 w-auto mr-3">
+                                    @endif
+                                @endif
+                                <span>{{ $pharmacyName }} Portal</span>
                             </a>
                         </div>
 
@@ -36,9 +51,21 @@
                                 class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('portal.dashboard') ? 'border-white text-white' : 'border-transparent text-indigo-200 hover:text-white hover:border-indigo-300' }} text-sm font-medium leading-5 transition duration-150 ease-in-out">
                                 Dashboard
                             </a>
+                            <a href="{{ route('portal.transactions') }}"
+                                class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('portal.transactions') ? 'border-white text-white' : 'border-transparent text-indigo-200 hover:text-white hover:border-indigo-300' }} text-sm font-medium leading-5 transition duration-150 ease-in-out">
+                                Transactions
+                            </a>
+                            <a href="{{ route('portal.loyalty') }}"
+                                class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('portal.loyalty') ? 'border-white text-white' : 'border-transparent text-indigo-200 hover:text-white hover:border-indigo-300' }} text-sm font-medium leading-5 transition duration-150 ease-in-out">
+                                Loyalty Points
+                            </a>
                             <a href="{{ route('portal.history') }}"
                                 class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('portal.history') ? 'border-white text-white' : 'border-transparent text-indigo-200 hover:text-white hover:border-indigo-300' }} text-sm font-medium leading-5 transition duration-150 ease-in-out">
-                                My History
+                                Prescriptions
+                            </a>
+                            <a href="{{ route('portal.upload') }}"
+                                class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('portal.upload') ? 'border-white text-white' : 'border-transparent text-indigo-200 hover:text-white hover:border-indigo-300' }} text-sm font-medium leading-5 transition duration-150 ease-in-out">
+                                Upload Prescription
                             </a>
                             <a href="{{ route('portal.documents') }}"
                                 class="inline-flex items-center px-1 pt-1 border-b-2 {{ request()->routeIs('portal.documents') ? 'border-white text-white' : 'border-transparent text-indigo-200 hover:text-white hover:border-indigo-300' }} text-sm font-medium leading-5 transition duration-150 ease-in-out">
@@ -75,6 +102,17 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Mobile Menu Button -->
+                    <div class="flex items-center sm:hidden">
+                        <button x-data="{ mobileOpen: false }" @click="mobileOpen = !mobileOpen"
+                            class="inline-flex items-center justify-center p-2 rounded-md text-indigo-200 hover:text-white hover:bg-indigo-500 focus:outline-none focus:bg-indigo-500 focus:text-white transition">
+                            <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
         </nav>
@@ -86,6 +124,22 @@
                     {{ $header }}
                 </div>
             </header>
+        @endif
+
+        <!-- Flash Messages -->
+        @if(session('success'))
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+                <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded">
+                    {{ session('success') }}
+                </div>
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
+                    {{ session('error') }}
+                </div>
+            </div>
         @endif
 
         <!-- Page Content -->
