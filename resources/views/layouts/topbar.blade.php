@@ -10,8 +10,12 @@
         </button>
 
         <!-- Current Date/Context (Optional) -->
-        <div class="hidden sm:block text-sm text-gray-500">
-            {{ now()->format('l, jS F Y') }}
+        <div class="hidden sm:flex items-center gap-3 text-sm text-gray-500">
+            <span>{{ now()->format('l, jS F Y') }}</span>
+            @if(auth()->user() && auth()->user()->branch)
+                <span class="text-gray-300">|</span>
+                <span class="font-medium text-indigo-600">{{ auth()->user()->branch->name }}</span>
+            @endif
         </div>
     </div>
 
