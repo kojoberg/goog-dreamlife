@@ -23,6 +23,8 @@ class SaleReceipt extends Mailable
      */
     public function __construct(Sale $sale)
     {
+        // Load relationships needed by the email template
+        $sale->load(['items.product', 'user', 'patient', 'cashierShift.user']);
         $this->sale = $sale;
         $this->settings = Setting::firstOrCreate(['id' => 1], ['business_name' => 'UVITECH Healthcare']);
     }

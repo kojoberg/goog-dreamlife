@@ -45,8 +45,13 @@
     <div class="container">
         <div class="text-center">
             @if($settings->logo_path)
-                <img src="{{ $message->embed(storage_path('app/public/' . $settings->logo_path)) }}" alt="Logo"
-                    style="max-height: 120px; width: auto; margin-bottom: 15px;">
+                @php
+                    $logoPath = storage_path('app/public/' . $settings->logo_path);
+                @endphp
+                @if(file_exists($logoPath))
+                    <img src="{{ $message->embed($logoPath) }}" alt="Logo"
+                        style="max-height: 120px; width: auto; margin-bottom: 15px;">
+                @endif
             @endif
             <h2 style="margin:0;">{{ $settings->business_name }}</h2>
             @if($settings->address)
@@ -90,10 +95,10 @@
                     <td>Subtotal</td>
                     <td class="right">GHS {{ number_format($sale->subtotal, 2) }}</td>
                 </tr>
-                @foreach($sale->tax_breakdown as $taxName => $taxAmount)
+                @foreach($sale->tax_breakdown as $taxCode => $taxData)
                     <tr>
-                        <td>{{ strtoupper($taxName) }}</td>
-                        <td class="right">{{ number_format($taxAmount, 2) }}</td>
+                        <td>{{ $taxData['name'] ?? strtoupper($taxCode) }}</td>
+                        <td class="right">{{ number_format($taxData['amount'] ?? 0, 2) }}</td>
                     </tr>
                 @endforeach
                 <tr>
