@@ -234,13 +234,55 @@ class SettingController extends Controller
 
             // CHECK MODE - Just check for updates, don't apply
             if ($request->has('check')) {
-                // Fetch latest from origin
-                exec("cd {$basePath} && git fetch origin 2>&1", $fetchOutput, $fetchCode);
-
-                if ($fetchCode !== 0) {
+                // First check if this is a git repository
+                $isGitRepo = is_dir($basePath . '/.git');
+                if (!$isGitRepo) {
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'Failed to fetch from repository. Check your network connection.'
+                        'message' => 'Not a git repository. Manual installation detected.'
+                    ], 500);
+                }
+
+                // Check git remote
+                $remoteUrl = trim(@shell_exec("cd {$basePath} && git remote get-url origin 2>/dev/null") ?? '');
+                if (empty($remoteUrl)) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'No git remote configured. Please set up the origin remote.'
+                    ], 500);
+                }
+
+                // Fetch latest from origin with output capture for better debugging
+                $fetchOutput = [];
+                exec("cd {$basePath} && git fetch origin {$currentBranch} 2>&1", $fetchOutput, $fetchCode);
+
+                if ($fetchCode !== 0) {
+                    $errorDetail = implode(' ', $fetchOutput);
+
+                    // If SSH authentication failed, suggest HTTPS
+                    if (
+                        strpos($errorDetail, 'Permission denied') !== false ||
+                        strpos($errorDetail, 'publickey') !== false
+                    ) {
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => 'SSH authentication failed. Consider using HTTPS URL for the git remote.',
+                            'detail' => $errorDetail
+                        ], 500);
+                    }
+
+                    // Could not resolve host
+                    if (strpos($errorDetail, 'Could not resolve') !== false) {
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => 'Cannot reach GitHub. Check server DNS/network.',
+                            'detail' => $errorDetail
+                        ], 500);
+                    }
+
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Failed to fetch from repository: ' . (strlen($errorDetail) > 100 ? substr($errorDetail, 0, 100) . '...' : $errorDetail)
                     ], 500);
                 }
 
@@ -254,10 +296,13 @@ class SettingController extends Controller
                         'branch' => $currentBranch
                     ]);
                 } else {
+                    // Count commits
+                    $commitCount = count(array_filter(explode("\n", trim($newCommits))));
                     return response()->json([
                         'status' => 'update_available',
                         'commits' => trim($newCommits),
-                        'message' => 'New updates are available.',
+                        'commit_count' => $commitCount,
+                        'message' => "{$commitCount} update(s) available.",
                         'branch' => $currentBranch
                     ]);
                 }
