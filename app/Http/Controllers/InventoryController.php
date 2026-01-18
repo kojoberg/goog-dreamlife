@@ -58,7 +58,7 @@ class InventoryController extends Controller
     }
 
     /**
-     * Store new stock batch.
+     * Store new stock batches (supports multiple items).
      */
     public function store(Request $request)
     {
@@ -66,24 +66,62 @@ class InventoryController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $validated = $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'supplier_id' => 'nullable|exists:suppliers,id',
-            'batch_number' => 'nullable|string|max:50',
-            'quantity' => 'required|integer|min:1',
-            'cost_price' => 'nullable|numeric|min:0',
-            'expiry_date' => 'nullable|date|after:today',
-            'branch_id' => 'nullable|exists:branches,id',
-        ]);
+        // Get common data
+        $supplierId = $request->input('supplier_id');
+        $branchId = $request->input('branch_id');
 
         // Super admin can specify branch, others use their own
-        if (!auth()->user()->isSuperAdmin() || !isset($validated['branch_id'])) {
-            $validated['branch_id'] = auth()->user()->branch_id;
+        if (!auth()->user()->isSuperAdmin() || !$branchId) {
+            $branchId = auth()->user()->branch_id;
         }
 
-        InventoryBatch::create($validated);
+        // Parse items from JSON
+        $items = json_decode($request->input('items', '[]'), true);
 
-        return redirect()->route('inventory.index')->with('success', 'Stock received successfully.');
+        if (empty($items) || !is_array($items)) {
+            return back()->with('error', 'No items to receive.');
+        }
+
+        $successCount = 0;
+        $errors = [];
+
+        foreach ($items as $index => $item) {
+            // Validate each item
+            if (empty($item['product_id']) || empty($item['quantity'])) {
+                continue;
+            }
+
+            // Check product exists
+            $product = Product::find($item['product_id']);
+            if (!$product) {
+                $errors[] = "Row " . ($index + 1) . ": Product not found.";
+                continue;
+            }
+
+            // Create inventory batch
+            InventoryBatch::create([
+                'product_id' => $item['product_id'],
+                'supplier_id' => $supplierId,
+                'batch_number' => $item['batch_number'] ?? null,
+                'quantity' => (int) $item['quantity'],
+                'cost_price' => $item['cost_price'] ? (float) $item['cost_price'] : null,
+                'expiry_date' => $item['expiry_date'] ?: null,
+                'branch_id' => $branchId,
+            ]);
+
+            $successCount++;
+        }
+
+        if ($successCount === 0) {
+            return back()->with('error', 'No items were added. ' . implode(' ', $errors));
+        }
+
+        $message = "$successCount item(s) received successfully.";
+        if (!empty($errors)) {
+            $message .= " Some errors: " . implode(' ', $errors);
+        }
+
+        return redirect()->route('inventory.index')->with('success', $message);
     }
     /**
      * Show history of received stock.
