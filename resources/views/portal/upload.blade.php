@@ -125,11 +125,16 @@
 
             <!-- Recent Uploads -->
             @php
-                $recentUploads = Auth::user()->patient->documents()
-                    ->where('type', 'prescription_upload')
-                    ->latest()
-                    ->take(5)
-                    ->get();
+                try {
+                    $recentUploads = Auth::user()->patient->documents()
+                        ->where('type', 'prescription_upload')
+                        ->latest()
+                        ->take(5)
+                        ->get();
+                } catch (\Exception $e) {
+                    // Column might not exist yet if migration hasn't run
+                    $recentUploads = collect();
+                }
             @endphp
 
             @if($recentUploads->count() > 0)
@@ -140,7 +145,7 @@
                             @foreach($recentUploads as $upload)
                                 <li class="py-3 flex justify-between items-center">
                                     <div>
-                                        <p class="text-sm font-medium text-gray-900">{{ $upload->title }}</p>
+                                        <p class="text-sm font-medium text-gray-900">{{ $upload->title ?? $upload->filename }}</p>
                                         <p class="text-sm text-gray-500">{{ $upload->created_at->format('M d, Y h:i A') }}</p>
                                     </div>
                                     <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">

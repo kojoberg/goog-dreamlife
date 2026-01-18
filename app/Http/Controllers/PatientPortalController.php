@@ -144,15 +144,20 @@ class PatientPortalController extends Controller
 
         $user = Auth::user();
         $patient = $user->patient;
+        $file = $request->file('prescription_file');
 
         // Store the file
-        $path = $request->file('prescription_file')->store('prescription-uploads', 'public');
+        $path = $file->store('prescription-uploads', 'public');
 
-        // Create a patient document record
+        // Create a patient document record with all required fields
         $document = $patient->documents()->create([
             'title' => 'Prescription Upload - ' . now()->format('M d, Y'),
             'type' => 'prescription_upload',
             'file_path' => $path,
+            'filename' => $file->getClientOriginalName(),
+            'file_type' => $file->getMimeType(),
+            'file_size' => $file->getSize(),
+            'description' => $request->notes,
             'notes' => $request->notes,
             'uploaded_by' => $user->id,
         ]);

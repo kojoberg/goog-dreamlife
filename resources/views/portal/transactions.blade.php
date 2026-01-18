@@ -24,9 +24,11 @@
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @foreach($sales as $sale)
-                                        <tr class="hover:bg-gray-50">
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                {{ str_pad($sale->id, 6, '0', STR_PAD_LEFT) }}
+                                        <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.open('{{ route('pos.receipt', $sale->id) }}', '_blank')">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600 hover:text-indigo-900">
+                                                <a href="{{ route('pos.receipt', $sale->id) }}" target="_blank" onclick="event.stopPropagation()">
+                                                    {{ str_pad($sale->id, 6, '0', STR_PAD_LEFT) }}
+                                                </a>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {{ $sale->created_at->format('M d, Y') }}

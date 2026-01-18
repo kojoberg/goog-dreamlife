@@ -38,8 +38,8 @@
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach($prescriptions as $prescription)
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='{{ route('prescriptions.show', $prescription->id) }}'">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-indigo-600 font-medium hover:text-indigo-900">
                                             {{ $prescription->created_at->format('M d, Y') }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -47,9 +47,23 @@
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-500">
                                             <ul class="list-disc pl-4">
-                                                @foreach($prescription->items as $item)
-                                                    <li>{{ $item->product->name }} ({{ $item->quantity }})</li>
-                                                @endforeach
+                                                @if($prescription->medications && is_array($prescription->medications))
+                                                    @foreach(array_slice($prescription->medications, 0, 3) as $med)
+                                                        <li>{{ $med['name'] ?? 'Medication' }} {{ isset($med['quantity']) ? '('.$med['quantity'].')' : '' }}</li>
+                                                    @endforeach
+                                                    @if(count($prescription->medications) > 3)
+                                                        <li class="text-gray-400">+{{ count($prescription->medications) - 3 }} more...</li>
+                                                    @endif
+                                                @elseif($prescription->items && $prescription->items->count() > 0)
+                                                    @foreach($prescription->items->take(3) as $item)
+                                                        <li>{{ $item->product->name ?? 'Item' }} ({{ $item->quantity }})</li>
+                                                    @endforeach
+                                                    @if($prescription->items->count() > 3)
+                                                        <li class="text-gray-400">+{{ $prescription->items->count() - 3 }} more...</li>
+                                                    @endif
+                                                @else
+                                                    <li class="text-gray-400">No medications</li>
+                                                @endif
                                             </ul>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
